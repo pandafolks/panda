@@ -8,7 +8,7 @@ import org.http4s.{HttpApp, HttpRoutes}
 
 class PrimaryRouting(private final val apiGateway: ApiGateway) extends Http4sDsl[Task] {
   private val routes = HttpRoutes.of[Task] {
-    case req @ GET -> "gateway" /: requestedPath => apiGateway.getResponse(req, requestedPath)
+    case request @ GET -> "gateway" /: requestedPath => apiGateway.getResponse(request, requestedPath)
   }
 
   val router: HttpApp[Task] = Http4sRouting.make { routes }

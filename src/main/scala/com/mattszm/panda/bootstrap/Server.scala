@@ -6,7 +6,8 @@ import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.mattszm.panda.bootstrap.configuration.AppConfiguration
-import com.mattszm.panda.gateway.BaseApiGateway
+import com.mattszm.panda.gateway.BaseApiGatewayImpl
+import com.mattszm.panda.gateway.dto.GatewayMappingInitializationDto
 import monix.eval.Task
 import org.http4s.server.Server
 
@@ -17,13 +18,16 @@ object Server extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
-      gatewayConfiguration <- Resource.eval(Task.evalOnce(
-        ujson.read(Source.fromResource(appConfiguration.gateway.configurationFile).mkString)))
+      gatewayMappingConfiguration <- Resource.eval(Task.evalOnce(
+        ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
+      gatewayMappingInitializationEntries = GatewayMappingInitializationDto.of(gatewayMappingConfiguration)
+
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
-      apiGateway = new BaseApiGateway(gatewayConfiguration, httpGatewayClient)
+      apiGateway = new BaseApiGatewayImpl(gatewayMappingInitializationEntries, httpGatewayClient)
+      primaryRouting = new PrimaryRouting(apiGateway)
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
-        new PrimaryRouting(apiGateway).router,
+        primaryRouting.router,
         global
       )
     } yield server
