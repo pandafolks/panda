@@ -1,0 +1,11 @@
+{
+  "mappers": {
+    "/cars": "cars",
+    "cars/rent": "cars",
+    "planes/{{plane_id}}/passengers": "planes"
+  },
+  "prefixes": {
+    "cars": "/api/v1",
+    "planes": "/api/v2"
+  }
+}

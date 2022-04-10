@@ -1,0 +1,8 @@
+version: '3.5'
+
+services:
+  cars-one:
+    container_name: cars-one
+    build: ./one/
+    ports:
+      - "3000:3000"

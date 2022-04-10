@@ -1,13 +1,14 @@
 package com.mattszm.panda.bootstrap
 
 import com.avast.sst.http4s.server.Http4sRouting
+import com.mattszm.panda.gateway.ApiGateway
 import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{HttpApp, HttpRoutes}
 
-class Routing extends Http4sDsl[Task] {
+class PrimaryRouting(private final val apiGateway: ApiGateway) extends Http4sDsl[Task] {
   private val routes = HttpRoutes.of[Task] {
-    case GET -> Root / "hello" => Ok(Task.eval("fds"))
+    case req @ GET -> "gateway" /: requestedPath => apiGateway.getResponse(req, requestedPath)
   }
 
   val router: HttpApp[Task] = Http4sRouting.make { routes }

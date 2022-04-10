@@ -22,7 +22,9 @@ lazy val root = project
       Dependencies.sstFlywayPureConfig,
       Dependencies.sstJvm,
       Dependencies.sstMicrometerJmxPureConfig,
-      Dependencies.sstBundleMonixHttp4sBlaze
+      Dependencies.sstBundleMonixHttp4sBlaze,
+      Dependencies.uPickle,
+      Dependencies.scalaUri
     ),
     name := "panda"
   )

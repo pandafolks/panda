@@ -16,6 +16,8 @@ object Dependencies {
   val sstMicrometerJmxPureConfig = "com.avast" %% "sst-micrometer-jmx-pureconfig" % Versions.sst
   val sstMonixCatnapPureConfig = "com.avast" %% "sst-monix-catnap-pureconfig" % Versions.sst
   val testContainers = "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.testContainers
+  val uPickle = "com.lihaoyi" %% "upickle" % "1.5.0"
+  val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.2"
 
   object Versions {
     val sst = "0.3.3"
