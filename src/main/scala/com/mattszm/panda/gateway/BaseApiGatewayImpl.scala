@@ -1,6 +1,7 @@
 package com.mattszm.panda.gateway
 
 import com.mattszm.panda.gateway.dto.GatewayMappingInitializationDto
+import com.mattszm.panda.participants.{Participant, ParticipantsCacheImpl}
 import monix.eval.Task
 import org.http4s.Uri.{Authority, Path, RegName}
 import org.http4s.client.Client
@@ -8,17 +9,21 @@ import org.http4s.{Header, Request, Response}
 import org.slf4j.LoggerFactory
 import org.typelevel.ci.CIString
 
-class BaseApiGatewayImpl(
+final class BaseApiGatewayImpl(
                       private val gatewayMappingInitializationEntries: GatewayMappingInitializationDto,
                       private val client: Client[Task],
                     ) extends ApiGateway {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  logger.info("Endpoints tree initialized")
-  // creating in memory structure here!
-  println(gatewayMappingInitializationEntries.prefixes)
+  // temporary solution - participants will be registered remotely
+  private val participantsCache = new ParticipantsCacheImpl(
+    List(Participant("127.0.0.1", 3000, "cars"),
+      Participant("localhost", 3001, "cars"),
+      Participant("127.0.0.1", 4000, "planes"))
+  ) // hardcoded
+  logger.info("Gateway Tree initialized")
 
-  override def getResponse(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
+  override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
     val newHost = "localhost" // hardcoded
     val port = 3000 // hardcoded
 

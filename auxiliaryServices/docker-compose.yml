@@ -6,3 +6,14 @@ services:
     build: ./one/
     ports:
       - "3000:3000"
+  cars-two:
+    container_name: cars-two
+    build: ./one/
+    ports:
+      - "3001:3000"
+
+  planes-one:
+    container_name: planes-one
+    build: ./two/
+    ports:
+      - "4000:3000"

@@ -24,7 +24,8 @@ lazy val root = project
       Dependencies.sstMicrometerJmxPureConfig,
       Dependencies.sstBundleMonixHttp4sBlaze,
       Dependencies.uPickle,
-      Dependencies.scalaUri
+      Dependencies.scalaUri,
+      Dependencies.collectionContrib
     ),
     name := "panda"
   )

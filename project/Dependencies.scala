@@ -18,6 +18,7 @@ object Dependencies {
   val testContainers = "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.testContainers
   val uPickle = "com.lihaoyi" %% "upickle" % "1.5.0"
   val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.2"
+  val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % "0.2.2"
 
   object Versions {
     val sst = "0.3.3"
