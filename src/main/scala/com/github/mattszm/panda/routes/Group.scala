@@ -1,4 +1,4 @@
-package com.mattszm.panda.routes
+package com.github.mattszm.panda.routes
 
 final case class Group(name: String)
 

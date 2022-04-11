@@ -1,6 +1,6 @@
-package com.mattszm.panda.routes
+package com.github.mattszm.panda.routes
 
-import com.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.{be, contain}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper

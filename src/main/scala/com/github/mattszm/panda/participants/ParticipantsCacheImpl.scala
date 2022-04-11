@@ -1,6 +1,6 @@
-package com.mattszm.panda.participants
+package com.github.mattszm.panda.participants
 
-import com.mattszm.panda.routes.Group
+import com.github.mattszm.panda.routes.Group
 
 import scala.collection.immutable.MultiDict
 

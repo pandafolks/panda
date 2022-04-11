@@ -1,7 +1,7 @@
-package com.mattszm.panda.bootstrap
+package com.github.mattszm.panda.bootstrap
 
 import com.avast.sst.http4s.server.Http4sRouting
-import com.mattszm.panda.gateway.ApiGateway
+import com.github.mattszm.panda.gateway.ApiGateway
 import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{HttpApp, HttpRoutes}

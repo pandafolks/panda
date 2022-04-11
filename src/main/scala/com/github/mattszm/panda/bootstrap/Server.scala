@@ -1,14 +1,14 @@
-package com.mattszm.panda.bootstrap
+package com.github.mattszm.panda.bootstrap
 
 import cats.effect.Resource
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
-import com.mattszm.panda.bootstrap.configuration.AppConfiguration
-import com.mattszm.panda.gateway.BaseApiGatewayImpl
-import com.mattszm.panda.routes.RoutesTreeImpl
-import com.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
+import com.github.mattszm.panda.gateway.BaseApiGatewayImpl
+import com.github.mattszm.panda.routes.RoutesTreeImpl
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
 import monix.eval.Task
 import org.http4s.server.Server
 

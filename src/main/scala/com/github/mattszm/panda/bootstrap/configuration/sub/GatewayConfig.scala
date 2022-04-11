@@ -1,4 +1,4 @@
-package com.mattszm.panda.bootstrap.configuration.sub
+package com.github.mattszm.panda.bootstrap.configuration.sub
 
 final case class GatewayConfig(
                                 mappingFile: String,

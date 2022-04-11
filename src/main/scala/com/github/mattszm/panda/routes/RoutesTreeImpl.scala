@@ -1,7 +1,7 @@
-package com.mattszm.panda.routes
+package com.github.mattszm.panda.routes
 
-import com.mattszm.panda.routes.RoutesTree.Node
-import com.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import RoutesTree.Node
 
 final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 

@@ -1,7 +1,9 @@
-package com.mattszm.panda.gateway
+package com.github.mattszm.panda.gateway
 
-import com.mattszm.panda.participants.{Participant, ParticipantsCacheImpl}
-import com.mattszm.panda.routes.{Group, RoutesTree}
+import com.github.mattszm.panda.participants.Participant
+import com.github.mattszm.panda.routes.Group
+import com.github.mattszm.panda.participants.ParticipantsCacheImpl
+import com.github.mattszm.panda.routes.RoutesTree
 import monix.eval.Task
 import org.http4s.Uri.{Authority, Path, RegName}
 import org.http4s.client.Client

@@ -1,4 +1,4 @@
-package com.mattszm.panda.routes.dto
+package com.github.mattszm.panda.routes.dto
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.be

@@ -1,4 +1,4 @@
-package com.mattszm.panda.gateway
+package com.github.mattszm.panda.gateway
 
 import monix.eval.Task
 import org.http4s.{Request, Response}

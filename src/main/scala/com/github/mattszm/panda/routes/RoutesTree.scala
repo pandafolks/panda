@@ -1,6 +1,6 @@
-package com.mattszm.panda.routes
+package com.github.mattszm.panda.routes
 
-import com.mattszm.panda.routes.RoutesTree.Node
+import RoutesTree.Node
 
 trait RoutesTree {
   def getRoot: Node

@@ -1,4 +1,4 @@
-package com.mattszm.panda.participants
+package com.github.mattszm.panda.participants
 
 trait ParticipantsCache {
   // provide methods useful for loadBalancer
