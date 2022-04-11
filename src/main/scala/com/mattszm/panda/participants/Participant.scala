@@ -1,3 +1,5 @@
 package com.mattszm.panda.participants
 
-final case class Participant(host: String, port: Int, group: String, identifier: Option[String] = Option.empty)
+import com.mattszm.panda.routes.Group
+
+final case class Participant(host: String, port: Int, group: Group, identifier: Option[String] = Option.empty)

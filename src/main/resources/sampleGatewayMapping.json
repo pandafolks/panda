@@ -5,7 +5,7 @@
     "planes/{{plane_id}}/passengers": "planes"
   },
   "prefixes": {
-    "cars": "/api/v1",
+    "cars": "/api/v1/",
     "planes": "/api/v2"
   }
 }
