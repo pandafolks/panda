@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.{be, contain}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-class RoutesTreeTest extends AnyFlatSpec {
+class RoutesTreeImplTest extends AnyFlatSpec {
  "RoutesTree#construct" should "construct appropriate tree" in {
   // arrange
   val data = RoutesMappingInitializationDto(
@@ -18,23 +18,23 @@ class RoutesTreeTest extends AnyFlatSpec {
   )
 
   // act
-  val tree: RoutesTree = RoutesTree.construct(data)
+  val tree: RoutesTree = RoutesTreeImpl.construct(data)
 
   // assert
-  tree.getHead.value should be(RoutesTree.Wildcard)
+  tree.getRoot.value should be(RoutesTree.Wildcard)
 
-  val childrenFirstLayer = tree.getHead.children
+  val childrenFirstLayer = tree.getRoot.children
   childrenFirstLayer.map(_.value) should contain theSameElementsAs List(
    RoutesTree.Fixed("cars"), RoutesTree.Fixed("planes"))
   childrenFirstLayer.filter(_.value == RoutesTree.Fixed("cars")).head.groupInfo should be(
-   Some(RoutesTree.GroupInfo(group = Group("cars"), prefix = "api/v1")))
+   Some(GroupInfo(group = Group("cars"), prefix = "api/v1")))
   childrenFirstLayer.filter(_.value == RoutesTree.Fixed("planes")).head.groupInfo should be(None)
 
   val childrenSecondLayer = childrenFirstLayer.flatMap(_.children)
   childrenSecondLayer.map(_.value) should contain theSameElementsAs List(
    RoutesTree.Fixed("rent"), RoutesTree.Wildcard)
   childrenSecondLayer.filter(_.value == RoutesTree.Fixed("rent")).head.groupInfo should be(
-   Some(RoutesTree.GroupInfo(group = Group("cars"), prefix = "api/v1")))
+   Some(GroupInfo(group = Group("cars"), prefix = "api/v1")))
   childrenSecondLayer.filter(_.value == RoutesTree.Wildcard).head.groupInfo should be(None)
 
   val childrenThirdLayer = childrenSecondLayer.flatMap(_.children)
@@ -42,7 +42,7 @@ class RoutesTreeTest extends AnyFlatSpec {
   childrenThirdLayer.head.value should be(RoutesTree.Fixed("passengers"))
   childrenThirdLayer.head.children.size should be(0)
   childrenThirdLayer.head.groupInfo should be(
-   Some(RoutesTree.GroupInfo(group = Group("planes"), prefix = "api/v2")))
+   Some(GroupInfo(group = Group("planes"), prefix = "api/v2")))
 
   val childrenFourthLayer = childrenThirdLayer.flatMap(_.children)
   childrenFourthLayer.size should be(0)
@@ -60,14 +60,14 @@ class RoutesTreeTest extends AnyFlatSpec {
   )
 
   // act
-  val tree: RoutesTree = RoutesTree.construct(data)
+  val tree: RoutesTree = RoutesTreeImpl.construct(data)
 
   // assert
-  tree.getHead.value should be(RoutesTree.Wildcard)
-  val childrenFirstLayer = tree.getHead.children
+  tree.getRoot.value should be(RoutesTree.Wildcard)
+  val childrenFirstLayer = tree.getRoot.children
   childrenFirstLayer.size should be(1)
   childrenFirstLayer.head.value should be(RoutesTree.Fixed("cars"))
   childrenFirstLayer.head.children.size should be(0)
-  childrenFirstLayer.head.groupInfo should be(Some(RoutesTree.GroupInfo(group = Group("cars"), prefix = "")))
+  childrenFirstLayer.head.groupInfo should be(Some(GroupInfo(group = Group("cars"), prefix = "")))
  }
 }

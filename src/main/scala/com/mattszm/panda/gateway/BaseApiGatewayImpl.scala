@@ -22,7 +22,7 @@ final class BaseApiGatewayImpl(
       Participant("127.0.0.1", 4000, Group("planes")))
   )
   println(participantsCache.cacheByGroup)
-  println(routesTree.getHead)
+  println(routesTree.getRoot)
   logger.info("Gateway Tree initialized")
 
   override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {

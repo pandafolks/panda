@@ -7,7 +7,7 @@ import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.mattszm.panda.bootstrap.configuration.AppConfiguration
 import com.mattszm.panda.gateway.BaseApiGatewayImpl
-import com.mattszm.panda.routes.RoutesTree
+import com.mattszm.panda.routes.RoutesTreeImpl
 import com.mattszm.panda.routes.dto.RoutesMappingInitializationDto
 import monix.eval.Task
 import org.http4s.server.Server
@@ -22,7 +22,7 @@ object Server extends MonixServerApp {
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
       routesMappingInitializationEntries = RoutesMappingInitializationDto.of(routesMappingConfiguration)
-      routesTree = RoutesTree.construct(routesMappingInitializationEntries)
+      routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       apiGateway = new BaseApiGatewayImpl(httpGatewayClient, routesTree)
