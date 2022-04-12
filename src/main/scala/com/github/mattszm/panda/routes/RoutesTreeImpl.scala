@@ -1,16 +1,30 @@
 package com.github.mattszm.panda.routes
 
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
-import RoutesTree.Node
+import RoutesTree.{Fixed, Node, Wildcard}
+import org.http4s.Uri
+import org.http4s.Uri.Path
 
 final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
   override def getRoot: Node = root.copy()
 
-  override def specifyGroup(path: String): GroupInfo = ???
+  override def specifyGroup(path: Path): Option[GroupInfo] = {
+    def rc(curr: Node, segments: List[Uri.Path.Segment]): Option[GroupInfo] = {
+      if (segments.isEmpty) curr.groupInfo
+      else curr.children.find(node => node.value match {
+        case Fixed(expression) if expression == segments.head.encoded => true
+        case _: Fixed => false
+        case Wildcard => true
+      }).flatMap(rc(_, segments.tail))
+    }
+
+    rc(root, path.segments.toList)
+  }
 }
 
 object RoutesTreeImpl {
+
   def construct(data: RoutesMappingInitializationDto): RoutesTreeImpl = {
     val dataWithProcessedPrefixes = data.copy(
       prefixes = data.prefixes.view.mapValues(
@@ -31,20 +45,27 @@ object RoutesTreeImpl {
   }
 
   private def insert(root: Node, path: String, info: GroupInfo): Node = {
+    import com.github.mattszm.panda.routes.RoutesTree.orderingByValueType
+
     def rc(parts: List[RoutesTree.Value], currentNode: Node): Node = {
       if (parts.isEmpty) currentNode.copy(groupInfo = Some(info))
       else {
         val affectedNode = currentNode.children.find(_.value == parts.head).getOrElse(Node(parts.head, List.empty))
         currentNode.copy(
-          children = rc(parts.tail, affectedNode) :: currentNode.children.filterNot(_.value == parts.head)
+          children = (rc(parts.tail, affectedNode) :: currentNode.children.filterNot(_.value == parts.head)).sorted
         )
       }
     }
 
-    val parts: List[RoutesTree.Value] = path.split("/").filter(_ != "").toList.map {
+    def splitIntoParts(path: String)(mapFunc: String => RoutesTree.Value): List[RoutesTree.Value] =
+      path.split("/").filterNot(_ == "").map(mapFunc).toList
+
+    val mainParts: List[RoutesTree.Value] = splitIntoParts(path) {
       case entry if entry.startsWith("{{") && entry.endsWith("}}") => RoutesTree.Wildcard
       case entry => RoutesTree.Fixed(entry)
     }
-    rc(parts, root)
+    val prefixParts: List[RoutesTree.Value] = splitIntoParts(info.prefix) { RoutesTree.Fixed }
+
+    rc(prefixParts ::: mainParts, root)
   }
 }

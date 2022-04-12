@@ -1,6 +1,6 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / turbo := true
-ThisBuild / organization := "com.mattszm"
+ThisBuild / organization := "com.github.mattszm"
 
 lazy val commonSettings = BuildSettings.common ++ Seq(
   libraryDependencies ++= Seq(
