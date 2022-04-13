@@ -16,29 +16,45 @@ final class BaseApiGatewayImpl(
                                 private val routesTree: RoutesTree,
                     ) extends ApiGateway {
   private val logger = LoggerFactory.getLogger(getClass.getName)
-
   // temporary solution - participants will be registered remotely
   private val participantsCache = new ParticipantsCacheImpl(
     List(Participant("127.0.0.1", 3000, Group("cars")),
       Participant("localhost", 3001, Group("cars")),
-      Participant("127.0.0.1", 4000, Group("planes")))
+      Participant("127.0.0.1", 4000, Group("planes"))
+    )
   )
-  println(participantsCache.cacheByGroup)
-  println(routesTree.getRoot)
-  logger.info("Gateway Tree initialized")
 
   override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
-    val newHost = "localhost" // hardcoded
-    val newPort = 3000 // hardcoded
-
-    val proxiedReq =
-      request
-        .withUri(request.uri.copy(
-          authority = Some(Authority(host = RegName(newHost), port = Some(newPort))),
-          path = requestedPath
-        ))
-        .withHeaders(request.headers.put(Header.Raw(CIString("host"), newHost)))
-
-    client.run(proxiedReq).use(Task.eval(_)).onErrorRecoverWith { case _: Throwable => Task.eval(Response.notFound) }
+    routesTree.specifyGroup(requestedPath) match {
+      case None =>
+        logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
+        Response.notFoundFor(request)
+      case Some(groupInfo) =>
+        Task.eval(participantsCache.getParticipantsAssociatedWithGroup(groupInfo.group))
+          .map(_.headOption) // this and the previous will be replaced by loadBalancer
+          .flatMap(optionalParticipant => optionalParticipant
+            .fold(
+              {
+                logger.info("There is no available instance for the requested path: \"" + requestedPath.renderString + "\"")
+                Response.notFoundFor(request)
+              }
+            )(chosenParticipant =>
+              client.run(
+                request
+                  .withUri(request.uri.copy(
+                    authority = Some(Authority(
+                      host = RegName(chosenParticipant.host),
+                      port = Some(chosenParticipant.port)
+                    )),
+                    path = requestedPath
+                  ))
+                  .withHeaders(request.headers.put(Header.Raw(CIString("host"), chosenParticipant.host)))
+              ).use(Task.eval(_))
+            )
+          ).onErrorRecoverWith { case err: Throwable =>
+          logger.info("[path: \"" + requestedPath.renderString + "\"] " + err.getMessage)
+          Response.notFoundFor(request)
+        } // here probably recovery and trying to hit another server
+    }
   }
 }
