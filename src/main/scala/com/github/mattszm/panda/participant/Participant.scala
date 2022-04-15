@@ -1,4 +1,4 @@
-package com.github.mattszm.panda.participants
+package com.github.mattszm.panda.participant
 
 import com.github.mattszm.panda.routes.Group
 
