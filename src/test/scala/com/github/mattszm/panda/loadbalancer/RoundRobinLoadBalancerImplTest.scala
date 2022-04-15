@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.loadbalancer
 
-import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
+import com.github.mattszm.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.utils.ClientStub
 import monix.eval.Task
@@ -24,7 +24,7 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
     val client = new ClientStub()
     val tempParticipants = Vector(
       (Participant("59.145.84.51", 4001, Group("cars")), false),     // 0
-      (Participant("201.240.55.24", 4001, Group("cars")), false),    // 1
+      (Participant("13.204.158.90", 4001, Group("cars")), false),    // 1 - looks like the first available but with wrong port
       (Participant("211.188.80.67", 4001, Group("cars")), false),    // 2
       (Participant("13.204.158.90", 3000, Group("cars")), true),     // 3 - first available
       (Participant("44.233.130.109", 4001, Group("cars")), false),   // 4
@@ -59,7 +59,14 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
   }
 
   it should "return `Not Found` if there is no available instance for the requested path" in {
-    val loadBalancer = createLBWithSingleGroup()
+    val client = new ClientStub()
+    val tempParticipants = List(
+      Participant("59.145.84.51", 4001, Group("cars")),
+      Participant("193.207.130.133", 3000, Group("cars")),
+      Participant("218.214.92.75", 4002, Group("cars"))
+    )
+    val participantsCache: ParticipantsCache = new ParticipantsCacheImpl(tempParticipants)
+    val loadBalancer: LoadBalancer = new RoundRobinLoadBalancerImpl(client, participantsCache)
 
     loadBalancer.route(
       createRequest("/gateway/planes/passengers"),
