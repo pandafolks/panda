@@ -38,7 +38,10 @@ object RoutesTreeImpl {
           insert(
             root = root,
             path = entry._1,
-            info = GroupInfo(Group(entry._2), dataWithProcessedPrefixes.prefixes.getOrElse(entry._2, ""))
+            info = GroupInfo(
+              Group(entry._2),
+              Path.unsafeFromString(dataWithProcessedPrefixes.prefixes.getOrElse(entry._2, ""))
+            )
           )
         )
     )
@@ -64,8 +67,7 @@ object RoutesTreeImpl {
       case entry if entry.startsWith("{{") && entry.endsWith("}}") => RoutesTree.Wildcard
       case entry => RoutesTree.Fixed(entry)
     }
-    val prefixParts: List[RoutesTree.Value] = splitIntoParts(info.prefix) { RoutesTree.Fixed }
 
-    rc(prefixParts ::: mainParts, root)
+    rc(mainParts, root)
   }
 }

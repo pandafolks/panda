@@ -19,6 +19,9 @@ object Dependencies {
   val uPickle = "com.lihaoyi" %% "upickle" % "1.5.0"
   val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.2"
   val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % "0.2.2"
+//  val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.12"
+//  val circeGeneric = "io.circe" %% "circe-generic" % "0.14.1"
+//  val circeLiteral = "io.circe" %% "circe-literal" % "0.14.1"
 
   object Versions {
     val sst = "0.3.3"

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 final class BaseApiGatewayImpl(
                                 private val loadBalancer: LoadBalancer,
                                 private val routesTree: RoutesTree,
-                    ) extends ApiGateway {
+                              ) extends ApiGateway {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
@@ -18,7 +18,11 @@ final class BaseApiGatewayImpl(
       case None =>
         logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
         Response.notFoundFor(request)
-      case Some(groupInfo) => loadBalancer.route(request, requestedPath, groupInfo.group)
+      case Some(groupInfo) => loadBalancer.route(
+        request,
+        groupInfo.prefix.addSegments(requestedPath.segments),
+        groupInfo.group
+      )
     }
   }
 }

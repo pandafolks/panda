@@ -30,12 +30,13 @@ object Server extends MonixServerApp {
         Participant("127.0.0.1", 3000, Group("cars")),
         Participant("localhost", 3001, Group("cars")),
         Participant("127.0.0.1", 4000, Group("planes"))
-      )
+      ) // temp solution
+
+      participantsCache =  new ParticipantsCacheImpl(tempParticipants)
       loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
         client = httpGatewayClient,
-        participantsCache = new ParticipantsCacheImpl(tempParticipants)
+        participantsCache = participantsCache
       )
-
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
       primaryRouting = new PrimaryRouting(apiGateway)
       server <- Http4sBlazeServerModule.make[Task](

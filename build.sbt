@@ -25,7 +25,7 @@ lazy val root = project
       Dependencies.sstBundleMonixHttp4sBlaze,
       Dependencies.uPickle,
       Dependencies.scalaUri,
-      Dependencies.collectionContrib
+      Dependencies.collectionContrib,
     ),
     name := "panda"
   )
