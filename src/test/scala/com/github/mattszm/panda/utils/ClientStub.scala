@@ -73,7 +73,7 @@ final class ClientStub extends Client[Task] {
 }
 
 object ClientStub {
-  final val availableRoutes = List(
+  final val availableRoutes: List[String] = List(
     "13.204.158.90:3000/api/v1/cars/rent",
     "193.207.130.133:3000/api/v1/cars/rent",
   )
