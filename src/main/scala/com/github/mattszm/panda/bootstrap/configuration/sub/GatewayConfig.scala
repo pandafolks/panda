@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.bootstrap.configuration.sub
 
-import com.github.mattszm.panda.loadbalancer.{LoadBalancer, RoundRobinLoadBalancerImpl}
+import com.github.mattszm.panda.loadbalancer.{LoadBalancer, RandomLoadBalancerImpl, RoundRobinLoadBalancerImpl}
 import com.github.mattszm.panda.participant.ParticipantsCache
 import monix.eval.Task
 import org.http4s.client.Client
@@ -17,4 +17,9 @@ sealed trait LoadBalanceAlgorithm {
 case object RoundRobin extends LoadBalanceAlgorithm {
   override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
     new RoundRobinLoadBalancerImpl(client, participantsCache)
+}
+
+case object Random extends LoadBalanceAlgorithm {
+  override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
+    new RandomLoadBalancerImpl(client, participantsCache)
 }
