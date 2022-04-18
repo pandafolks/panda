@@ -67,17 +67,17 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
       LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
       Path.unsafeFromString("rest/api/v1/planes/passengers"),
       Group("planesGroup")
-    ).runToFuture.map(res => res.status should be (Status.NotFound))
+    ).runToFuture.map(_.status should be (Status.NotFound))
   }
 
   it should "return `Not Found` if all servers are unreachable" in {
     val loadBalancer = createRoundRobinLBWithSingleGroup(false)
 
     LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(res => res.status should be (Status.NotFound))
+      .map(_.status should be (Status.NotFound))
   }
 
   private def fromResponseAssert(response: Response[Task], availableRouteIndex: Int): Assertion =
     response.headers.headers.find(p => p.name == CIString("from"))
-        .fold(fail())(header => header.value should be (ClientStub.availableRoutes.toArray.apply(availableRouteIndex)))
+        .fold(fail())(_.value should be (ClientStub.availableRoutes.toArray.apply(availableRouteIndex)))
 }

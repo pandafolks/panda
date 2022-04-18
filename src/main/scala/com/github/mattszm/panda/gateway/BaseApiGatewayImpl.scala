@@ -13,7 +13,7 @@ final class BaseApiGatewayImpl(
                               ) extends ApiGateway {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
+  override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] =
     routesTree.specifyGroup(requestedPath) match {
       case None =>
         logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
@@ -24,5 +24,4 @@ final class BaseApiGatewayImpl(
         groupInfo.group
       )
     }
-  }
 }

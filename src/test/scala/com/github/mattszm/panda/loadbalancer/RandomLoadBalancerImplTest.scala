@@ -25,8 +25,10 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
   "RandomLoadBalancerImpl#route" should "routes to the available server" in {
     val loadBalancer = createRandomLBWithSingleGroup()
 
-    Await.result(Task.traverse((0 to 20).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture, 30.seconds)
-      .map(LoadBalancerTestUtils.fromResponseAssert)
+    Await.result(
+      Task.traverse((0 to 20).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
+      30.seconds
+    ).map(LoadBalancerTestUtils.fromResponseAssert)
     succeed
   }
 
@@ -55,13 +57,13 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
       LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
       Path.unsafeFromString("rest/api/v1/planes/passengers"),
       Group("planesGroup")
-    ).runToFuture.map(res => res.status should be (Status.NotFound))
+    ).runToFuture.map(_.status should be (Status.NotFound))
   }
 
   it should "return `Not Found` if all servers are unreachable" in {
     val loadBalancer = createRandomLBWithSingleGroup(false)
 
     LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(res => res.status should be (Status.NotFound))
+      .map(_.status should be (Status.NotFound))
   }
 }

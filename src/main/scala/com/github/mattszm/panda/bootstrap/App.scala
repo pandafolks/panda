@@ -6,7 +6,9 @@ import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
+import com.github.mattszm.panda.bootstrap.routing.PrimaryRouting
 import com.github.mattszm.panda.gateway.BaseApiGatewayImpl
+import com.github.mattszm.panda.management.ManagementRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
@@ -16,7 +18,7 @@ import org.http4s.server.Server
 import scala.concurrent.ExecutionContext.global
 import scala.io.Source
 
-object Server extends MonixServerApp {
+object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
@@ -38,7 +40,8 @@ object Server extends MonixServerApp {
         participantsCache = participantsCache
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
-      primaryRouting = new PrimaryRouting(apiGateway)
+      managementRouting = new ManagementRouting()
+      primaryRouting = new PrimaryRouting(managementRouting, apiGateway)
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
         primaryRouting.router,
