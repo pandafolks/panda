@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.loadbalancer
 
-import com.github.mattszm.panda.loadbalancer.LoadBalancerTestUtils.scheduler
+import com.github.mattszm.panda.utils.TestScheduler.scheduler
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.utils.ClientStub

@@ -26,6 +26,11 @@ lazy val root = project
       Dependencies.uPickle,
       Dependencies.scalaUri,
       Dependencies.collectionContrib,
+      Dependencies.fuuid,
+      Dependencies.tsec,
+      Dependencies.http4sCirce,
+      Dependencies.circeGeneric,
+      Dependencies.circeLiteral,
     ),
     name := "panda"
   )

@@ -2,9 +2,8 @@ package com.github.mattszm.panda.loadbalancer
 
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
 import com.github.mattszm.panda.routes.Group
-import com.github.mattszm.panda.utils.ClientStub
+import com.github.mattszm.panda.utils.{ClientStub, PersistenceError}
 import monix.eval.Task
-import monix.execution.Scheduler
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
 import org.scalatest.Assertion
@@ -14,8 +13,6 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.typelevel.ci.CIString
 
 object LoadBalancerTestUtils {
-  implicit val scheduler: Scheduler = Scheduler.io("monix-task-support-spec")
-
   def createParticipantsCacheWithSingleGroup(containAvailable: Boolean = true): ParticipantsCache = {
     val tempParticipants = Vector(
       (Participant("59.145.84.51", 4001, Group("cars")), false),     // 0
@@ -27,7 +24,17 @@ object LoadBalancerTestUtils {
       (Participant("218.214.92.75", 4002, Group("cars")), false)     // 6
     ).filter(p => containAvailable || !p._2).map(_._1)
 
-    (_: Group) => tempParticipants // enforcing the participants order
+    new ParticipantsCache {
+      override def getParticipantsAssociatedWithGroup(group: Group): Vector[Participant] = tempParticipants // enforcing the participants order
+
+      override def addParticipant(participant: Participant): Task[Either[PersistenceError, Unit]] = ???
+
+      override def addParticipants(participants: List[Participant]): Task[Either[PersistenceError, Unit]] = ???
+
+      override def removeParticipant(participant: Participant): Task[Either[PersistenceError, Unit]] = ???
+
+      override def removeAllParticipantsAssociatedWithGroup(group: Group): Task[Either[PersistenceError, Unit]] = ???
+    }
   }
 
   def createRequest(path: String): Request[Task] =

@@ -10,12 +10,11 @@ import com.github.mattszm.panda.bootstrap.routing.PrimaryRouting
 import com.github.mattszm.panda.gateway.BaseApiGatewayImpl
 import com.github.mattszm.panda.management.ManagementRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
-import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
 import org.http4s.server.Server
-
-import scala.concurrent.ExecutionContext.global
 import scala.io.Source
 
 object App extends MonixServerApp {
@@ -40,7 +39,7 @@ object App extends MonixServerApp {
         participantsCache = participantsCache
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
-      managementRouting = new ManagementRouting()
+      managementRouting = new ManagementRouting(participantsCache)
       primaryRouting = new PrimaryRouting(managementRouting, apiGateway)
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
