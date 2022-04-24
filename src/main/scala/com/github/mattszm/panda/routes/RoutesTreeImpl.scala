@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.routes
 
-import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
 import RoutesTree.{Fixed, Node, Wildcard}
 import org.http4s.Uri
 import org.http4s.Uri.Path
@@ -25,7 +25,7 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
 object RoutesTreeImpl {
 
-  def construct(data: RoutesMappingInitializationDto): RoutesTreeImpl = {
+  def construct(data: RoutesMappingInitDto): RoutesTreeImpl = {
     val dataWithProcessedPrefixes = data.copy(
       prefixes = data.prefixes.view.mapValues(
         _.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse

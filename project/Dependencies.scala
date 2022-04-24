@@ -24,6 +24,8 @@ object Dependencies {
   val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.12"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
+  val tsecPassword = "io.github.jmcardon" %% "tsec-password" % "0.2.0"
+  val cryptoBits = "org.reactormonk" %% "cryptobits" % "1.3"
 
   object Versions {
     val sst = "0.3.3"

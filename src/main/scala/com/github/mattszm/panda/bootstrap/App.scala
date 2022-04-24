@@ -1,20 +1,22 @@
 package com.github.mattszm.panda.bootstrap
 
 import cats.effect.Resource
+import cats.implicits.toSemigroupKOps
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
-import com.github.mattszm.panda.bootstrap.routing.PrimaryRouting
-import com.github.mattszm.panda.gateway.BaseApiGatewayImpl
+import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.mattszm.panda.management.ManagementRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
-import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
 import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
+import com.github.mattszm.panda.user._
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import org.http4s.server.Server
+import org.http4s.server.{AuthMiddleware, Server}
+
 import scala.io.Source
 
 object App extends MonixServerApp {
@@ -23,8 +25,11 @@ object App extends MonixServerApp {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
-      routesMappingInitializationEntries = RoutesMappingInitializationDto.of(routesMappingConfiguration)
+      routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
+
+      tempUsers = List(UserCredentials("admin", "admin"), UserCredentials("admin2", "admin2"), UserCredentials("admin3", "admin3")) // temp solution
+      userCredentialStore <- Resource.eval(UserStore(tempUsers))
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
@@ -39,11 +44,19 @@ object App extends MonixServerApp {
         participantsCache = participantsCache
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
+
+      apiGatewayRouting = new ApiGatewayRouting(apiGateway)
+      authRouting = new AuthRouting(userCredentialStore.checkPassword)
       managementRouting = new ManagementRouting(participantsCache)
-      primaryRouting = new PrimaryRouting(managementRouting, apiGateway)
+
+      authenticator = new AuthenticatorBasedOnHeader(userCredentialStore.identityStore)
+      authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
+      managementAuthedService = authMiddleware(managementRouting.getRoutes)
+
+      allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> managementAuthedService).orNotFound
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
-        primaryRouting.router,
+        allRoutes,
         global
       )
     } yield server

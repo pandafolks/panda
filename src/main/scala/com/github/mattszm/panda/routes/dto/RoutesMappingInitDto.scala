@@ -4,16 +4,16 @@ import ujson.Value
 
 import scala.collection.immutable.ListMap
 
-final case class RoutesMappingInitializationDto(
-                                                mappers: Map[String, String],
-                                                prefixes: Map[String, String]
-                                                )
+final case class RoutesMappingInitDto(
+                                       mappers: Map[String, String],
+                                       prefixes: Map[String, String]
+                                     )
 
-object RoutesMappingInitializationDto {
+object RoutesMappingInitDto {
   private final val MAPPERS_NAME = "mappers"
   private final val PREFIXES_NAME = "prefixes"
 
-  def of(configuration: Value.Value): RoutesMappingInitializationDto = {
+  def of(configuration: Value.Value): RoutesMappingInitDto = {
     def extractMapFromConfiguration(propertyName: String): Map[String, String] =
       configuration.objOpt
         .flatMap(mutableMap => mutableMap.get(propertyName))
@@ -25,7 +25,7 @@ object RoutesMappingInitializationDto {
         .mapValues(_.get)
         .toMap
 
-    RoutesMappingInitializationDto(
+    RoutesMappingInitDto(
       extractMapFromConfiguration(MAPPERS_NAME),
       extractMapFromConfiguration(PREFIXES_NAME)
     )

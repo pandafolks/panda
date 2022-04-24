@@ -1,10 +1,17 @@
 package com.github.mattszm.panda.management
 
+import com.github.mattszm.panda.user.User
 import monix.eval.Task
-import org.http4s.HttpRoutes
+import org.http4s.{AuthedRoutes, HttpRoutes}
 
-trait SubRouting {
+sealed trait SubRouting
+
+trait SubRoutingWithNoAuth extends SubRouting {
   def getRoutes: HttpRoutes[Task]
+}
+
+trait SubRoutingWithAuth extends SubRouting {
+  def getRoutes: AuthedRoutes[User, Task]
 }
 
 object SubRouting {

@@ -1,13 +1,13 @@
 package com.github.mattszm.panda.routes
 
-import com.github.mattszm.panda.routes.dto.RoutesMappingInitializationDto
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
 import org.http4s.Uri.Path
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.{be, contain}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
 class RoutesTreeImplTest extends AnyFlatSpec {
-  private val commonData = RoutesMappingInitializationDto(
+  private val commonData = RoutesMappingInitDto(
     Map.from(List(
       ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes")
     )),
@@ -48,7 +48,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   }
 
   it should "handle scenario when there is no prefix in delivered data" in {
-    val data = RoutesMappingInitializationDto(
+    val data = RoutesMappingInitDto(
       Map.from(List(
         ("/cars", "cars")
       )),
@@ -69,7 +69,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   }
 
   it should "put the Wildcard at the end of the children" in {
-    val data = RoutesMappingInitializationDto(
+    val data = RoutesMappingInitDto(
       Map.from(List(
         ("/cars", "cars"),
         ("/bikes/", "cars"),
@@ -118,7 +118,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   }
 
   it should "always return None if there are no available routes" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(RoutesMappingInitializationDto(Map.empty, Map.empty))
+    val tree: RoutesTree = RoutesTreeImpl.construct(RoutesMappingInitDto(Map.empty, Map.empty))
 
     tree.specifyGroup(Path.unsafeFromString("/cars/random")) should be(None)
     tree.specifyGroup(Path.unsafeFromString("planes/somePlaneId123/passengers/")) should be(None)

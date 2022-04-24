@@ -4,8 +4,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-class RoutesMappingInitializationDtoTest extends AnyFlatSpec {
-  "RoutesMappingInitializationDto#of" should "create appropriately mapped dto" in {
+class RoutesMappingInitDtoTest extends AnyFlatSpec {
+  "RoutesMappingInitDto#of" should "create appropriately mapped dto" in {
     val input: String = """{
                          |  "mappers": {
                          |    "/cars": "cars",
@@ -18,7 +18,7 @@ class RoutesMappingInitializationDtoTest extends AnyFlatSpec {
                          |  }
                          |}""".stripMargin
     val jsonToProcess = ujson.read(input)
-    val expected = RoutesMappingInitializationDto(
+    val expected = RoutesMappingInitDto(
       Map.from(List(
         ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes")
       )),
@@ -27,6 +27,6 @@ class RoutesMappingInitializationDtoTest extends AnyFlatSpec {
       ))
     )
 
-    RoutesMappingInitializationDto.of(jsonToProcess) should be(expected)
+    RoutesMappingInitDto.of(jsonToProcess) should be(expected)
   }
 }

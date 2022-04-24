@@ -27,10 +27,11 @@ lazy val root = project
       Dependencies.scalaUri,
       Dependencies.collectionContrib,
       Dependencies.fuuid,
-      Dependencies.tsec,
       Dependencies.http4sCirce,
       Dependencies.circeGeneric,
       Dependencies.circeLiteral,
+      Dependencies.tsecPassword,
+      Dependencies.cryptoBits
     ),
     name := "panda"
   )
