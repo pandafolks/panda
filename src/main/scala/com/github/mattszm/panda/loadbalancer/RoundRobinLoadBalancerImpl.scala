@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.loadbalancer
 
-import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
+import com.github.mattszm.panda.participant.ParticipantsCache
 import com.github.mattszm.panda.routes.Group
 import monix.eval.Task
 import monix.execution.atomic.AtomicInt
@@ -16,18 +16,17 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
 
   private val lastUsedIndexes: ConcurrentHashMap[Group, AtomicInt] = new ConcurrentHashMap
 
-  override def route(request: Request[Task], requestedPath: Uri.Path, group: Group): Task[Response[Task]] = {
-    val eligibleParticipants: Vector[Participant] = participantsCache.getParticipantsAssociatedWithGroup(group)
-    eligibleParticipants.size match {
-      case 0 =>
+  override def route(request: Request[Task], requestedPath: Uri.Path, group: Group): Task[Response[Task]] =
+    participantsCache.getParticipantsAssociatedWithGroup(group).flatMap {
+      case eligibleParticipants if eligibleParticipants.isEmpty =>
         lastUsedIndexes.remove(group)
         LoadBalancer.noAvailableInstanceLog(requestedPath, logger)
         Response.notFoundFor(request)
-      case size: Int =>
+      case eligibleParticipants =>
         Task.evalOnce(
           AtomicInt(lastUsedIndexes.computeIfAbsent(group, _ => AtomicInt(0))
-            .getAndTransform(prev => (prev + 1) % Int.MaxValue) % size)
-        ).map(atomicIndex => eligibleParticipants(atomicIndex.getAndIncrement() % size))
+            .getAndTransform(prev => (prev + 1) % Int.MaxValue) % eligibleParticipants.size)
+        ).map(atomicIndex => eligibleParticipants(atomicIndex.getAndIncrement() % eligibleParticipants.size))
           .flatMap(chosenParticipant => {
             client.run(
               LoadBalancer.fillRequestWithParticipant(request, chosenParticipant, requestedPath)
@@ -39,5 +38,4 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
             Response.notFoundFor(request)
           }
     }
-  }
 }

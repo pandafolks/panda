@@ -6,7 +6,7 @@ import monix.eval.Task
 
 trait ParticipantsCache {
 
-  def getParticipantsAssociatedWithGroup(group: Group): Vector[Participant]
+  def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
   def addParticipant(participant: Participant): Task[Either[PersistenceError, Unit]]
 

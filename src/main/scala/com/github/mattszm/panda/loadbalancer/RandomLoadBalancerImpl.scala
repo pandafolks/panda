@@ -24,7 +24,7 @@ final class RandomLoadBalancerImpl(private val client: Client[Task],
         .onErrorRecoverWith { case _: Throwable => rc(participants.tail) }
     }
 
-    Random.shuffle(participantsCache.getParticipantsAssociatedWithGroup(group)).toList match {
+    participantsCache.getParticipantsAssociatedWithGroup(group).map(_.toList).map(Random.shuffle(_)).flatMap {
       case emptyArray if emptyArray.isEmpty =>
         LoadBalancer.noAvailableInstanceLog(requestedPath, logger)
         Response.notFoundFor(request)

@@ -25,7 +25,7 @@ object LoadBalancerTestUtils {
     ).filter(p => containAvailable || !p._2).map(_._1)
 
     new ParticipantsCache {
-      override def getParticipantsAssociatedWithGroup(group: Group): Vector[Participant] = tempParticipants // enforcing the participants order
+      override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
 
       override def addParticipant(participant: Participant): Task[Either[PersistenceError, Unit]] = ???
 

@@ -20,7 +20,7 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache) 
       } yield response
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group as _ =>
-      participantsCache.getParticipantsAssociatedWithGroup(Group(group)) match {
+      participantsCache.getParticipantsAssociatedWithGroup(Group(group)).flatMap {
         case participants if participants.nonEmpty => Ok(Seq(participants: _*))
         case _ => Task.eval(Response.notFound)
       }

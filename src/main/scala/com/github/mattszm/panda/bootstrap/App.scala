@@ -38,7 +38,7 @@ object App extends MonixServerApp {
         Participant("127.0.0.1", 4000, Group("planes"))
       ) // temp solution
 
-      participantsCache =  new ParticipantsCacheImpl(tempParticipants)
+      participantsCache <- Resource.eval(ParticipantsCacheImpl(tempParticipants))
       loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
         client = httpGatewayClient,
         participantsCache = participantsCache

@@ -6,40 +6,44 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.must.Matchers.{be, contain}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+
 class ParticipantsCacheImplTest extends AsyncFlatSpec {
   private def createCache(): ParticipantsCacheImpl =
-    new ParticipantsCacheImpl(
+    Await.result(ParticipantsCacheImpl(
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1"),
         Participant("59.145.84.52", 4001, Group("cars"), "id2"),
         Participant("59.145.84.53", 4002, Group("planes"), "id3")
       )
-    )
+    ).runToFuture, 5.seconds)
 
   "ParticipantsCacheImpl#getParticipantsAssociatedWithGroup" should "return appropriate results for the requested group" in {
     val cache: ParticipantsCache = createCache()
 
-    cache.getParticipantsAssociatedWithGroup(Group("cars")).toList should
+    cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(_.toList).map(l => l should
       contain theSameElementsAs List(
       Participant("59.145.84.51", 4001, Group("cars"), "id1"),
       Participant("59.145.84.52", 4001, Group("cars"), "id2")
-    )
+    ))
   }
 
   it should "return empty vector if there are no elements associated with the group" in {
     val cache: ParticipantsCache = createCache()
-    cache.getParticipantsAssociatedWithGroup(Group("whatever")).size should be(0)
+    cache.getParticipantsAssociatedWithGroup(Group("whatever")).runToFuture.map(l => l.size should be(0))
   }
 
   "ParticipantsCacheImpl#addParticipant" should "be able to add an element if the group already exists" in {
     val cache: ParticipantsCache = createCache()
     cache.addParticipant(Participant("59.145.84.54", 4402, Group("planes"), "id4")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("planes")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("planes")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.53", 4002, Group("planes"), "id3"),
           Participant("59.145.84.54", 4402, Group("planes"), "id4")
+        )
         )
       )
   }
@@ -48,9 +52,10 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache: ParticipantsCache = createCache()
     cache.addParticipant(Participant("59.145.86.59", 4405, Group("ships"), "id11")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("ships")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("ships")).runToFuture.map(l => l should
           contain theSameElementsAs List(Participant("59.145.86.59", 4405, Group("ships"), "id11"))
+        )
       )
   }
 
@@ -62,17 +67,19 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
       Participant("59.145.86.59", 4405, Group("ships"), "id11")
     )).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("planes")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("planes")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.53", 4002, Group("planes"), "id3"),
           Participant("59.145.84.54", 4402, Group("planes"), "id4"),
           Participant("59.126.84.56", 4402, Group("planes"), "id5")
         )
+        )
       )
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("ships")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("ships")).runToFuture.map(l => l should
           contain theSameElementsAs List(Participant("59.145.86.59", 4405, Group("ships"), "id11"))
+        )
       )
   }
 
@@ -80,10 +87,11 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache: ParticipantsCache = createCache()
     cache.removeParticipant(Participant("59.145.84.51", 4001, Group("cars"), "id1")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("cars")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.52", 4001, Group("cars"), "id2")
+        )
         )
       )
   }
@@ -92,11 +100,12 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache: ParticipantsCache = createCache()
     cache.removeParticipant(Participant("59.145.84.61", 4001, Group("cars"), "id1")).runToFuture //different ip
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("cars")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l should
           contain theSameElementsAs List(
-            Participant("59.145.84.51", 4001, Group("cars"), "id1"),
-            Participant("59.145.84.52", 4001, Group("cars"), "id2"),
+          Participant("59.145.84.51", 4001, Group("cars"), "id1"),
+          Participant("59.145.84.52", 4001, Group("cars"), "id2"),
+        )
         )
       )
   }
@@ -105,17 +114,19 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache: ParticipantsCache = createCache()
     cache.removeParticipant(Participant("59.145.84.61", 4001, Group("different"), "id1")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("cars")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.51", 4001, Group("cars"), "id1"),
           Participant("59.145.84.52", 4001, Group("cars"), "id2"),
         )
+        )
       )
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("planes")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("planes")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.53", 4002, Group("planes"), "id3")
+        )
         )
       )
   }
@@ -124,24 +135,26 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache: ParticipantsCache = createCache()
     cache.removeAllParticipantsAssociatedWithGroup(Group("cars")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ => cache.getParticipantsAssociatedWithGroup(Group("cars")).size should be(0))
+      .flatMap(_ => cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l.size should be(0)))
   }
 
   it should "not remove anything if the group does not exist in the cache" in {
     val cache: ParticipantsCache = createCache()
     cache.removeAllParticipantsAssociatedWithGroup(Group("different")).runToFuture
       .map(res => res should be(Right(())))
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("cars")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.51", 4001, Group("cars"), "id1"),
           Participant("59.145.84.52", 4001, Group("cars"), "id2"),
         )
+        )
       )
-      .map(_ =>
-        cache.getParticipantsAssociatedWithGroup(Group("planes")) should
+      .flatMap(_ =>
+        cache.getParticipantsAssociatedWithGroup(Group("planes")).runToFuture.map(l => l should
           contain theSameElementsAs List(
           Participant("59.145.84.53", 4002, Group("planes"), "id3")
+        )
         )
       )
   }

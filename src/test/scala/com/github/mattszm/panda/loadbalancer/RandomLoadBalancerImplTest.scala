@@ -50,7 +50,7 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
       Participant("193.207.130.133", 3000, Group("cars")),
       Participant("218.214.92.75", 4002, Group("cars"))
     )
-    val participantsCache: ParticipantsCache = new ParticipantsCacheImpl(tempParticipants)
+    val participantsCache: ParticipantsCache = Await.result(ParticipantsCacheImpl(tempParticipants).runToFuture, 5.seconds)
     val loadBalancer: LoadBalancer = new RandomLoadBalancerImpl(client, participantsCache)
 
     loadBalancer.route(
