@@ -10,6 +10,8 @@ import scala.collection.immutable.MultiDict
 final class ParticipantsCacheImpl(private val cacheByGroup: Ref[Task, MultiDict[Group, Participant]])
   extends ParticipantsCache {
 
+  override def getAllGroups: Task[List[Group]] = cacheByGroup.get.map(_.keySet).map(_.toList)
+
   override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] =
     cacheByGroup.get.map(_.get(group)).map(_.toVector)
 

@@ -19,6 +19,12 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
       )
     ).runToFuture, 5.seconds)
 
+  "ParticipantsCacheImpl#getAllGroups" should "return all available groups" in {
+    val cache: ParticipantsCache = createCache()
+
+    cache.getAllGroups.runToFuture.map(l => l should contain theSameElementsAs List(Group("cars"), Group("planes")))
+  }
+
   "ParticipantsCacheImpl#getParticipantsAssociatedWithGroup" should "return appropriate results for the requested group" in {
     val cache: ParticipantsCache = createCache()
 

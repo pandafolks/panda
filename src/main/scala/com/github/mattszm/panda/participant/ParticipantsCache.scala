@@ -5,6 +5,7 @@ import com.github.mattszm.panda.utils.PersistenceError
 import monix.eval.Task
 
 trait ParticipantsCache {
+  def getAllGroups: Task[List[Group]]
 
   def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
