@@ -15,7 +15,8 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache) 
   private val routes = AuthedRoutes.of[User, Task] {
     case req@POST -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
       for {
-        participants <- req.req.as[Seq[Participant]]
+        participants <- req.req.as[Seq[Participant]].map(
+          _.map(p => if (p.identifier.isBlank) Participant(p.host, p.port, p.group) else p))
         addResult <- participantsCache.addParticipants(participants.toList)
         response <- addResult.fold(_ => BadRequest("Participants not saved"), _ => Ok())
       } yield response

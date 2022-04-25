@@ -1,36 +1,18 @@
-version: "3.3"
+version: '2'
 
 services:
-  cassandra-seed:
-    image: cassandra:latest
+  cassandra:
+    image: docker.io/bitnami/cassandra:4.0
     ports:
-      - "9044:9042"
+      - '7000:7000'
+      - '9042:9042'
     volumes:
-      - "./cassandra_data_seed:/var/lib/cassandra"
+      - 'cassandra_data:/bitnami'
     environment:
-      - "CASSANDRA_SEEDS=cassandra-seed"
-      - "CASSANDRA_CLUSTER_NAME=Panda Cluster"
-      - "CASSANDRA_DC=se1"
-      - "CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch"
-      - "MAX_HEAP_SIZE=1G"
-      - "HEAP_NEWSIZE=200M"
-    restart: always
-
-  cassandra1:
-    image: cassandra:latest
-    volumes:
-      - "./cassandra_data_1:/var/lib/cassandra"
-    environment:
-      - "CASSANDRA_SEEDS=cassandra-seed"
-      - "CASSANDRA_CLUSTER_NAME=Panda Cluster"
-      - "CASSANDRA_DC=se1"
-      - "CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch"
-      - "MAX_HEAP_SIZE=1G"
-      - "HEAP_NEWSIZE=200M"
-    depends_on:
-      - cassandra-seed
-    restart: always
-
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD_SEEDER=yes
+      - MAX_HEAP_SIZE=2G
+      - HEAP_NEWSIZE=1G
 volumes:
-  cassandra_data_seed:
-  cassandra_data_1:
+  cassandra_data:
+    driver: local

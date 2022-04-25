@@ -35,7 +35,7 @@ object App extends MonixServerApp {
       tempParticipants = List(
         Participant("127.0.0.1", 3000, Group("cars")),
         Participant("localhost", 3001, Group("cars")),
-        Participant("127.0.0.1", 4000, Group("planes"))
+        Participant("127.0.0.1", 4000, Group("planes"), "planesInstance1")
       ) // temp solution
 
       participantsCache <- Resource.eval(ParticipantsCacheImpl(tempParticipants))

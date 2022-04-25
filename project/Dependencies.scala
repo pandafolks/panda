@@ -34,5 +34,4 @@ object Dependencies {
     val testContainers = "0.38.6"
     val circe = "0.14.1"
   }
-
 }

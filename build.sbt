@@ -31,7 +31,7 @@ lazy val root = project
       Dependencies.circeGeneric,
       Dependencies.circeLiteral,
       Dependencies.tsecPassword,
-      Dependencies.cryptoBits
+      Dependencies.cryptoBits,
     ),
     name := "panda"
   )
