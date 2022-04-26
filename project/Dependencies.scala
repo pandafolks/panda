@@ -26,6 +26,8 @@ object Dependencies {
   val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   val tsecPassword = "io.github.jmcardon" %% "tsec-password" % "0.2.0"
   val cryptoBits = "org.reactormonk" %% "cryptobits" % "1.3"
+  val cassandraDriverCore = "com.datastax.cassandra" % "cassandra-driver-core" % "4.0.0" pomOnly()
+  val monixReactive = "io.monix" %% "monix-reactive" % "3.4.0"
 
   object Versions {
     val sst = "0.3.3"

@@ -32,6 +32,8 @@ lazy val root = project
       Dependencies.circeLiteral,
       Dependencies.tsecPassword,
       Dependencies.cryptoBits,
+      Dependencies.cassandraDriverCore,
+      Dependencies.monixReactive,
     ),
     name := "panda"
   )

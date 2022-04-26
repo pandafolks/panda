@@ -7,6 +7,7 @@ import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
+import com.github.mattszm.panda.db.Session
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.mattszm.panda.management.ManagementRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
@@ -25,6 +26,7 @@ object App extends MonixServerApp {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
+      session = new Session(appConfiguration.db).cqlSession
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
@@ -47,7 +49,7 @@ object App extends MonixServerApp {
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(userCredentialStore.checkPassword)
-      managementRouting = new ManagementRouting(participantsCache)
+      managementRouting = new ManagementRouting(participantsCache, session)
 
       authenticator = new AuthenticatorBasedOnHeader(userCredentialStore.identityStore)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)

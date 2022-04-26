@@ -1,6 +1,8 @@
 package com.github.mattszm.panda.management
 
 import cats.implicits.toTraverseOps
+import com.datastax.oss.driver.api.core.CqlSession
+import com.github.mattszm.panda.db.{CqlStrings, Executable}
 import com.github.mattszm.panda.management.SubRouting.{API_NAME, API_VERSION_1}
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
 import com.github.mattszm.panda.routes.Group
@@ -9,7 +11,13 @@ import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{AuthedRoutes, Response}
 
-final class ManagementRouting(private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+
+import monix.execution.Scheduler.Implicits.global
+
+
+final class ManagementRouting(private val participantsCache: ParticipantsCache, implicit val session: CqlSession) extends Http4sDsl[Task]
   with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
@@ -28,6 +36,9 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache) 
       }
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
+      //todo mszmal: delete!
+      val statement = Executable.query(cql"SELECT * FROM system_schema.keyspaces")
+      Await.result(statement.foreach(l => print(l.getColumnDefinitions)), 2.minutes)
       handleParticipantsResponse(
         participantsCache.getAllGroups.
           flatMap(groups => groups.map(group => participantsCache.getParticipantsAssociatedWithGroup(group)).sequence)

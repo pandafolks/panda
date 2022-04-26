@@ -11,6 +11,7 @@ services:
     environment:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_PASSWORD_SEEDER=yes
+      - CASSANDRA_PASSWORD=cassandra
       - MAX_HEAP_SIZE=2G
       - HEAP_NEWSIZE=1G
 volumes:

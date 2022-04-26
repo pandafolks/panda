@@ -1,12 +1,11 @@
 package com.github.mattszm.panda.bootstrap.configuration.sub
 
 final case class DbConfig(
-                         host: String,
-                         port: Int,
+                         contactPoints: List[String],
                          username: String,
                          password: String,
                          keySpace: String,
-                         replicationFactor: Int,
-                         connectTimeoutMillis: Int,
-                         readTimeoutMillis: Int
+                         requestTimeout: Long,
+                         loadBalancingLocalDataCenter: String,
+                         reconnectionBaseDelayInSeconds: Long
                          )
