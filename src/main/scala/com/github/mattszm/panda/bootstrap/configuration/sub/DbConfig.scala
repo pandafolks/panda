@@ -6,6 +6,9 @@ final case class DbConfig(
                          password: String,
                          keySpace: String,
                          requestTimeout: Long,
+                         connectionInitQueryTimeout: Long,
                          loadBalancingLocalDataCenter: String,
-                         reconnectionBaseDelayInSeconds: Long
+                         reconnectionBaseDelayInSeconds: Long,
+                         heartbeatInterval: String,
+                         heartbeatTimeout: String
                          )

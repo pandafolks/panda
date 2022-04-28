@@ -21,14 +21,6 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache, 
   with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
-    case req@POST -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
-      for {
-        participants <- req.req.as[Seq[Participant]].map(
-          _.map(p => if (p.identifier.isBlank) Participant(p.host, p.port, p.group) else p))
-        addResult <- participantsCache.addParticipants(participants.toList)
-        response <- addResult.fold(_ => BadRequest("Participants not saved"), _ => Ok())
-      } yield response
-
     case _@GET -> Root / API_NAME / API_VERSION_1 / "groups" as _ =>
       participantsCache.getAllGroups.flatMap {
         case groups if groups.nonEmpty => Ok(Seq(groups: _*))
@@ -44,6 +36,14 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache, 
           flatMap(groups => groups.map(group => participantsCache.getParticipantsAssociatedWithGroup(group)).sequence)
           .map(_.flatten)
       )
+
+    case req@POST -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
+      for {
+        participants <- req.req.as[Seq[Participant]].map(
+          _.map(p => if (p.identifier.isBlank) Participant(p.host, p.port, p.group) else p))
+        addResult <- participantsCache.addParticipants(participants.toList)
+        response <- addResult.fold(_ => BadRequest("Participants not saved"), _ => Ok())
+      } yield response
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group as _ =>
       handleParticipantsResponse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))

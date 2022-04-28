@@ -21,7 +21,7 @@ object Executable {
       .takeWhile(_.nonEmpty)
       .flatMap(Observable.fromIterable)
 
-  protected def page(rs: AsyncResultSet): Task[Iterable[Row]] = Task.defer {
+  private def page(rs: AsyncResultSet): Task[Iterable[Row]] = Task.defer {
     val page = rs.currentPage().asScala
     if (rs.hasMorePages)
       Task.from(rs.fetchNextPage().asScala).map(_ => page)

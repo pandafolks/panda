@@ -30,8 +30,7 @@ object App extends MonixServerApp {
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
-      tempUsers = List(UserCredentials("admin", "admin"), UserCredentials("admin2", "admin2"), UserCredentials("admin3", "admin3")) // temp solution
-      userCredentialStore <- Resource.eval(UserStore(tempUsers))
+      userCredentialStore <- Resource.eval(UserStore(List(appConfiguration.initUser)))
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
