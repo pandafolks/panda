@@ -17,7 +17,7 @@ import scala.concurrent.duration.DurationInt
 import monix.execution.Scheduler.Implicits.global
 
 
-final class ManagementRouting(private val participantsCache: ParticipantsCache, implicit val session: CqlSession) extends Http4sDsl[Task]
+final class ManagementRouting(private val participantsCache: ParticipantsCache)(implicit val session: CqlSession) extends Http4sDsl[Task]
   with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {

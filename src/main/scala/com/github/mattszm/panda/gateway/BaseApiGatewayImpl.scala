@@ -14,7 +14,7 @@ final class BaseApiGatewayImpl(
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] =
-    routesTree.specifyGroup(requestedPath) match {
+    Task.eval(routesTree.specifyGroup(requestedPath)).flatMap {
       case None =>
         logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
         Response.notFoundFor(request)

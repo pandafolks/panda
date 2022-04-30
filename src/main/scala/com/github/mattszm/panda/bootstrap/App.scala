@@ -48,7 +48,7 @@ object App extends MonixServerApp {
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(userCredentialStore.checkPassword)
-      managementRouting = new ManagementRouting(participantsCache, session)
+      managementRouting = new ManagementRouting(participantsCache)(session)
 
       authenticator = new AuthenticatorBasedOnHeader(userCredentialStore.identityStore)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
