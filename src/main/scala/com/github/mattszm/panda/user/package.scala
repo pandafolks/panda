@@ -1,11 +1,12 @@
 package com.github.mattszm.panda
 
-import io.chrisdavenport.fuuid.FUUID
 import shapeless.tag
 import shapeless.tag.@@
 
-package object user {
-  type UserId = FUUID @@ UserIdTag
+import java.util.UUID
 
-  def tagFUUIDAsUserId(id: FUUID): UserId = tag[UserIdTag][FUUID](id)
+package object user {
+  type UserId = UUID @@ UserIdTag
+
+  def tagUUIDAsUserId(id: UUID): UserId = tag[UserIdTag][UUID](id)
 }

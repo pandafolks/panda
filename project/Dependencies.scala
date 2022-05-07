@@ -19,15 +19,13 @@ object Dependencies {
   val uPickle = "com.lihaoyi" %% "upickle" % "1.5.0"
   val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.2"
   val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % "0.2.2"
-  val fuuid = "io.chrisdavenport" %% "fuuid" % "0.3.0-M5"
   val tsec = "io.github.jmcardon" %% "tsec-http4s" % "0.2.0"
   val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.12"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   val tsecPassword = "io.github.jmcardon" %% "tsec-password" % "0.2.0"
   val cryptoBits = "org.reactormonk" %% "cryptobits" % "1.3"
-  val cassandraDriverCore = "com.datastax.cassandra" % "cassandra-driver-core" % "4.0.0" pomOnly()
-  val monixReactive = "io.monix" %% "monix-reactive" % "3.4.0"
+  val monixMongo = "io.monix" %% "monix-mongodb" % "0.6.2"
 
   object Versions {
     val sst = "0.3.3"

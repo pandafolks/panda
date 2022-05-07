@@ -10,7 +10,7 @@ object TokenService {
   private final val crypto = CryptoBits(key)
   private final val clock = java.time.Clock.systemUTC
 
-  def signToken(user: User): String = crypto.signToken(user.id.show, clock.millis.toString)
+  def signToken(user: User): String = crypto.signToken(user._id.toString, clock.millis.toString)
 
   def validateSignedToken(token: String): Option[String] = crypto.validateSignedToken(token)
 }

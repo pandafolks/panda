@@ -26,14 +26,12 @@ lazy val root = project
       Dependencies.uPickle,
       Dependencies.scalaUri,
       Dependencies.collectionContrib,
-      Dependencies.fuuid,
       Dependencies.http4sCirce,
       Dependencies.circeGeneric,
       Dependencies.circeLiteral,
       Dependencies.tsecPassword,
       Dependencies.cryptoBits,
-      Dependencies.cassandraDriverCore,
-      Dependencies.monixReactive,
+      Dependencies.monixMongo,
     ),
     name := "panda"
   )
