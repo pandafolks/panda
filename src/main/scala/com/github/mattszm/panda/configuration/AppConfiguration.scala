@@ -1,4 +1,4 @@
-package com.github.mattszm.panda.bootstrap.configuration
+package com.github.mattszm.panda.configuration
 
 import com.avast.sst.http4s.client.Http4sBlazeClientConfig
 import com.avast.sst.http4s.server.Http4sBlazeServerConfig
@@ -6,7 +6,7 @@ import pureconfig.ConfigReader
 import pureconfig.generic.semiauto.{deriveEnumerationReader, deriveReader}
 import com.avast.sst.http4s.server.pureconfig.implicits._
 import com.avast.sst.http4s.client.pureconfig.implicits._
-import com.github.mattszm.panda.bootstrap.configuration.sub.{DbConfig, GatewayConfig, LoadBalanceAlgorithm}
+import com.github.mattszm.panda.configuration.sub.{DbConfig, GatewayConfig, LoadBalanceAlgorithm}
 import com.github.mattszm.panda.user.UserCredentials
 import pureconfig.generic.auto._
 

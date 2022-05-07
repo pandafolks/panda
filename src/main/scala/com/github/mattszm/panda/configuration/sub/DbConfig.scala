@@ -1,4 +1,4 @@
-package com.github.mattszm.panda.bootstrap.configuration.sub
+package com.github.mattszm.panda.configuration.sub
 
 
 final case class DbConfig(

@@ -1,4 +1,4 @@
-package com.github.mattszm.panda.bootstrap.configuration.sub
+package com.github.mattszm.panda.configuration.sub
 
 import com.github.mattszm.panda.loadbalancer.{LoadBalancer, RandomLoadBalancerImpl, RoundRobinLoadBalancerImpl}
 import com.github.mattszm.panda.participant.ParticipantsCache

@@ -6,7 +6,7 @@ import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
-import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
+import com.github.mattszm.panda.configuration.AppConfiguration
 import com.github.mattszm.panda.db.MongoAppClient
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.mattszm.panda.management.ManagementRouting

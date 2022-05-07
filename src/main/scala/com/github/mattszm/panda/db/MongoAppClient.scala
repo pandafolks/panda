@@ -1,7 +1,7 @@
 package com.github.mattszm.panda.db
 
 import cats.effect.Resource
-import com.github.mattszm.panda.bootstrap.configuration.sub.DbConfig
+import com.github.mattszm.panda.configuration.sub.DbConfig
 import com.github.mattszm.panda.db.MongoAppClient.USERS_COLLECTION_NAME
 import com.github.mattszm.panda.user.User
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
