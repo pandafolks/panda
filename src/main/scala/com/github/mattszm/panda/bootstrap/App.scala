@@ -7,6 +7,7 @@ import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
+import com.github.mattszm.panda.db.MongoAppClient
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.mattszm.panda.management.ManagementRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
@@ -23,20 +24,14 @@ object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
+      mongoConnection = new MongoAppClient(appConfiguration.db).getConnection
+
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
-      userCredentialStore <- Resource.eval(UserStore(List(appConfiguration.initUser)))
-
-      tempUser = UserStore.newUser(appConfiguration.initUser.username, appConfiguration.initUser.password)
-//      mongoConnection = new MongoCustomClient(appConfiguration.db).getConnection.use {
-//        case (userOperator) => for {
-//          user <- tempUser
-//          _ <- userOperator.single.insertOne(user)
-//        } yield ()
-//      }.runToFuture
+      userCredentialStore <- Resource.eval(UserStore(List(appConfiguration.initUser))(mongoConnection))
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
@@ -53,7 +48,7 @@ object App extends MonixServerApp {
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(userCredentialStore.checkPassword)
+      authRouting = new AuthRouting(userCredentialStore)
       managementRouting = new ManagementRouting(participantsCache)
 
       authenticator = new AuthenticatorBasedOnHeader(userCredentialStore.identityStore)
