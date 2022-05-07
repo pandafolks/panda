@@ -31,7 +31,7 @@ object App extends MonixServerApp {
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
-      userCredentialStore <- Resource.eval(UserStore(List(appConfiguration.initUser))(mongoConnection))
+      userDao = new UserDaoImpl(List(appConfiguration.initUser))(mongoConnection)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
@@ -48,10 +48,10 @@ object App extends MonixServerApp {
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(userCredentialStore)
+      authRouting = new AuthRouting(userDao)
       managementRouting = new ManagementRouting(participantsCache)
 
-      authenticator = new AuthenticatorBasedOnHeader(userCredentialStore.identityStore)
+      authenticator = new AuthenticatorBasedOnHeader(userDao)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       managementAuthedService = authMiddleware(managementRouting.getRoutes)
 
