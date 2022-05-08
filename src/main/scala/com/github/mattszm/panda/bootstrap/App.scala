@@ -24,14 +24,14 @@ object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
-      mongoConnection = new MongoAppClient(appConfiguration.db).getConnection
+      dbAppClient = new MongoAppClient(appConfiguration.db)
 
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
-      userDao = new UserDaoImpl(List(appConfiguration.initUser))(mongoConnection)
+      daosAndServices = new DaoAndServiceInitialization(dbAppClient, List(appConfiguration.initUser))
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
@@ -48,10 +48,10 @@ object App extends MonixServerApp {
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(userDao)
-      managementRouting = new ManagementRouting(participantsCache)
+      authRouting = new AuthRouting(daosAndServices.getUserService)
+      managementRouting = new ManagementRouting(daosAndServices.getParticipantEventService, participantsCache)
 
-      authenticator = new AuthenticatorBasedOnHeader(userDao)
+      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getUserService)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       managementAuthedService = authMiddleware(managementRouting.getRoutes)
 

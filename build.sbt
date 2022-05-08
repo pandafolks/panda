@@ -29,6 +29,7 @@ lazy val root = project
       Dependencies.http4sCirce,
       Dependencies.circeGeneric,
       Dependencies.circeLiteral,
+      Dependencies.circeParser,
       Dependencies.tsecPassword,
       Dependencies.cryptoBits,
       Dependencies.monixMongo,

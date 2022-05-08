@@ -2,7 +2,8 @@ package com.github.mattszm.panda.db
 
 import cats.effect.Resource
 import com.github.mattszm.panda.configuration.sub.DbConfig
-import com.github.mattszm.panda.db.MongoAppClient.USERS_COLLECTION_NAME
+import com.github.mattszm.panda.participant.event.{EventType, ParticipantEventDataModification, ParticipantEvent}
+import com.github.mattszm.panda.sequence.{Sequence, SequenceKey}
 import com.github.mattszm.panda.user.User
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
@@ -11,6 +12,7 @@ import org.bson.UuidRepresentation
 import org.bson.codecs.UuidCodec
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
@@ -18,7 +20,9 @@ import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, Mon
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
-final class MongoAppClient(config: DbConfig) {
+final class MongoAppClient(config: DbConfig) extends DbAppClient {
+  import com.github.mattszm.panda.db.MongoAppClient._
+
   private val settings: MongoClientSettings =
     MongoClientSettings.builder()
       .credential(MongoCredential.createCredential(config.username, config.dbName, config.password.toCharArray))
@@ -38,27 +42,68 @@ final class MongoAppClient(config: DbConfig) {
     fromRegistries(fromProviders(classOf[User]), javaCodecs)
   )
 
-  private val connection: Resource[Task, CollectionOperator[User]] = MongoConnection.create1(settings, usersCol)
+  private val participantEventsCol = CollectionCodecRef(config.dbName, PARTICIPANT_EVENTS_COLLECTION_NAME,
+    classOf[ParticipantEvent],
+    fromRegistries(fromProviders(
+      classOf[ParticipantEvent],
+      classOf[ParticipantEventDataModification],
+      classOf[EventType]
+    ), DEFAULT_CODEC_REGISTRY)
+  )
 
-  def getConnection: Resource[Task, CollectionOperator[User]] = connection
+  private val sequenceCol = CollectionCodecRef(config.dbName, SEQUENCE_COLLECTION_NAME,
+    classOf[Sequence],
+    fromRegistries(fromProviders(
+      classOf[Sequence],
+      classOf[SequenceKey]
+    ), DEFAULT_CODEC_REGISTRY)
+  )
+
+  private val connection: Resource[Task, (CollectionOperator[User], CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
+    MongoConnection.create3(settings, (usersCol, participantEventsCol, sequenceCol))
+
+  override def getConnection: Resource[Task, (
+    CollectionOperator[User],
+      CollectionOperator[ParticipantEvent],
+      CollectionOperator[Sequence]
+    )] = connection
 
   locally {
     //    creating indexes
     val mongoClient: MongoClient = MongoClient(settings)
     val database: MongoDatabase = mongoClient.getDatabase(config.dbName)
 
-    Task.fromReactivePublisher(database.getCollection(USERS_COLLECTION_NAME).createIndexes(
-      Seq(
-        IndexModel(
-          Indexes.ascending("username"),
-          IndexOptions().background(true).unique(false)
+    (
+      Task.fromReactivePublisher(
+        database.getCollection(USERS_COLLECTION_NAME).createIndexes(
+          Seq(
+            IndexModel(
+              Indexes.ascending("username"),
+              IndexOptions().background(true).unique(false)
+            )
+          )
         )
-      )
-    )).runSyncUnsafe(10.seconds)
+      ) >>
+        Task.fromReactivePublisher(
+          database.getCollection(PARTICIPANT_EVENTS_COLLECTION_NAME).createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.compoundIndex(
+                  Indexes.ascending("participantIdentifier"),
+                  Indexes.descending("eventId")
+                ),
+                IndexOptions().background(false).unique(false)
+              )
+            )
+          )
+        )
+      ).runSyncUnsafe(10.seconds)
     mongoClient.close()
   }
 }
 
 object MongoAppClient {
   final val USERS_COLLECTION_NAME = "users"
+  final val PARTICIPANT_EVENTS_COLLECTION_NAME = "participant_events"
+  final val SEQUENCE_COLLECTION_NAME = "sequence_generator"
 }

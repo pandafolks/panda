@@ -9,12 +9,11 @@ import org.http4s.headers.Authorization
 import java.util.UUID
 import scala.util.Try
 
-final class AuthenticatorBasedOnHeader(private val userDao: UserDao) extends Authenticator {
-  // in the final impl we would take it from db
+final class AuthenticatorBasedOnHeader(private val userService: UserService) extends Authenticator {
   private def retrieveUser: String => OptionT[Task, User] =
     id => OptionT(Task.eval(Try(UUID.fromString(id)).toOption))
       .map(tagUUIDAsUserId)
-      .flatMap(userId => OptionT(userDao.byId(userId)))
+      .flatMap(userId => OptionT(userService.getById(userId)))
 
   override def authUser: Kleisli[Task, Request[Task], Either[String, User]] = Kleisli({ request =>
     (

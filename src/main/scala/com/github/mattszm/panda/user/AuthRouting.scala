@@ -7,7 +7,7 @@ import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{HttpRoutes, Response, Status}
 
-final class AuthRouting(userDao: UserDao) extends Http4sDsl[Task] with SubRoutingWithNoAuth {
+final class AuthRouting(userService: UserService) extends Http4sDsl[Task] with SubRoutingWithNoAuth {
   private val AUTH_NAME: String = "auth"
 
   private val routes = HttpRoutes.of[Task] {
@@ -15,7 +15,7 @@ final class AuthRouting(userDao: UserDao) extends Http4sDsl[Task] with SubRoutin
       (
         for {
           user <- req.as[UserCredentials]
-          userOpt <- userDao.checkPassword(user)
+          userOpt <- userService.checkPassword(user)
         } yield userOpt
         ).flatMap {
         case Some(user) => Ok(TokenService.signToken(user))
@@ -26,7 +26,7 @@ final class AuthRouting(userDao: UserDao) extends Http4sDsl[Task] with SubRoutin
       (
         for {
           user <- req.as[UserCredentials]
-          res <- userDao.create(user.username, user.password)
+          res <- userService.create(user.username, user.password)
         } yield res
         ).flatMap {
         case Right(_) => Task.now(Response[Task](Status.Created))
@@ -37,7 +37,7 @@ final class AuthRouting(userDao: UserDao) extends Http4sDsl[Task] with SubRoutin
     case req@DELETE -> Root / API_NAME / API_VERSION_1 / AUTH_NAME / "destroy" =>
       for {
         user <- req.as[UserCredentials]
-        result <- userDao.delete(user)
+        result <- userService.delete(user)
       } yield Response[Task](if (result) Status.NoContent else Status.Unauthorized)
   }
 

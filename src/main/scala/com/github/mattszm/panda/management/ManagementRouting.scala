@@ -2,15 +2,20 @@ package com.github.mattszm.panda.management
 
 import cats.implicits.toTraverseOps
 import com.github.mattszm.panda.management.SubRouting.{API_NAME, API_VERSION_1}
+import com.github.mattszm.panda.participant.dto.ParticipantCreationDto
+import com.github.mattszm.panda.participant.event.ParticipantEventService
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
 import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.user.User
+import io.circe.generic.auto._
 import monix.eval.Task
+import org.http4s.circe.jsonOf
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{AuthedRoutes, Response}
+import org.http4s.{AuthedRoutes, EntityDecoder, Response}
 
 
-final class ManagementRouting(private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
+final class ManagementRouting(private val participantEventService: ParticipantEventService,
+                              private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
   with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
@@ -29,10 +34,10 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache) 
 
     case req@POST -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
       for {
-        participants <- req.req.as[Seq[Participant]].map(
-          _.map(p => if (p.identifier.isBlank) Participant(p.host, p.port, p.group) else p))
-        addResult <- participantsCache.addParticipants(participants.toList)
-        response <- addResult.fold(_ => BadRequest("Participants not saved"), _ => Ok())
+        // todo mszmal: start here!
+        participantDtos <- req.req.as[Seq[ParticipantCreationDto]]
+        _ <- Task.now(participantDtos).foreachL(e => println(e))
+        response <- Ok()
       } yield response
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group as _ =>
@@ -46,4 +51,7 @@ final class ManagementRouting(private val participantsCache: ParticipantsCache) 
     }
 
   override def getRoutes: AuthedRoutes[User, Task] = routes
+
+  implicit val participantCreationDtoDecoder: EntityDecoder[Task, ParticipantCreationDto] = jsonOf[Task, ParticipantCreationDto]
+  implicit val participantCreationDtoSeqDecoder: EntityDecoder[Task, Seq[ParticipantCreationDto]] = jsonOf[Task, Seq[ParticipantCreationDto]]
 }
