@@ -2,7 +2,7 @@ package com.github.mattszm.panda.db
 
 import cats.effect.Resource
 import com.github.mattszm.panda.configuration.sub.DbConfig
-import com.github.mattszm.panda.participant.event.{EventType, ParticipantEventDataModification, ParticipantEvent}
+import com.github.mattszm.panda.participant.event.{ParticipantEventType, ParticipantEventDataModification, ParticipantEvent}
 import com.github.mattszm.panda.sequence.{Sequence, SequenceKey}
 import com.github.mattszm.panda.user.User
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
@@ -47,7 +47,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
     fromRegistries(fromProviders(
       classOf[ParticipantEvent],
       classOf[ParticipantEventDataModification],
-      classOf[EventType]
+      classOf[ParticipantEventType]
     ), DEFAULT_CODEC_REGISTRY)
   )
 
