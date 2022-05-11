@@ -7,6 +7,10 @@ object ParticipantEventType {
   case class Created() extends MainState
   case class Removed() extends MainState
 
+  sealed trait SubState extends ParticipantEventType
+  case class TurnedOn() extends ParticipantEventType
+  case class TurnedOff() extends ParticipantEventType
+
   case class ModifiedData() extends ParticipantEventType
 
   sealed trait Connection extends ParticipantEventType

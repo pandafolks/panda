@@ -50,7 +50,7 @@ final class ParticipantEventServiceImpl(
               insertEvent(
                 participantIdentifier.get,
                 ParticipantEventDataModification.empty,
-                ParticipantEventType.Joined()
+                ParticipantEventType.TurnedOn()
               )(sequenceOperator, participantEventOperator)
         } yield finalRes
     }
@@ -82,13 +82,13 @@ final class ParticipantEventServiceImpl(
               insertEvent(
                 participantIdentifier.get,
                 ParticipantEventDataModification.empty,
-                ParticipantEventType.Disconnected()
+                ParticipantEventType.TurnedOff()
               )(sequenceOperator, participantEventOperator)
             else
               insertEvent(
                 participantIdentifier.get,
                 ParticipantEventDataModification.empty,
-                ParticipantEventType.Joined()
+                ParticipantEventType.TurnedOn()
               )(sequenceOperator, participantEventOperator)
         } yield finalRes
     }
