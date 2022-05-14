@@ -27,6 +27,9 @@ object Dependencies {
   val tsecPassword = "io.github.jmcardon" %% "tsec-password" % "0.2.0"
   val cryptoBits = "org.reactormonk" %% "cryptobits" % "1.3"
   val monixMongo = "io.monix" %% "monix-mongodb" % "0.6.2"
+  val scalaCacheCore =  "com.github.cb372" %% "scalacache-core" % "0.28.0"
+  val scalaCacheGuava = "com.github.cb372" %% "scalacache-guava" % "0.28.0"
+  val scalaCacheCats = "com.github.cb372" %% "scalacache-cats-effect" % "0.28.0"
 
   object Versions {
     val sst = "0.3.3"

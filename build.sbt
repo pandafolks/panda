@@ -33,6 +33,9 @@ lazy val root = project
       Dependencies.tsecPassword,
       Dependencies.cryptoBits,
       Dependencies.monixMongo,
+      Dependencies.scalaCacheCore,
+      Dependencies.scalaCacheGuava,
+      Dependencies.scalaCacheCats
     ),
     name := "panda"
   )

@@ -31,7 +31,7 @@ final class ParticipantsCacheImpl(private val cacheByGroup: Ref[Task, MultiDict[
 }
 
 object ParticipantsCacheImpl {
-  def apply(initParticipants: List[Participant]): Task[ParticipantsCacheImpl] =
+  def apply(initParticipants: List[Participant] = List.empty): Task[ParticipantsCacheImpl] =
     for {
       participantsByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(initParticipants.map(p => (p.group, p))))
