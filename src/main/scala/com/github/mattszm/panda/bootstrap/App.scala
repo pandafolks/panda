@@ -14,6 +14,7 @@ import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
 import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import com.github.mattszm.panda.user._
+import com.github.mattszm.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.http4s.server.{AuthMiddleware, Server}
@@ -31,14 +32,14 @@ object App extends MonixServerApp {
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTree = RoutesTreeImpl.construct(routesMappingInitializationEntries)
 
-      daosAndServices = new DaoAndServiceInitialization(dbAppClient, List(appConfiguration.initUser))
+      daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
       tempParticipants = List(
         Participant("127.0.0.1", 3000, Group("cars")),
         Participant("localhost", 3001, Group("cars")),
         Participant("127.0.0.1", 4000, Group("planes"), "planesInstance1")
-      ) // temp solution
+      ) // temp solution //todo: delete
 
       participantsCache <- Resource.eval(ParticipantsCacheImpl(tempParticipants))
       loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
@@ -48,10 +49,10 @@ object App extends MonixServerApp {
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTree)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(daosAndServices.getUserService)
+      authRouting = new AuthRouting(daosAndServices.getTokenService, daosAndServices.getUserService)
       managementRouting = new ManagementRouting(daosAndServices.getParticipantEventService, participantsCache)
 
-      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getUserService)
+      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getTokenService, daosAndServices.getUserService)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       managementAuthedService = authMiddleware(managementRouting.getRoutes)
 

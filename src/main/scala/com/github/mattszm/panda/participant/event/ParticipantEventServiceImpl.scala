@@ -6,6 +6,7 @@ import com.github.mattszm.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
 import com.github.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import com.github.mattszm.panda.user.User
+import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
@@ -13,11 +14,9 @@ import monix.eval.Task
 final class ParticipantEventServiceImpl(
                                          private val participantEventDao: ParticipantEventDao,
                                          private val sequenceDao: SequenceDao)(
-                                         private val c: Resource[Task, (
-                                           CollectionOperator[User],
-                                             CollectionOperator[ParticipantEvent],
-                                             CollectionOperator[Sequence]
-                                           )]) extends ParticipantEventService {
+                                         private val c: Resource[Task, (CollectionOperator[User],
+                                           CollectionOperator[ParticipantEvent], CollectionOperator[Sequence],
+                                           CollectionOperator[Token])]) extends ParticipantEventService {
 
   private val identifierCannotBeBlankError: Task[Left[UnsuccessfulSaveOperation, Nothing]] = Task.evalOnce(Left(UnsuccessfulSaveOperation("Identifier cannot be blank")))
 
@@ -30,7 +29,7 @@ final class ParticipantEventServiceImpl(
       return identifierCannotBeBlankError
 
     c.use {
-      case (_, participantEventOperator, sequenceOperator) =>
+      case (_, participantEventOperator, sequenceOperator, _) =>
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
@@ -62,7 +61,7 @@ final class ParticipantEventServiceImpl(
       return identifierCannotBeBlankError
 
     c.use {
-      case (_, participantEventOperator, sequenceOperator) =>
+      case (_, participantEventOperator, sequenceOperator, _) =>
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
@@ -99,7 +98,7 @@ final class ParticipantEventServiceImpl(
     if (participantIdentifier.isBlank) return identifierCannotBeBlankError
 
     c.use {
-      case (_, participantEventOperator, sequenceOperator) =>
+      case (_, participantEventOperator, sequenceOperator, _) =>
         for {
           exists <- participantEventDao.exists(participantIdentifier, participantEventOperator)
 

@@ -1,6 +1,7 @@
-package com.github.mattszm.panda.user
+package com.github.mattszm.panda.user.token
 
 import cats.data.{Kleisli, OptionT}
+import com.github.mattszm.panda.user.User
 import fs2.Stream
 import fs2.text.utf8Encode
 import monix.eval.Task

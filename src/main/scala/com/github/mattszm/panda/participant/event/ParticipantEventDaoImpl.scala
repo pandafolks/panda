@@ -3,16 +3,15 @@ package com.github.mattszm.panda.participant.event
 import cats.effect.Resource
 import com.github.mattszm.panda.sequence.Sequence
 import com.github.mattszm.panda.user.User
+import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.utils.{PersistenceError, UnsuccessfulSaveOperation}
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 
-final class ParticipantEventDaoImpl(private val c: Resource[Task, (
-  CollectionOperator[User],
-    CollectionOperator[ParticipantEvent],
-    CollectionOperator[Sequence]
-  )]) extends ParticipantEventDao {
+final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOperator[User],
+  CollectionOperator[ParticipantEvent], CollectionOperator[Sequence],
+  CollectionOperator[Token])]) extends ParticipantEventDao {
 
   override def exists(identifier: String, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Boolean] =
     participantEventOperator.source

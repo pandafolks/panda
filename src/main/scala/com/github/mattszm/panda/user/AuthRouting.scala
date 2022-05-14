@@ -2,12 +2,14 @@ package com.github.mattszm.panda.user
 
 import com.github.mattszm.panda.management.SubRouting.{API_NAME, API_VERSION_1}
 import com.github.mattszm.panda.management.SubRoutingWithNoAuth
+import com.github.mattszm.panda.user.token.TokenService
 import com.github.mattszm.panda.utils.AlreadyExists
 import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{HttpRoutes, Response, Status}
 
-final class AuthRouting(userService: UserService) extends Http4sDsl[Task] with SubRoutingWithNoAuth {
+final class AuthRouting(private val tokenService: TokenService, private val userService: UserService
+                       ) extends Http4sDsl[Task] with SubRoutingWithNoAuth {
   private val AUTH_NAME: String = "auth"
 
   private val routes = HttpRoutes.of[Task] {
@@ -18,7 +20,7 @@ final class AuthRouting(userService: UserService) extends Http4sDsl[Task] with S
           userOpt <- userService.checkPassword(user)
         } yield userOpt
         ).flatMap {
-        case Some(user) => Ok(TokenService.signToken(user))
+        case Some(user) => Ok(tokenService.signToken(user))
         case None => Task.now(Response[Task](Status.Unauthorized))
       }
 

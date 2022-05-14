@@ -6,7 +6,7 @@ import pureconfig.ConfigReader
 import pureconfig.generic.semiauto.{deriveEnumerationReader, deriveReader}
 import com.avast.sst.http4s.server.pureconfig.implicits._
 import com.avast.sst.http4s.client.pureconfig.implicits._
-import com.github.mattszm.panda.configuration.sub.{DbConfig, GatewayConfig, LoadBalanceAlgorithm}
+import com.github.mattszm.panda.configuration.sub.{DbConfig, GatewayConfig, LoadBalanceAlgorithm, TokensConfig}
 import com.github.mattszm.panda.user.UserCredentials
 import pureconfig.generic.auto._
 
@@ -15,6 +15,7 @@ final case class AppConfiguration(
                                 gatewayClient: Http4sBlazeClientConfig,
                                 gateway: GatewayConfig,
                                 db: DbConfig,
+                                authTokens: TokensConfig,
                                 initUser: UserCredentials
                               )
 

@@ -2,6 +2,7 @@ package com.github.mattszm.panda.user
 import cats.effect.Resource
 import com.github.mattszm.panda.participant.event.ParticipantEvent
 import com.github.mattszm.panda.sequence.Sequence
+import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.utils.{PersistenceError, UnsuccessfulSaveOperation}
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
@@ -11,18 +12,15 @@ import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.Try
 
-final class UserDaoImpl(private val c: Resource[Task, (
-  CollectionOperator[User],
-    CollectionOperator[ParticipantEvent],
-    CollectionOperator[Sequence]
-  )]) extends UserDao {
+final class UserDaoImpl(private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[ParticipantEvent],
+  CollectionOperator[Sequence], CollectionOperator[Token])]) extends UserDao {
 
   override def byId(id: UserId): Task[Option[User]] =
-    c.use { case (userOperator, _, _) => userOperator.source.find(Filters.eq(id)).firstOptionL }
+    c.use { case (userOperator, _, _, _) => userOperator.source.find(Filters.eq(id)).firstOptionL }
 
   override def checkIfEmpty: Task[Boolean] =
     c.use {
-      case (userOperator, _, _) => userOperator.source.countAll().map(_ == 0)
+      case (userOperator, _, _, _) => userOperator.source.countAll().map(_ == 0)
     }
 
   override def exists(username: String, userOperator: CollectionOperator[User]): Task[Boolean] =
@@ -36,7 +34,7 @@ final class UserDaoImpl(private val c: Resource[Task, (
         .findL(user => Try(BCrypt.checkpwUnsafe(credentials.password, user.password)).getOrElse(false))
 
   override def validateUser(credentials: UserCredentials): Task[Option[User]] =
-    c.use { case (userOperator, _, _) => validateUser(credentials, userOperator) }
+    c.use { case (userOperator, _, _, _) => validateUser(credentials, userOperator) }
 
   override def delete(user: User, userOperator: CollectionOperator[User]): Task[Boolean] =
     userOperator.single.deleteOne(Filters.eq(user._id)).map(dr => dr.deleteCount > 0)

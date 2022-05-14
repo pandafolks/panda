@@ -2,9 +2,10 @@ package com.github.mattszm.panda.db
 
 import cats.effect.Resource
 import com.github.mattszm.panda.configuration.sub.DbConfig
-import com.github.mattszm.panda.participant.event.{ParticipantEventType, ParticipantEventDataModification, ParticipantEvent}
+import com.github.mattszm.panda.participant.event.{ParticipantEvent, ParticipantEventDataModification, ParticipantEventType}
 import com.github.mattszm.panda.sequence.{Sequence, SequenceKey}
 import com.github.mattszm.panda.user.User
+import com.github.mattszm.panda.user.token.Token
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
@@ -48,7 +49,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
       classOf[ParticipantEvent],
       classOf[ParticipantEventDataModification],
       classOf[ParticipantEventType]
-    ), DEFAULT_CODEC_REGISTRY)
+    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
   )
 
   private val sequenceCol = CollectionCodecRef(config.dbName, SEQUENCE_COLLECTION_NAME,
@@ -56,17 +57,16 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
     fromRegistries(fromProviders(
       classOf[Sequence],
       classOf[SequenceKey]
-    ), DEFAULT_CODEC_REGISTRY)
+    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
   )
 
-  private val connection: Resource[Task, (CollectionOperator[User], CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
-    MongoConnection.create3(settings, (usersCol, participantEventsCol, sequenceCol))
+  private val tokensCol = CollectionCodecRef(config.dbName, TOKENS_COLLECTION_NAME, classOf[Token],
+    fromRegistries(fromProviders(classOf[Token]), javaCodecs)
+  )
 
-  override def getConnection: Resource[Task, (
-    CollectionOperator[User],
-      CollectionOperator[ParticipantEvent],
-      CollectionOperator[Sequence]
-    )] = connection
+  private val connection = MongoConnection.create4(settings, (usersCol, participantEventsCol, sequenceCol, tokensCol))
+
+  override def getConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[ParticipantEvent], CollectionOperator[Sequence], CollectionOperator[Token])] = connection
 
   locally {
     //    creating indexes
@@ -92,6 +92,16 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
                   Indexes.ascending("participantIdentifier"),
                   Indexes.descending("eventId")
                 ),
+                IndexOptions().background(false).unique(true)
+              )
+            )
+          )
+        ) >>
+        Task.fromReactivePublisher(
+          database.getCollection(TOKENS_COLLECTION_NAME).createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.hashed("tempId"),
                 IndexOptions().background(false).unique(false)
               )
             )
@@ -106,4 +116,5 @@ object MongoAppClient {
   final val USERS_COLLECTION_NAME = "users"
   final val PARTICIPANT_EVENTS_COLLECTION_NAME = "participant_events"
   final val SEQUENCE_COLLECTION_NAME = "sequence_generator"
+  final val TOKENS_COLLECTION_NAME = "tokens"
 }
