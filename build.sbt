@@ -1,44 +1,107 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
-ThisBuild / turbo := true
-ThisBuild / organization := "com.github.mattszm"
 
-lazy val commonSettings = BuildSettings.common ++ Seq(
-  libraryDependencies ++= Seq(
-    Dependencies.logbackClassic,
-    Dependencies.scalaTest % Test,
-    Dependencies.testContainers % Test,
+inThisBuild(List(
+  organization := "com.github.mattszm",
+  homepage := Some(url("https://github.com/MattSzm/panda")),
+  licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+  developers := List(
+    Developer(
+      "mattszm",
+      "Mateusz Szmal",
+      "-",
+      url("https://github.com/MattSzm")
+    )
+  )
+))
+
+//skip in publish := true
+
+lazy val sharedSettings = Seq(
+  scalaVersion       := "2.13.8",
+  scalacOptions ++= Seq(
+    "-unchecked",
+    "-deprecation",
+    "-feature",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-language:experimental.macros"
   ),
-  Test / publishArtifact := false
+  scalacOptions in (Compile, console) ++= Seq("-Ywarn-unused:imports"),
+  scalacOptions ++= Seq(
+    "-Ywarn-unused:imports",
+    "-Ywarn-dead-code",
+    "-Xlint:adapted-args",
+    "-Xlint:infer-any",
+    "-Xlint:missing-interpolator",
+    "-Xlint:doc-detached",
+    "-Xlint:private-shadow",
+    "-Xlint:type-parameter-shadow",
+    "-Xlint:poly-implicit-overload",
+    "-Xlint:option-implicit",
+    "-Xlint:delayedinit-select",
+  ),
+
+  // ScalaDoc settings
+  scalacOptions in (Compile, doc) ++= Seq("-no-link-warnings"),
+  autoAPIMappings := true,
+  scalacOptions in ThisBuild ++= Seq(
+    "-sourcepath",
+    file(".").getAbsolutePath.replaceAll("[.]$", "")
+  ),
+  parallelExecution in Test             := true,
+  parallelExecution in ThisBuild        := true,
+  testForkedParallel in Test            := true,
+  testForkedParallel in ThisBuild       := true,
+  concurrentRestrictions in Global += Tags.limit(Tags.Test, 3),
+  logBuffered in Test            := false,
+  logBuffered in IntegrationTest := false,
+  incOptions := incOptions.value.withLogRecompileOnMacro(false),
+  pomIncludeRepository    := { _ => false },
+
+  autoAPIMappings := true,
+  Test / publishArtifact := false,
+
+  ThisBuild / scalafixDependencies ++= Seq(
+    Dependencies.scalafixScaluzzi,
+    Dependencies.scalafixSortImports
+  ),
+  libraryDependencies ++= Seq(
+    compilerPlugin(Dependencies.silencer),
+    Dependencies.silencerLib
+  ),
 )
 
-lazy val root = project
-  .in(file("."))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      Dependencies.sstHttp4sClientBlazePureConfig,
-      Dependencies.sstHttp4sClientMonixCatcap,
-      Dependencies.sstMonixCatnapPureConfig,
-      Dependencies.sstFlywayPureConfig,
-      Dependencies.sstJvm,
-      Dependencies.sstMicrometerJmxPureConfig,
-      Dependencies.sstBundleMonixHttp4sBlaze,
-      Dependencies.uPickle,
-      Dependencies.scalaUri,
-      Dependencies.collectionContrib,
-      Dependencies.http4sCirce,
-      Dependencies.circeGeneric,
-      Dependencies.circeLiteral,
-      Dependencies.circeParser,
-      Dependencies.tsecPassword,
-      Dependencies.cryptoBits,
-      Dependencies.monixMongo,
-      Dependencies.scalaCacheCore,
-      Dependencies.scalaCacheGuava,
-      Dependencies.scalaCacheCats
-    ),
-    name := "panda"
-  )
+scalacOptions in (Compile, doc) ++= Seq("-no-link-warnings")
 
-addCommandAlias("checkAll", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check; test")
-addCommandAlias("fixAll", "; compile:scalafix; test:scalafix; scalafmtSbt; scalafmtAll")
+val IT = config("it") extend Test
+
+lazy val panda = (project in file("."))
+  .configs(IntegrationTest, IT)
+  .settings(sharedSettings)
+  .settings(name := "panda")
+  .aggregate(bootstap, db, gateway, loadBalancer, management, participant, routes, sequence, user, utils)
+  .dependsOn(bootstap, db, gateway, loadBalancer, management, participant, routes, sequence, user, utils)
+
+lazy val bootstap = pandaConnector("bootstap", Dependencies.bootstapDependencies, Seq(db, gateway, loadBalancer, management, participant, routes, sequence, user))
+lazy val db = pandaConnector("db", Dependencies.dbDependencies, Seq(user, participant, sequence))
+lazy val gateway = pandaConnector("gateway", Dependencies.gatewayDependencies, Seq(management, loadBalancer, routes, utils))
+lazy val loadBalancer = pandaConnector("loadBalancer", Dependencies.loadBalancerDependencies, Seq(participant, utils))
+lazy val management = pandaConnector("management", Dependencies.managementDependencies, Seq(participant, user))
+lazy val participant = pandaConnector("participant", Dependencies.participantDependencies, Seq(sequence, utils, routes))
+lazy val routes = pandaConnector("routes", Dependencies.routesDependencies)
+lazy val sequence = pandaConnector("sequence", Dependencies.sequenceDependencies, Seq(utils, user))
+lazy val user = pandaConnector("user", Dependencies.userDependencies, Seq(utils))
+lazy val utils = pandaConnector("utils", Dependencies.utilsDependencies)
+
+
+def pandaConnector(
+                    moduleName: String,
+                    projectDependencies: Seq[ModuleID],
+                    dependsOn: Seq[sbt.ClasspathDep[sbt.ProjectReference]] = Seq.empty
+                  ): Project = {
+  Project(id = moduleName, base = file(moduleName))
+    .settings(name := s"panda-$moduleName", libraryDependencies ++= projectDependencies, Defaults.itSettings)
+    .settings(sharedSettings)
+    .configs(IntegrationTest, IT)
+    .dependsOn(dependsOn: _*)
+}
