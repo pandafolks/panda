@@ -5,9 +5,8 @@ import scalafix.sbt.ScalafixPlugin.autoImport._
 object BuildSettings {
 
   lazy val common: Seq[Def.Setting[_]] = Seq(
-    scalaVersion := "2.13.3",
+    scalaVersion := "2.13.8",
     libraryDependencies ++= Seq(
-      compilerPlugin(Dependencies.kindProjector),
       compilerPlugin(Dependencies.silencer),
       Dependencies.silencerLib
     ),

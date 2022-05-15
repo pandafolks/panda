@@ -2,7 +2,6 @@ import sbt._
 
 object Dependencies {
   val sstBundleMonixHttp4sBlaze = "com.avast" %% "sst-bundle-monix-http4s-blaze" % "0.15.7"
-  val kindProjector = "org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.3"
   val scalafixScaluzzi = "com.github.vovapolu" %% "scaluzzi" % "0.1.15"
@@ -33,7 +32,7 @@ object Dependencies {
 
   object Versions {
     val sst = "0.3.3"
-    val silencer = "1.7.1"
+    val silencer = "1.7.8"
     val doobie = "0.9.2"
     val testContainers = "0.38.6"
     val circe = "0.14.1"
