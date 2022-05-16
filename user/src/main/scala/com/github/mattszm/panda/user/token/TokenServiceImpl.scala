@@ -2,15 +2,12 @@ package com.github.mattszm.panda.user.token
 
 import cats.data.OptionT
 import cats.effect.Resource
+import com.github.mattszm.panda.user.cache.{CustomCache, CustomCacheImpl}
 import com.github.mattszm.panda.user.{User, UserId}
-import com.google.common.cache.{Cache, CacheBuilder}
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import org.reactormonk.{CryptoBits, PrivateKey}
-import scalacache.guava.GuavaCache
-import scalacache.memoization.memoizeF
-import scalacache.{CacheConfig, Mode, _}
 
 import java.time.Instant
 import java.util.UUID
@@ -19,7 +16,8 @@ import scala.io.{Codec, Source}
 import scala.util.{Random, Try}
 
 
-final class TokenServiceImpl(private val config: TokensConfig, val c: Resource[Task, CollectionOperator[Token]]) extends TokenService {
+final class TokenServiceImpl(private val config: TokensConfig)(private val c: Resource[Task,
+  (CollectionOperator[User], CollectionOperator[Token])]) extends TokenService {
   //todo: add background job which clears old, unused tokens
 
   private val readmeText : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
@@ -29,26 +27,21 @@ final class TokenServiceImpl(private val config: TokensConfig, val c: Resource[T
   private final val clock = java.time.Clock.systemUTC
   private final val tokenTimeToLive = config.timeToLive
 
-  private val underlyingGuavaCache: Cache[String, Entry[Option[Token]]] = CacheBuilder.newBuilder()
-    .maximumSize(10000L)
-    .build[String, Entry[Option[Token]]]
-  implicit private val cache: GuavaCache[Option[Token]] = GuavaCache(underlyingGuavaCache)(CacheConfig.defaultCacheConfig)
-  implicit private val mode: Mode[Task] = scalacache.CatsEffect.modes.async
-
-  private def getToken(tempId: String): Task[Option[Token]] =
-    memoizeF[Task, Option[Token]](Some(60.seconds)) { // purpose: better handling of the batched requests (maintenance scripts, etc)
-      c.use {
-        case tokenOperator => tokenOperator.source
+  // purpose: better handling of the batched requests (maintenance scripts, etc)
+  private val cache: CustomCache[String, Option[Token]] = new CustomCacheImpl[String, Option[Token]](
+    tempId => c.use {
+      case (_, tokenOperator) =>
+        tokenOperator.source
           .find(Filters.eq("tempId", tempId))
           .toListL
           .map(_.sortBy(t => -t.creationTimeStamp)) // very little collision chance
           .map(_.headOption)
-      }
     }
+  )(maximumSize = 50L, ttl = 60.seconds)
 
   def signToken(user: User): Task[String] =
     c.use {
-      case tokenOperator =>
+      case (_, tokenOperator) =>
         for {
           tempId <- Task.now(UUID.randomUUID().toString)
           creationTimeStamp = clock.instant().toEpochMilli
@@ -60,7 +53,7 @@ final class TokenServiceImpl(private val config: TokensConfig, val c: Resource[T
   def validateSignedToken(token: String): Task[Option[UserId]] =
     for {
       tokenEntity <- OptionT(Task.eval(crypto.validateSignedToken(token)))
-        .flatMap(validatedSignedToken => OptionT(getToken(validatedSignedToken))).value
+        .flatMap(validatedSignedToken => OptionT(cache.get(validatedSignedToken))).value
       tokenEntityWithExpiryCheck <- Task.eval(tokenEntity.filter(t =>
         Instant.ofEpochMilli(t.creationTimeStamp).plusSeconds(tokenTimeToLive).isAfter(clock.instant())))
     } yield tokenEntityWithExpiryCheck.map(_.userId)

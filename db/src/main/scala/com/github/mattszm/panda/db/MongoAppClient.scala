@@ -63,15 +63,12 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
     fromRegistries(fromProviders(classOf[Token]), javaCodecs)
   )
 
-  private val usersConnection = MongoConnection.create1(settings, usersCol)
-  private val tokensConnection = MongoConnection.create1(settings, tokensCol)
   private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
-
-  override def getUsersConnection: Resource[Task, CollectionOperator[User]] = usersConnection
-
-  override def getTokensConnection: Resource[Task, CollectionOperator[Token]] = tokensConnection
+  private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
 
   override def getParticipantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] = participantEventsAndSequencesConnection
+
+  override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] = usersWithTokensConnection
 
   locally {
     //    creating indexes

@@ -3,6 +3,7 @@ package com.github.mattszm.panda.user
 import cats.data.OptionT
 import cats.effect.Resource
 import cats.implicits.toTraverseOps
+import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.utils.{AlreadyExists, PersistenceError}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
@@ -13,7 +14,7 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
 final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials])(
-  private val c: Resource[Task, CollectionOperator[User]]) extends UserService {
+  private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserService {
 
   locally {
     (for {
@@ -35,14 +36,14 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
 
   override def delete(credentials: UserCredentials): Task[Boolean] =
     c.use {
-      userOperator =>
+      case (userOperator, _) =>
         OptionT(userDao.validateUser(credentials, userOperator))
           .foldF(Task.now(false))(userDao.delete(_, userOperator))
     }
 
   override def create(username: String, password: String): Task[Either[PersistenceError, Unit]] =
     c.use {
-      userOperator =>
+      case (userOperator, _) =>
         for {
           id <- Task.now(UUID.randomUUID()).map(tagUUIDAsUserId)
           pwd <- BCrypt.hashpw[Task](password)

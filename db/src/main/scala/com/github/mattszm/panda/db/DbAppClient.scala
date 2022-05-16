@@ -10,9 +10,7 @@ import monix.eval.Task
 
 trait DbAppClient {
 
-  def getUsersConnection: Resource[Task, CollectionOperator[User]]
-
-  def getTokensConnection: Resource[Task, CollectionOperator[Token]]
-
   def getParticipantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])]
+
+  def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]
 }

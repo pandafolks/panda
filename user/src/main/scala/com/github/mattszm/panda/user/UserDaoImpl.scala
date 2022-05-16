@@ -1,5 +1,6 @@
 package com.github.mattszm.panda.user
 import cats.effect.Resource
+import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.utils.{PersistenceError, UnsuccessfulSaveOperation}
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
@@ -9,13 +10,13 @@ import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.Try
 
-final class UserDaoImpl(private val c: Resource[Task, CollectionOperator[User]]) extends UserDao {
+final class UserDaoImpl(private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserDao {
 
   override def byId(id: UserId): Task[Option[User]] =
-    c.use(userOperator => userOperator.source.find(Filters.eq(id)).firstOptionL)
+    c.use { case (userOperator, _)  => userOperator.source.find(Filters.eq(id)).firstOptionL }
 
   override def checkIfEmpty: Task[Boolean] =
-    c.use(userOperator => userOperator.source.countAll().map(_ == 0))
+    c.use { case (userOperator, _) => userOperator.source.countAll().map(_ == 0) }
 
   override def exists(username: String, userOperator: CollectionOperator[User]): Task[Boolean] =
     userOperator.source
@@ -28,7 +29,7 @@ final class UserDaoImpl(private val c: Resource[Task, CollectionOperator[User]])
         .findL(user => Try(BCrypt.checkpwUnsafe(credentials.password, user.password)).getOrElse(false))
 
   override def validateUser(credentials: UserCredentials): Task[Option[User]] =
-    c.use(userOperator => validateUser(credentials, userOperator))
+    c.use { case (userOperator, _) => validateUser(credentials, userOperator) }
 
   override def delete(user: User, userOperator: CollectionOperator[User]): Task[Boolean] =
     userOperator.single.deleteOne(Filters.eq(user._id)).map(dr => dr.deleteCount > 0)

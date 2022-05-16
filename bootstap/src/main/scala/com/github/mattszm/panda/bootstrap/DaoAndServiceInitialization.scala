@@ -12,8 +12,8 @@ final class DaoAndServiceInitialization(
                                          private val appConfiguration: AppConfiguration,
                                        ) {
 
-  private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersConnection)
-  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersConnection)
+  private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
+  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersWithTokensConnection)
 
   private val sequenceDao: SequenceDao = new SequenceDao()
 
@@ -23,7 +23,7 @@ final class DaoAndServiceInitialization(
     sequenceDao = sequenceDao
   )(dbAppClient.getParticipantEventsAndSequencesConnection)
 
-  private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens, dbAppClient.getTokensConnection)
+  private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens)(dbAppClient.getUsersWithTokensConnection)
 
   def getUserService: UserService = userService
 
