@@ -19,9 +19,9 @@ final class BaseApiGatewayImpl(
         logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
         Response.notFoundFor(request)
       case Some(groupInfo) => loadBalancer.route(
-        request,
-        groupInfo.prefix.addSegments(requestedPath.segments),
-        groupInfo.group
+        request = request,
+        requestedPath = groupInfo.prefix.addSegments(requestedPath.segments),
+        group = groupInfo.group
       )
     }
 }
