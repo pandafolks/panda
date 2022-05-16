@@ -74,7 +74,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
   }
 
-  it should "return None if there is neither requested group nor the group is empty" in {
+  it should "return None if there is no requested group / the group is empty" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
 
     val group1 = Group("cars")
