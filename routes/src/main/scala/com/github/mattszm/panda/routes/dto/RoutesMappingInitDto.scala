@@ -5,8 +5,8 @@ import ujson.Value
 import scala.collection.immutable.ListMap
 
 final case class RoutesMappingInitDto(
-                                       mappers: Map[String, String],
-                                       prefixes: Map[String, String]
+                                       mappers: Map[String, String] = Map.empty,
+                                       prefixes: Map[String, String] = Map.empty
                                      )
 
 object RoutesMappingInitDto {

@@ -9,10 +9,10 @@ import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
 import com.github.mattszm.panda.db.MongoAppClient
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
-import com.github.mattszm.panda.management.ManagementRouting
+import com.github.mattszm.panda.management.ParticipantsRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
-import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
+import com.github.mattszm.panda.routes.{Group, RoutesTreeImpl}
 import com.github.mattszm.panda.user.AuthRouting
 import com.github.mattszm.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
@@ -50,13 +50,13 @@ object App extends MonixServerApp {
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(daosAndServices.getTokenService, daosAndServices.getUserService)
-      managementRouting = new ManagementRouting(daosAndServices.getParticipantEventService, participantsCache)
 
       authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getTokenService, daosAndServices.getUserService)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
-      managementAuthedService = authMiddleware(managementRouting.getRoutes)
+      participantsRouting = new ParticipantsRouting(daosAndServices.getParticipantEventService, participantsCache)
+      participantsAuthedService = authMiddleware(participantsRouting.getRoutes)
 
-      allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> managementAuthedService).orNotFound
+      allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> participantsAuthedService).orNotFound
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
         allRoutes,

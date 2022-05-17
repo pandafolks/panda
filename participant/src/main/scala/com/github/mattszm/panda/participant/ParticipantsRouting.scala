@@ -16,7 +16,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder, Response}
 
 
-final class ManagementRouting(private val participantEventService: ParticipantEventService,
+final class ParticipantsRouting(private val participantEventService: ParticipantEventService,
                               private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
   with SubRoutingWithAuth {
 
@@ -104,3 +104,4 @@ final class ManagementRouting(private val participantEventService: ParticipantEv
 object ManagementRouting {
   case class ParticipantsModificationResult(message: String, successfulParticipantIdentifiers: List[String], errors: List[String])
 }
+

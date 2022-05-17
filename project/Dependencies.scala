@@ -68,8 +68,6 @@ object Dependencies {
 
   val loadBalancerDependencies: Seq[ModuleID] = CommonDependencies
 
-  val managementDependencies: Seq[ModuleID] = CommonDependencies
-
   val participantDependencies: Seq[ModuleID] = CommonDependencies
 
   val routesDependencies: Seq[ModuleID] = Seq(
