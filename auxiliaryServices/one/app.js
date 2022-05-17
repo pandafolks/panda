@@ -18,6 +18,12 @@ app.get('/api/v1/cars', (req, res) => {
     res.send(jsonExample1);
 })
 
+app.post('/api/v1/cars',(request, response) => {
+    console.log(request.body);
+    response.end("yes")
+});
+
+
 app.get('/api/v1/cars/rent/', (req, res) => {
     res.send(jsonExample2);
 })

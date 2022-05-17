@@ -9,10 +9,10 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 class RoutesTreeImplTest extends AnyFlatSpec {
   private val commonData = RoutesMappingInitDto(
     Map.from(List(
-      ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes")
+      ("cars", "/api/v1/"), ("planes", "/api/v2")
     )),
     Map.from(List(
-      ("cars", "/api/v1/"), ("planes", "/api/v2")
+      ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes")
     ))
   )
 
@@ -50,10 +50,10 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   it should "handle scenario when there is no prefix in delivered data" in {
     val data = RoutesMappingInitDto(
       Map.from(List(
-        ("/cars", "cars")
+        ("planes", "/api/v2")
       )),
       Map.from(List(
-        ("planes", "/api/v2")
+        ("/cars", "cars")
       ))
     )
 
@@ -70,6 +70,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
 
   it should "put the Wildcard at the end of the children" in {
     val data = RoutesMappingInitDto(
+      Map.empty,
       Map.from(List(
         ("/cars", "cars"),
         ("/bikes/", "cars"),
@@ -77,8 +78,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
         ("{{some_wildcard}}", "cars"),
         ("planes/", "planes"),
         ("ships", "shipsGroup")
-      )),
-      Map.empty
+      ))
     )
 
     val tree: RoutesTree = RoutesTreeImpl.construct(data)

@@ -25,7 +25,7 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
 object RoutesTreeImpl {
 
-  def construct(data: RoutesMappingInitDto): RoutesTreeImpl = {
+  def construct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTreeImpl = {
     val dataWithProcessedPrefixes = data.copy(
       prefixes = data.prefixes.view.mapValues(
         _.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse
@@ -33,7 +33,7 @@ object RoutesTreeImpl {
     )
 
     new RoutesTreeImpl(
-      dataWithProcessedPrefixes.mappers.iterator
+      dataWithProcessedPrefixes.get(httpMethod).iterator
         .foldLeft(Node(RoutesTree.Wildcard, List.empty))((root, entry) =>
           insert(
             root = root,

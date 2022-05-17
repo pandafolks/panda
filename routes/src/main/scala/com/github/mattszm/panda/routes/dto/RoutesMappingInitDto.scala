@@ -1,17 +1,26 @@
 package com.github.mattszm.panda.routes.dto
 
+import com.github.mattszm.panda.routes.HttpMethod
 import ujson.Value
 
 import scala.collection.immutable.ListMap
 
 final case class RoutesMappingInitDto(
-                                       mappers: Map[String, String] = Map.empty,
-                                       prefixes: Map[String, String] = Map.empty
-                                     )
+                                       prefixes: Map[String, String] = Map.empty,
+                                       getMappers: Map[String, String] = Map.empty,
+                                       postMappers: Map[String, String] = Map.empty
+                                     ) {
+
+  def get(httpMethod: HttpMethod): Map[String, String] = httpMethod match {
+    case _: HttpMethod.Get.type => getMappers
+    case _: HttpMethod.Post.type  => postMappers
+  }
+}
 
 object RoutesMappingInitDto {
-  private final val MAPPERS_NAME = "mappers"
   private final val PREFIXES_NAME = "prefixes"
+  private final val GET_MAPPERS_NAME = "getMappers"
+  private final val POST_MAPPERS_NAME = "postMappers"
 
   def of(configuration: Value.Value): RoutesMappingInitDto = {
     def extractMapFromConfiguration(propertyName: String): Map[String, String] =
@@ -26,8 +35,9 @@ object RoutesMappingInitDto {
         .toMap
 
     RoutesMappingInitDto(
-      extractMapFromConfiguration(MAPPERS_NAME),
-      extractMapFromConfiguration(PREFIXES_NAME)
+      extractMapFromConfiguration(PREFIXES_NAME),
+      extractMapFromConfiguration(GET_MAPPERS_NAME),
+      extractMapFromConfiguration(POST_MAPPERS_NAME)
     )
   }
 }

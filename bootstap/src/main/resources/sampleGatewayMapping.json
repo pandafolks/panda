@@ -1,8 +1,11 @@
 {
-  "mappers": {
+  "getMappers": {
     "/cars": "cars",
     "cars/rent": "cars",
     "planes/{{plane_id}}/passengers": "planes"
+  },
+  "postMappers": {
+    "cars": "cars"
   },
   "prefixes": {
     "cars": "/api/v1/",
