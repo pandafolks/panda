@@ -1,6 +1,7 @@
 package com.github.mattszm.panda.participant
 
 import com.github.mattszm.panda.routes.Group
+import com.github.mattszm.panda.utils.ChangeListener
 import monix.eval.Task
 
 trait ParticipantsCache {
@@ -15,4 +16,6 @@ trait ParticipantsCache {
   def removeParticipant(participant: Participant): Task[Unit]
 
   def removeAllParticipantsAssociatedWithGroup(group: Group): Task[Unit]
+
+  def registerListener(listener: ChangeListener[Participant]): Task[Unit]
 }

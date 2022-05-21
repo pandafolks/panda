@@ -3,7 +3,7 @@ package com.github.mattszm.panda.participant
 import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
 import com.github.mattszm.panda.routes.Group
-import com.github.mattszm.panda.utils.DefaultPublisher
+import com.github.mattszm.panda.utils.{ChangeListener, DefaultPublisher}
 import monix.eval.Task
 
 import scala.collection.immutable.MultiDict
@@ -44,6 +44,13 @@ final class ParticipantsCacheImpl(private val cacheByGroup: Ref[Task, MultiDict[
       .flatMap(previousCacheState => publisher.getListeners
         .flatMap(_.map(_.notifyAboutRemove(previousCacheState.get(group).toList)).sequence)
       ).void
+
+  override def registerListener(listener: ChangeListener[Participant]): Task[Unit] =
+    for {
+      _ <- publisher.register(listener)
+      cache <- cacheByGroup.get
+      _ <- listener.notifyAboutAdd(cache.values.toList) // initial load to the listener
+    } yield ()
 }
 
 object ParticipantsCacheImpl {

@@ -1,6 +1,7 @@
 package com.github.mattszm.panda.loadbalancer
 
 import cats.implicits.toTraverseOps
+import com.github.mattszm.panda.participant.Participant
 import com.github.mattszm.panda.routes.Group
 import org.scalatest.PrivateMethodTester
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -29,47 +30,47 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     val group3 = Group("ships")
 
     for (i <- 1 to 500) {
-      underTest.add(group1, group1.name + i)
-      underTest.add(group2, group2.name + i)
-      underTest.add(group3, group3.name + i)
+      underTest.add(Participant("whatever", 1111, group1, group1.name + i))
+      underTest.add(Participant("whatever", 1111, group2, group2.name + i))
+      underTest.add(Participant("whatever", 1111, group3, group3.name + i))
     }
 
-    var getCarsFutures: List[Future[Option[String]]] = List()
+    var getCarsFutures: List[Future[Option[Participant]]] = List()
     for (_ <- 1 to 1000) {
       getCarsFutures = Future(underTest.get(group1, r.nextInt(Integer.MAX_VALUE))) :: getCarsFutures
     }
-    var getShipsFutures: List[Future[Option[String]]] = List()
+    var getShipsFutures: List[Future[Option[Participant]]] = List()
     for (_ <- 1 to 3000) {
       getShipsFutures = Future(underTest.get(group2, r.nextInt(Integer.MAX_VALUE))) :: getShipsFutures
     }
-    var getPlanesFutures: List[Future[Option[String]]] = List()
+    var getPlanesFutures: List[Future[Option[Participant]]] = List()
     for (_ <- 1 to 200) {
       getPlanesFutures = Future(underTest.get(group3, r.nextInt(Integer.MAX_VALUE))) :: getPlanesFutures
     }
 
-    val getCarsListWithFutures: Future[List[Option[String]]] = getCarsFutures.sequence
-    val getShipsListWithFutures: Future[List[Option[String]]] = getShipsFutures.sequence
-    val getPlanesListWithFutures: Future[List[Option[String]]] = getPlanesFutures.sequence
+    val getCarsListWithFutures: Future[List[Option[Participant]]] = getCarsFutures.sequence
+    val getShipsListWithFutures: Future[List[Option[Participant]]] = getShipsFutures.sequence
+    val getPlanesListWithFutures: Future[List[Option[Participant]]] = getPlanesFutures.sequence
 
 
     whenReady(getCarsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
       res =>
         res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.startsWith(group1.name) should be(true))
+        res.map(r => r.get.identifier.startsWith(group1.name) should be(true))
         res.size should be(1000)
     }
 
     whenReady(getShipsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
       res =>
         res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.startsWith(group2.name) should be(true))
+        res.map(r => r.get.identifier.startsWith(group2.name) should be(true))
         res.size should be(3000)
     }
 
     whenReady(getPlanesListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
       res =>
         res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.startsWith(group3.name) should be(true))
+        res.map(r => r.get.identifier.startsWith(group3.name) should be(true))
         res.size should be(200)
     }
   }
@@ -82,31 +83,32 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     val group3 = Group("ships")
 
     for (i <- 1 to 500) {
-      underTest.add(group1, group1.name + i)
-      underTest.add(group2, group2.name + i)
-      underTest.add(group3, group3.name + i)
+      underTest.add(Participant("whatever", 1111, group1, group1.name + i))
+      underTest.add(Participant("whatever", 1111, group2, group2.name + i))
+      underTest.add(Participant("whatever", 1111, group3, group3.name + i))
     }
 
     val requestedGroup = Group("blabla")
     underTest.get(requestedGroup, 3123123) should be (None)
 
-    underTest.add(requestedGroup, "someIden")
-    underTest.get(requestedGroup, 3123123) should be (Some("someIden"))
+    val p = Participant("whatever", 123123, requestedGroup, "someIden")
+    underTest.add(p)
+    underTest.get(requestedGroup, 3123123) should be (Some(p))
 
-    underTest.remove(requestedGroup, "someIden")
+    underTest.remove(p)
     underTest.get(requestedGroup, 3123123) should be (None)
   }
 
   "add" should "not lose any data during concurrent invocations (one group case)" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 600)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, String]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[String, List[Int]]](Symbol("usedIdentifiersWithPositions"))
+    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
     val group = Group("cars")
 
     var futures: List[Future[Unit]] = List()
     for (i <- 1 to 500) {
-      futures = Future(underTest.add(group, "cars" + i)) :: futures
+      futures = Future(underTest.add(Participant("whatever", 123, group, "cars" + i))) :: futures
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
@@ -121,8 +123,8 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
     it should "not lose any data during concurrent invocations (multiple groups case)" in {
       val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
-      val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, String]]](Symbol("usedPositionsGroupedByGroup"))
-      val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[String, List[Int]]](Symbol("usedIdentifiersWithPositions"))
+      val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+      val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
       val group1 = Group("cars")
       val group2 = Group("planes")
@@ -130,9 +132,9 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
       var futures: List[Future[Unit]] = List()
       for (i <- 1 to 500) {
-        futures = Future(underTest.add(group1, group1.name + i)) :: futures
-        futures = Future(underTest.add(group2, group2.name + i)) :: futures
-        futures = Future(underTest.add(group3, group3.name + i)) :: futures
+        futures = Future(underTest.add(Participant("ip", 123, group1, group1.name + i))) :: futures
+        futures = Future(underTest.add(Participant("ip", 123, group2, group2.name + i))) :: futures
+        futures = Future(underTest.add(Participant("ip", 123, group3, group3.name + i))) :: futures
       }
       val futureWithList: Future[List[Unit]] = futures.sequence
 
@@ -151,18 +153,18 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
       "remove" should "delete only requested identifier" in {
         val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
-        val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, String]]](Symbol("usedPositionsGroupedByGroup"))
-        val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[String, List[Int]]](Symbol("usedIdentifiersWithPositions"))
+        val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+        val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
         val group1 = Group("cars")
         val group2 = Group("planes")
 
         for (i <- 1 to 500) {
-          underTest.add(group1, group1.name + i)
-          underTest.add(group2, group2.name + i)
+          underTest.add(Participant("ip", 123, group1, group1.name + i))
+          underTest.add(Participant("ip", 123, group2, group2.name + i))
         }
 
-        underTest.remove(group1, "cars100")
+        underTest.remove(Participant("ip", 123, group1, "cars100"))
         underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
         underTest.invokePrivate(usedPositionsGroupedByGroup()).values().asScala.map(_.size).sum should be(499500)
         underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(249500)
@@ -174,20 +176,20 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
   it should "delete only requested identifiers (all identifiers from single group)" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, String]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[String, List[Int]]](Symbol("usedIdentifiersWithPositions"))
+    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
     val group1 = Group("cars")
     val group2 = Group("planes")
 
     for (i <- 1 to 500) {
-      underTest.add(group1, group1.name + i)
-      underTest.add(group2, group2.name + i)
+      underTest.add(Participant("ip", 123, group1, group1.name + i))
+      underTest.add(Participant("ip", 123, group2, group2.name + i))
     }
 
     var futures: List[Future[Unit]] = List()
     for (i <- 1 to 500) {
-      futures = Future(underTest.remove(group1, group1.name + i)) :: futures
+      futures = Future(underTest.remove(Participant("ip", 123, group1, group1.name + i))) :: futures
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
@@ -199,31 +201,31 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
         underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
 
         underTest.invokePrivate(usedIdentifiersWithPositions()).values().asScala.map(_.size should be(500))
-        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.startsWith("cars")) should be (0)
+        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith("cars")) should be (0)
         underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().size() should be(500)
     }
   }
 
   it should "delete only requested identifiers (multiple groups)" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, String]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[String, List[Int]]](Symbol("usedIdentifiersWithPositions"))
+    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
     val group1 = Group("cars")
     val group2 = Group("planes")
     val group3 = Group("ships")
 
     for (i <- 1 to 500) {
-      underTest.add(group1, group1.name + i)
-      underTest.add(group2, group2.name + i)
-      underTest.add(group3, group3.name + i)
+      underTest.add(Participant("ip", 123, group1, group1.name + i))
+      underTest.add(Participant("ip", 123, group2, group2.name + i))
+      underTest.add(Participant("ip", 123, group3, group3.name + i))
     }
 
     var futures: List[Future[Unit]] = List()
     for (i <- 1 to 400 by 4) {
-      futures = Future(underTest.remove(group1, group1.name + i.toString)) :: futures
-      futures = Future(underTest.remove(group3, group3.name + i.toString)) :: futures
-      futures = Future(underTest.remove(group2, group2.name + i.toString)) :: futures
+      futures = Future(underTest.remove(Participant("ip", 123, group1, group1.name + i))) :: futures
+      futures = Future(underTest.remove(Participant("ip", 123, group3, group3.name + i))) :: futures
+      futures = Future(underTest.remove(Participant("ip", 123, group2, group2.name + i))) :: futures
 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
@@ -238,9 +240,9 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
 
         underTest.invokePrivate(usedIdentifiersWithPositions()).values().asScala.map(_.size should be(500))
-        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.startsWith(group1.name)) should be (400)
-        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.startsWith(group2.name)) should be (400)
-        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.startsWith(group3.name)) should be (400)
+        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group1.name)) should be (400)
+        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group2.name)) should be (400)
+        underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group3.name)) should be (400)
     }
   }
 }

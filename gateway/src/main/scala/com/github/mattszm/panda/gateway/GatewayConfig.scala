@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.gateway
 
-import com.github.mattszm.panda.loadbalancer.{LoadBalancer, RandomLoadBalancerImpl, RoundRobinLoadBalancerImpl}
+import com.github.mattszm.panda.loadbalancer.{ConsistentHashingState, HashLoadBalancerImpl, LoadBalancer, RandomLoadBalancerImpl, RoundRobinLoadBalancerImpl}
 import com.github.mattszm.panda.participant.ParticipantsCache
 import monix.eval.Task
 import org.http4s.client.Client
@@ -22,4 +22,9 @@ case object RoundRobin extends LoadBalanceAlgorithm {
 case object Random extends LoadBalanceAlgorithm {
   override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
     new RandomLoadBalancerImpl(client, participantsCache)
+}
+
+case object Hash extends LoadBalanceAlgorithm {
+  override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
+    new HashLoadBalancerImpl(client, participantsCache, new ConsistentHashingState())
 }

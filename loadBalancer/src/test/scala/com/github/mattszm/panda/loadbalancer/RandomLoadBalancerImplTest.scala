@@ -23,7 +23,7 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable)
     )
 
-  "RandomLoadBalancerImpl#route" should "routes to the available server" in {
+  "RandomLoadBalancerImpl#route" should "route to the available server" in {
     val loadBalancer = createRandomLBWithSingleGroup()
 
     Await.result(
@@ -33,7 +33,7 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
     succeed
   }
 
-  it should "routes to the available server (multi-thread environment)" in {
+  it should "route to the available server (multi-thread environment)" in {
     val loadBalancer = createRandomLBWithSingleGroup()
 
     Await.result(

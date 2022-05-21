@@ -15,27 +15,27 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
   // than check on every remove (cannot be performed in O(1))
 
   @VisibleForTesting
-  private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, String]] = new ConcurrentHashMap
+  private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, Participant]] = new ConcurrentHashMap
   @VisibleForTesting
-  private val usedIdentifiersWithPositions: ConcurrentHashMap[String, List[Int]] = new ConcurrentHashMap // identifiers are unique across all groups
+  private val usedIdentifiersWithPositions: ConcurrentHashMap[Participant, List[Int]] = new ConcurrentHashMap // identifiers are unique across all groups
   private val random = new Random(System.currentTimeMillis())
 
-  def get(group: Group, requestedPosition: Int): Option[String] =
+  def get(group: Group, requestedPosition: Int): Option[Participant] =
     Option(usedPositionsGroupedByGroup.get(group)).flatMap {
       case positions if positions.isEmpty => Option.empty
-      case positions => Some(positions.minAfter(requestedPosition).getOrElse(positions.min)._2)
+      case positions => Some(positions.minAfter(requestedPosition).getOrElse(positions.head)._2)
     }
 
-  def add(group: Group, participantIdentifier: String): Unit = {
-    usedIdentifiersWithPositions.computeIfAbsent(participantIdentifier, _ => {
+  def add(participant: Participant): Unit = {
+    usedIdentifiersWithPositions.computeIfAbsent(participant, _ => {
       var positions = List.empty[Int]
-      usedPositionsGroupedByGroup.compute(group, (_, v) => {
-        var tree = Option(v).getOrElse(TreeMap.empty[Int, String])
+      usedPositionsGroupedByGroup.compute(participant.group, (_, v) => {
+        var tree = Option(v).getOrElse(TreeMap.empty[Int, Participant])
         var i = 0
         while (i < positionsPerIdentifier) {
           val shot = random.nextInt(Integer.MAX_VALUE)
           if (!tree.contains(shot)) {
-            tree = tree.updated(shot, participantIdentifier)
+            tree = tree.updated(shot, participant)
             positions = shot :: positions
             i += 1
           }
@@ -47,15 +47,15 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
     ()
   }
 
-  def remove(group: Group, participantIdentifier: String): Unit =
-    Option(usedIdentifiersWithPositions.remove(participantIdentifier))
-      .foreach(identifierPositions => usedPositionsGroupedByGroup.computeIfPresent(group, (_, tree) => // if there is an entry, there has to be a tree (at least empty)
+  def remove(participant: Participant): Unit =
+    Option(usedIdentifiersWithPositions.remove(participant))
+      .foreach(identifierPositions => usedPositionsGroupedByGroup.computeIfPresent(participant.group, (_, tree) => // if there is an entry, there has to be a tree (at least empty)
         identifierPositions.foldLeft(tree)((prevTree, identifierPosition) => prevTree - identifierPosition)
       ))
 
   override def notifyAboutAdd(items: List[Participant]): Task[Unit] =
-    Task.traverse(items)(item => Task.eval(add(item.group, item.identifier))).void
+    Task.traverse(items)(item => Task.eval(add(item))).void
 
   override def notifyAboutRemove(items: List[Participant]): Task[Unit] =
-    Task.traverse(items)(item => Task.eval(remove(item.group, item.identifier))).void
+    Task.traverse(items)(item => Task.eval(remove(item))).void
 }

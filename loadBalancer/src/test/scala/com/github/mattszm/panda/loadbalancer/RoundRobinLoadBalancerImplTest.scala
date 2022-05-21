@@ -25,7 +25,7 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable)
     )
 
-  "RoundRobinLoadBalancerImpl#route" should "routes to the available server with respect to round-robin algorithm" in {
+  "RoundRobinLoadBalancerImpl#route" should "route to the available server with respect to round-robin algorithm" in {
     val loadBalancer = createRoundRobinLBWithSingleGroup()
 
     def routeAction: Task[Response[Task]] = LoadBalancerTestUtils.commonRouteAction(loadBalancer)
@@ -43,7 +43,7 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
     succeed
   }
 
-  it should "routes to the available server (multi-thread environment)" in {
+  it should "route to the available server (multi-thread environment)" in {
     val loadBalancer = createRoundRobinLBWithSingleGroup()
 
     Await.result(
