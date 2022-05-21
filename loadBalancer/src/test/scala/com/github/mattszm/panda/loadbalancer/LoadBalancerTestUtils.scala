@@ -2,7 +2,6 @@ package com.github.mattszm.panda.loadbalancer
 
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
 import com.github.mattszm.panda.routes.Group
-import com.github.mattszm.panda.utils.PersistenceError
 import monix.eval.Task
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
@@ -30,13 +29,13 @@ object LoadBalancerTestUtils {
 
       override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
 
-      override def addParticipant(participant: Participant): Task[Either[PersistenceError, Unit]] = ???
+      override def addParticipant(participant: Participant): Task[Unit] = ???
 
-      override def addParticipants(participants: List[Participant]): Task[Either[PersistenceError, Unit]] = ???
+      override def addParticipants(participants: List[Participant]): Task[Unit] = ???
 
-      override def removeParticipant(participant: Participant): Task[Either[PersistenceError, Unit]] = ???
+      override def removeParticipant(participant: Participant): Task[Unit] = ???
 
-      override def removeAllParticipantsAssociatedWithGroup(group: Group): Task[Either[PersistenceError, Unit]] = ???
+      override def removeAllParticipantsAssociatedWithGroup(group: Group): Task[Unit] = ???
     }
   }
 

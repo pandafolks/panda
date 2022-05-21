@@ -6,6 +6,7 @@ import org.http4s.client.Client
 
 final class HashLoadBalancerImpl(private val client: Client[Task],
                                  private val participantsCache: ParticipantsCache,
-                                 private val consistentHashingState: ConsistentHashingState) {
+                                 private val consistentHashingState: ConsistentHashingState,
+                                 private val retriesNumber: Int = 10) {
 
 }
