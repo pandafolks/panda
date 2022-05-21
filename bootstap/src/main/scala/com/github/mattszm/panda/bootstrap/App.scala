@@ -12,7 +12,7 @@ import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.mattszm.panda.management.ParticipantsRouting
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
-import com.github.mattszm.panda.routes.{Group, HttpMethod, RoutesTreeImpl, RoutesTrees}
+import com.github.mattszm.panda.routes.{Group, RoutesTrees}
 import com.github.mattszm.panda.user.AuthRouting
 import com.github.mattszm.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
@@ -30,10 +30,7 @@ object App extends MonixServerApp {
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
-      routesTrees = RoutesTrees(
-        get = Some(RoutesTreeImpl.construct(routesMappingInitializationEntries, HttpMethod.Get)),
-        post = Some(RoutesTreeImpl.construct(routesMappingInitializationEntries, HttpMethod.Post))
-      )
+      routesTrees = RoutesTrees.construct(routesMappingInitializationEntries)
 
       daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
 

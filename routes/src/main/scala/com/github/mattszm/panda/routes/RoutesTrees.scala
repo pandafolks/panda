@@ -1,3 +1,24 @@
 package com.github.mattszm.panda.routes
 
-final case class RoutesTrees(get: Option[RoutesTree] = Option.empty, post: Option[RoutesTree] = Option.empty)
+import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
+import org.http4s.Method
+
+final case class RoutesTrees(get: RoutesTree, post: RoutesTree) {
+  def get(method: Method): RoutesTree =
+    method match {
+      case Method.GET => get
+      case Method.POST => post
+    }
+}
+
+object RoutesTrees {
+  def construct(data: RoutesMappingInitDto): RoutesTrees = {
+    val dataWithUnifiedPrefixes = data.withUnifiedPrefixes
+
+    RoutesTrees(
+      get = RoutesTreeImpl.construct(dataWithUnifiedPrefixes, HttpMethod.Get),
+      post = RoutesTreeImpl.construct(dataWithUnifiedPrefixes, HttpMethod.Post)
+    )
+
+  }
+}

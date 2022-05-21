@@ -15,6 +15,9 @@ final case class RoutesMappingInitDto(
     case _: HttpMethod.Get.type => getMappers
     case _: HttpMethod.Post.type  => postMappers
   }
+
+  def withUnifiedPrefixes: RoutesMappingInitDto =
+    this.copy(prefixes = this.prefixes.view.mapValues(_.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse).toMap)
 }
 
 object RoutesMappingInitDto {

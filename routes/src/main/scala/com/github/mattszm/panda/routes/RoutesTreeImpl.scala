@@ -25,27 +25,23 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
 object RoutesTreeImpl {
 
-  def construct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTreeImpl = {
-    val dataWithProcessedPrefixes = data.copy(
-      prefixes = data.prefixes.view.mapValues(
-        _.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse
-      ).toMap
-    )
+  def unifyPrefixesAndConstruct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTree =
+    construct(data.withUnifiedPrefixes, httpMethod)
 
+  def construct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTree =
     new RoutesTreeImpl(
-      dataWithProcessedPrefixes.get(httpMethod).iterator
+      data.get(httpMethod).iterator
         .foldLeft(Node(RoutesTree.Wildcard, List.empty))((root, entry) =>
           insert(
             root = root,
             path = entry._1,
             info = GroupInfo(
               Group(entry._2),
-              Path.unsafeFromString(dataWithProcessedPrefixes.prefixes.getOrElse(entry._2, ""))
+              Path.unsafeFromString(data.prefixes.getOrElse(entry._2, ""))
             )
           )
         )
     )
-  }
 
   private def insert(root: Node, path: String, info: GroupInfo): Node = {
 

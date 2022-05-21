@@ -17,7 +17,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   )
 
   "RoutesTree#construct" should "construct appropriate tree" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(commonData)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(commonData)
 
     tree.getRoot.value should be(RoutesTree.Wildcard)
 
@@ -57,7 +57,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
       ))
     )
 
-    val tree: RoutesTree = RoutesTreeImpl.construct(data)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(data)
 
     tree.getRoot.value should be(RoutesTree.Wildcard)
     val childrenFirstLayer = tree.getRoot.children
@@ -81,7 +81,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
       ))
     )
 
-    val tree: RoutesTree = RoutesTreeImpl.construct(data)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(data)
 
     val children = tree.getRoot.children
     children.size should be(5)
@@ -92,7 +92,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   }
 
   "RoutesTree#construct#specifyGroup" should "return matching Group Info if exists" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(commonData)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(commonData)
 
     tree.specifyGroup(Path.unsafeFromString("cars")) should be(
       Some(GroupInfo(group = Group("cars"), Path.unsafeFromString("api/v1"))))
@@ -105,20 +105,20 @@ class RoutesTreeImplTest extends AnyFlatSpec {
   }
 
   it should "return None if there is no matching group" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(commonData)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(commonData)
 
     tree.specifyGroup(Path.unsafeFromString("/cafrfds")) should be(None)
     tree.specifyGroup(Path.unsafeFromString("/cars/random")) should be(None)
   }
 
   it should "return None if the provided path is empty" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(commonData)
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(commonData)
 
     tree.specifyGroup(Path.unsafeFromString("")) should be(None)
   }
 
   it should "always return None if there are no available routes" in {
-    val tree: RoutesTree = RoutesTreeImpl.construct(RoutesMappingInitDto(Map.empty, Map.empty))
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(RoutesMappingInitDto(Map.empty, Map.empty))
 
     tree.specifyGroup(Path.unsafeFromString("/cars/random")) should be(None)
     tree.specifyGroup(Path.unsafeFromString("planes/somePlaneId123/passengers/")) should be(None)
