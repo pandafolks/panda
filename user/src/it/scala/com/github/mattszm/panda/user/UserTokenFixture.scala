@@ -1,7 +1,9 @@
 package com.github.mattszm.panda.user
 
-import com.github.mattszm.panda.user.token.Token
-import monix.connect.mongodb.client.{CollectionCodecRef, MongoConnection}
+import cats.effect.Resource
+import com.github.mattszm.panda.user.token.{Token, TokenService, TokenServiceImpl, TokensConfig}
+import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
+import monix.eval.Task
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
@@ -10,8 +12,9 @@ import org.testcontainers.utility.DockerImageName
 
 trait UserTokenFixture {
   private val dbName = "test"
-  protected val mongoContainer: MongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo")
-    .withTag("4.0.10"))
+  protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
+    DockerImageName.parse("mongo").withTag("4.0.10")
+  )
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
@@ -28,6 +31,9 @@ trait UserTokenFixture {
 
   private val userDao: UserDao = new UserDaoImpl(usersWithTokensConnection)
   protected val userService: UserService = new UserServiceImpl(userDao)(usersWithTokensConnection)
+
+  private val tokensConfig = TokensConfig(3)
+  protected val tokenService: TokenService = new TokenServiceImpl(tokensConfig)(usersWithTokensConnection)
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }

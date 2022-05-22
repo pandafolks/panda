@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.effect.Resource
 import com.github.mattszm.panda.user.cache.{CustomCache, CustomCacheImpl}
 import com.github.mattszm.panda.user.{User, UserId}
+import com.google.common.annotations.VisibleForTesting
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
@@ -23,7 +24,7 @@ final class TokenServiceImpl(private val config: TokensConfig)(private val c: Re
   private val readmeText : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
     .getOrElse(Random.alphanumeric.take(20).mkString(""))
   private final val key = PrivateKey(Codec.toUTF8(readmeText))
-  private final val crypto = CryptoBits(key)
+  @VisibleForTesting private final val crypto = CryptoBits(key)
   private final val clock = java.time.Clock.systemUTC
   private final val tokenTimeToLive = config.timeToLive
 
