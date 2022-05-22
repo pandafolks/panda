@@ -1,9 +1,7 @@
 package com.github.mattszm.panda.user
 
-import cats.effect.Resource
 import com.github.mattszm.panda.user.token.{Token, TokenService, TokenServiceImpl, TokensConfig}
-import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
-import monix.eval.Task
+import monix.connect.mongodb.client.{CollectionCodecRef, MongoConnection}
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
