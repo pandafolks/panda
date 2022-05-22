@@ -10,5 +10,5 @@ trait UserService {
 
   def delete(credentials: UserCredentials): Task[Boolean]
 
-  def create(username: String, password: String): Task[Either[PersistenceError, Unit]]
+  def create(username: String, password: String): Task[Either[PersistenceError, UserId]]
 }

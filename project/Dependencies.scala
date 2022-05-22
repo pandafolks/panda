@@ -11,6 +11,7 @@ object Dependencies {
   private val sstMicrometerJmxPureConfig = "com.avast" %% "sst-micrometer-jmx-pureconfig" % Versions.sst
   private val sstMonixCatnapPureConfig = "com.avast" %% "sst-monix-catnap-pureconfig" % Versions.sst
   private val testContainers = "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.testContainers
+  private val testMongoContainer = "com.dimafeng" %% "testcontainers-scala-mongodb" % Versions.testContainers
   private val uPickle = "com.lihaoyi" %% "upickle" % "1.5.0"
   private val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % "0.2.2"
   private val tsec = "io.github.jmcardon" %% "tsec-http4s" % "0.2.0"
@@ -23,6 +24,7 @@ object Dependencies {
   private val scalaCacheCore =  "com.github.cb372" %% "scalacache-core" % "0.28.0"
   private val scalaCacheGuava = "com.github.cb372" %% "scalacache-guava" % "0.28.0"
   private val scalaCacheCats = "com.github.cb372" %% "scalacache-cats-effect" % "0.28.0"
+  private val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.16.0"
 
   val scalafixScaluzzi = "com.github.vovapolu" %% "scaluzzi" % "0.1.15"
   val scalafixSortImports = "com.nequissimus" %% "sort-imports" % "0.5.5"
@@ -32,13 +34,15 @@ object Dependencies {
   private object Versions {
     val sst = "0.3.3"
     val silencer = "1.7.8"
-    val testContainers = "0.38.6"
+    val testContainers = "0.40.6"
     val circe = "0.14.1"
   }
 
   private val CommonTestDependencies = Seq(
     scalaTest % Test,
-    testContainers % Test
+    testContainers % Test,
+    testMongoContainer % Test,
+    scalaCheck % Test
   )
 
   private val CommonDependencies = Seq(

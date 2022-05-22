@@ -1,20 +1,16 @@
 package com.github.mattszm.panda.db
 
 import cats.effect.Resource
-import com.github.mattszm.panda.db.MongoAppClient.{PARTICIPANT_EVENTS_COLLECTION_NAME, SEQUENCE_COLLECTION_NAME, TOKENS_COLLECTION_NAME, USERS_COLLECTION_NAME}
-import com.github.mattszm.panda.participant.event.{ParticipantEvent, ParticipantEventDataModification, ParticipantEventType}
-import com.github.mattszm.panda.sequence.{Sequence, SequenceKey}
+import com.github.mattszm.panda.participant.event.ParticipantEvent
+import com.github.mattszm.panda.participant.event.ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME
+import com.github.mattszm.panda.sequence.Sequence
 import com.github.mattszm.panda.user.User
+import com.github.mattszm.panda.user.User.USERS_COLLECTION_NAME
 import com.github.mattszm.panda.user.token.Token
+import com.github.mattszm.panda.user.token.Token.TOKENS_COLLECTION_NAME
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import org.bson.UuidRepresentation
-import org.bson.codecs.UuidCodec
-import org.bson.codecs.configuration.CodecRegistries
-import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
-import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
 
@@ -27,41 +23,15 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
     MongoClientSettings.builder()
       .credential(MongoCredential.createCredential(config.username, config.dbName, config.password.toCharArray))
       .applyToClusterSettings(builder => {
-        builder.hosts(
-          config.contactPoints.map(cp => new ServerAddress(cp.host, cp.port)).asJava
-        )
+        builder.hosts(config.contactPoints.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
         ()
       }
       ).build()
 
-  private val javaCodecs = CodecRegistries.fromCodecs(
-    new UuidCodec(UuidRepresentation.STANDARD)
-  )
-
-  private val usersCol = CollectionCodecRef(config.dbName, USERS_COLLECTION_NAME, classOf[User],
-    fromRegistries(fromProviders(classOf[User]), javaCodecs)
-  )
-
-  private val participantEventsCol = CollectionCodecRef(config.dbName, PARTICIPANT_EVENTS_COLLECTION_NAME,
-    classOf[ParticipantEvent],
-    fromRegistries(fromProviders(
-      classOf[ParticipantEvent],
-      classOf[ParticipantEventDataModification],
-      classOf[ParticipantEventType]
-    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
-  )
-
-  private val sequenceCol = CollectionCodecRef(config.dbName, SEQUENCE_COLLECTION_NAME,
-    classOf[Sequence],
-    fromRegistries(fromProviders(
-      classOf[Sequence],
-      classOf[SequenceKey]
-    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
-  )
-
-  private val tokensCol = CollectionCodecRef(config.dbName, TOKENS_COLLECTION_NAME, classOf[Token],
-    fromRegistries(fromProviders(classOf[Token]), javaCodecs)
-  )
+  private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
+  private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(config.dbName)
+  private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName)
+  private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
 
   private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
@@ -112,11 +82,4 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
       ).runSyncUnsafe(10.seconds)
     mongoClient.close()
   }
-}
-
-object MongoAppClient {
-  final val USERS_COLLECTION_NAME = "users"
-  final val PARTICIPANT_EVENTS_COLLECTION_NAME = "participant_events"
-  final val SEQUENCE_COLLECTION_NAME = "sequence_generator"
-  final val TOKENS_COLLECTION_NAME = "tokens"
 }

@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run tests
+      - name: Run Integration Tests
+        run: sbt coverage it:test
+      - name: Run Unit Tests
         run: sbt coverage test
       - name: Coverage Report
         run: sbt coverageReport

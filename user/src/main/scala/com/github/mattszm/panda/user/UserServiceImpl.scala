@@ -13,7 +13,7 @@ import tsec.passwordhashers.jca.BCrypt
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
-final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials])(
+final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials] = List.empty)(
   private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserService {
 
   locally {
@@ -41,7 +41,7 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
           .foldF(Task.now(false))(userDao.delete(_, userOperator))
     }
 
-  override def create(username: String, password: String): Task[Either[PersistenceError, Unit]] =
+  override def create(username: String, password: String): Task[Either[PersistenceError, UserId]] =
     c.use {
       case (userOperator, _) =>
         for {
@@ -52,6 +52,6 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
             userDao.insertOne(User(id, username, pwd), userOperator)
           else
             Task.now(Left(AlreadyExists("User with the username \"" + username + "\" already exists")))
-        } yield result
+        } yield result.map(_ => id)
     }
 }
