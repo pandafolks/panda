@@ -24,9 +24,7 @@ trait UserTokenFixture {
 
   private val usersCol: CollectionCodecRef[User] = User.getCollection(dbName)
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(dbName)
-
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
-
 
   private val userDao: UserDao = new UserDaoImpl(usersWithTokensConnection)
   protected val userService: UserService = new UserServiceImpl(userDao)(usersWithTokensConnection)
