@@ -78,7 +78,11 @@ val IT = config("it") extend Test
 lazy val panda = (project in file("."))
   .configs(IntegrationTest, IT)
   .settings(sharedSettings)
-  .settings(name := "panda")
+  .settings(
+    name := "panda",
+    assembly / mainClass := Some("com.github.mattszm.panda.bootstrap.App"),
+    assembly / assemblyJarName := "panda.jar",
+  )
   .aggregate(bootstap, db, gateway, loadBalancer, participant, routes, sequence, user, utils)
   .dependsOn(bootstap, db, gateway, loadBalancer, participant, routes, sequence, user, utils)
 
@@ -92,6 +96,12 @@ lazy val sequence = pandaConnector("sequence", Dependencies.sequenceDependencies
 lazy val user = pandaConnector("user", Dependencies.userDependencies, Seq(utils))
 lazy val utils = pandaConnector("utils", Dependencies.utilsDependencies)
 
+mainClass in (Compile, run) := Some("com.github.mattszm.panda.bootstrap.App")
+
+ThisBuild / assemblyMergeStrategy := {
+  case PathList("META-INF", _*) => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}
 
 def pandaConnector(
                     moduleName: String,
