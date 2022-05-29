@@ -3,7 +3,7 @@ package com.github.mattszm.panda.participant.event
 import com.github.mattszm.panda.participant.Participant
 import com.github.mattszm.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
-import com.github.mattszm.panda.utils.NotExists
+import com.github.mattszm.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
 import monix.execution.Scheduler
 import org.scalatest.concurrent.ScalaFutures
@@ -95,6 +95,23 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     whenReady(f) { res =>
       res._1.isLeft should be(true)
       res._2.size should be(0)
+    }
+  }
+
+  it should "fail if there is already a participant with requested identifier" in {
+    val identifier = randomString("identifier")
+
+    val f = participantEventService.createParticipant(ParticipantModificationDto(
+      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Option.empty
+    )).flatMap(_ =>
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.0.0.1"), port = Some(131213), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check2"), working = Option.empty
+      ))
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res.isLeft should be(true)
+      res should be(Left(AlreadyExists("Participant with identifier \"" + identifier + "\" already exists")))
     }
   }
 
