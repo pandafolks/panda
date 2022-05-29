@@ -35,9 +35,9 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
       }
       ).build()
 
-  private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
   private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(config.dbName)
   private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName)
+  private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
 
   private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))

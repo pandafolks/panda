@@ -67,25 +67,17 @@ final class ParticipantEventServiceImpl(
           else
             insertEvent(
               participantIdentifier.get,
-              ParticipantEventDataModification.of(participantModificationDto)
-                .copy(heartbeatRoute = participantModificationDto.heartbeatRoute),
+              ParticipantEventDataModification.of(participantModificationDto),
               ParticipantEventType.ModifiedData()
             )(sequenceOperator, participantEventOperator)
 
           finalRes <-
-            if (initRes.isLeft) Task.now(initRes)
-            else if (!participantModificationDto.working.getOrElse(true))
-              insertEvent(
-                participantIdentifier.get,
-                ParticipantEventDataModification.empty,
-                ParticipantEventType.TurnedOff()
-              )(sequenceOperator, participantEventOperator)
-            else
-              insertEvent(
-                participantIdentifier.get,
-                ParticipantEventDataModification.empty,
-                ParticipantEventType.TurnedOn()
-              )(sequenceOperator, participantEventOperator)
+            if (initRes.isLeft || participantModificationDto.working.isEmpty) Task.now(initRes)
+            else insertEvent(
+              participantIdentifier.get,
+              ParticipantEventDataModification.empty,
+              if (participantModificationDto.working.get) ParticipantEventType.TurnedOn() else ParticipantEventType.TurnedOff()
+            )(sequenceOperator, participantEventOperator)
         } yield finalRes
     }
   }
