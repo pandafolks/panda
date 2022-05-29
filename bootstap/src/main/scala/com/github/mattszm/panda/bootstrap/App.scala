@@ -9,8 +9,7 @@ import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
 import com.github.mattszm.panda.db.MongoAppClient
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
-import com.github.mattszm.panda.management.ParticipantsRouting
-import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl}
+import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl, ParticipantsRouting}
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
 import com.github.mattszm.panda.routes.{Group, RoutesTrees}
 import com.github.mattszm.panda.user.AuthRouting

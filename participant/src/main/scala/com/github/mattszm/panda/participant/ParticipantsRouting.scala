@@ -1,10 +1,9 @@
-package com.github.mattszm.panda.management
+package com.github.mattszm.panda.participant
 
 import cats.implicits.toTraverseOps
-import com.github.mattszm.panda.management.ManagementRouting.ParticipantsModificationResult
+import com.github.mattszm.panda.participant.ManagementRouting.ParticipantsModificationResult
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
 import com.github.mattszm.panda.participant.event.ParticipantEventService
-import com.github.mattszm.panda.participant.{Participant, ParticipantsCache}
 import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.user.{SubRoutingWithAuth, User}
 import com.github.mattszm.panda.utils.PersistenceError

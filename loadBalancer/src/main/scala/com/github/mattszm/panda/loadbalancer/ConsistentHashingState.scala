@@ -54,8 +54,8 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
       ))
 
   override def notifyAboutAdd(items: List[Participant]): Task[Unit] =
-    Task.traverse(items)(item => Task.eval(add(item))).void
+    Task.parTraverse(items)(item => Task.eval(add(item))).void
 
   override def notifyAboutRemove(items: List[Participant]): Task[Unit] =
-    Task.traverse(items)(item => Task.eval(remove(item))).void
+    Task.parTraverse(items)(item => Task.eval(remove(item))).void
 }

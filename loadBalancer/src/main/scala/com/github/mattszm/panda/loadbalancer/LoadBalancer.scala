@@ -9,6 +9,15 @@ import org.slf4j.Logger
 import org.typelevel.ci.CIString
 
 trait LoadBalancer {
+  /**
+   * Routes request to one of the participants belonging to a related group.
+   * The participant choice depends on the type of the implemented load balancer.
+   *
+   * @param request         Received request that needs to be forwarded
+   * @param requestedPath   Path that will be the request forwarded to
+   * @param group           The group from which the participant should be selected
+   * @return                Reply received from the end server
+   */
   def route(request: Request[Task], requestedPath: Path, group: Group): Task[Response[Task]]
 }
 

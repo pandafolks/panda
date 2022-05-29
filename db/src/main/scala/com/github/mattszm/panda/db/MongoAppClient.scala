@@ -8,6 +8,7 @@ import com.github.mattszm.panda.user.User
 import com.github.mattszm.panda.user.User.USERS_COLLECTION_NAME
 import com.github.mattszm.panda.user.token.Token
 import com.github.mattszm.panda.user.token.Token.TOKENS_COLLECTION_NAME
+import com.mongodb.connection.ClusterConnectionMode
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
@@ -23,7 +24,13 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
     MongoClientSettings.builder()
       .credential(MongoCredential.createCredential(config.username, config.dbName, config.password.toCharArray))
       .applyToClusterSettings(builder => {
-        builder.hosts(config.contactPoints.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
+        builder
+          .hosts(config.contactPoints.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
+          .mode(config.mode.toLowerCase() match {
+            case "multiple" => ClusterConnectionMode.MULTIPLE
+            case "load_balanced" => ClusterConnectionMode.LOAD_BALANCED
+            case _ => ClusterConnectionMode.SINGLE
+          })
         ()
       }
       ).build()
@@ -51,7 +58,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           Seq(
             IndexModel(
               Indexes.ascending("username"),
-              IndexOptions().background(true).unique(false)
+              IndexOptions().background(true).unique(true)
             )
           )
         )
