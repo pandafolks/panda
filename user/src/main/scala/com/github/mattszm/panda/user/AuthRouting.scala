@@ -16,7 +16,7 @@ final class AuthRouting(private val tokenService: TokenService, private val user
       (
         for {
           user <- req.as[UserCredentials]
-          userOpt <- userService.checkPassword(user)
+          userOpt <- userService.validateUser(user)
         } yield userOpt
         ).flatMap {
         case Some(user) => Ok(tokenService.signToken(user))

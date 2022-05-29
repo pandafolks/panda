@@ -6,20 +6,20 @@ import monix.eval.Task
 
 trait ParticipantEventDao {
   /**
-   * Checks whether participant with requested identifier exists
+   * Checks whether participant with requested identifier exists.
    *
-   * @param identifier                  participant unique identifier
-   * @param participantEventOperator    participant DB entry point
-   * @return                            true if exists, false otherwise
+   * @param identifier                  Participant unique identifier
+   * @param participantEventOperator    Participant DB entry point
+   * @return                            True if exists, false otherwise
    */
   def exists(identifier: String, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Boolean]
 
   /**
-   * Inserts participant event into the persistence layer
+   * Inserts participant event into the persistence layer.
    *
-   * @param participantEvent            participant event represented as an object of common type for all types of events
-   * @param participantEventOperator    participant DB entry point
-   * @return                            either empty if saved successfully or PersistenceError if the error during saving occurred
+   * @param participantEvent            Participant event represented as an object of common type for all types of events
+   * @param participantEventOperator    Participant DB entry point
+   * @return                            Either empty if saved successfully or PersistenceError if the error during saving occurred
    */
   def insertOne(participantEvent: ParticipantEvent, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Either[PersistenceError, Unit]]
 }

@@ -32,7 +32,7 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
 
   override def getById(id: UserId): Task[Option[User]] = userDao.byId(id)
 
-  override def checkPassword(credentials: UserCredentials): Task[Option[User]] = userDao.validateUser(credentials)
+  override def validateUser(credentials: UserCredentials): Task[Option[User]] = userDao.validateUser(credentials)
 
   override def delete(credentials: UserCredentials): Task[Boolean] =
     c.use {

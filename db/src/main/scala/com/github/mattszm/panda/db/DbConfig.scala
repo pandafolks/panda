@@ -2,6 +2,7 @@ package com.github.mattszm.panda.db
 
 final case class DbConfig(
                            contactPoints: List[ContactPoint],
+                           mode: String,
                            username: String,
                            password: String,
                            dbName: String,
