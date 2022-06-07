@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import scala.util.Random
 
 /**
+ * The load balancer tries to hit all available participants.
  * This is an important feature in the worst-case scenario. However, because of that, the solution is relatively slow.
  * The RandomLoadBalancer should be used only with a small number of participants. In other cases, either
  * the RoundRobinLoadBalancer or HashLoadBalancer should be preferred.
