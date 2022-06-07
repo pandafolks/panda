@@ -9,6 +9,11 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Random
 
+/**
+ * This is an important feature in the worst-case scenario. However, because of that, the solution is relatively slow.
+ * The RandomLoadBalancer should be used only with a small number of participants. In other cases, either
+ * the RoundRobinLoadBalancer or HashLoadBalancer should be preferred.
+ */
 final class RandomLoadBalancerImpl(private val client: Client[Task],
                                    private val participantsCache: ParticipantsCache) extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
