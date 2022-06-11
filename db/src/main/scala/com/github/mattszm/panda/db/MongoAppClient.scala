@@ -86,7 +86,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
             )
           )
         )
-      ).runSyncUnsafe(10.seconds)
+      ).runSyncUnsafe(30.seconds)
     mongoClient.close()
   }
 }

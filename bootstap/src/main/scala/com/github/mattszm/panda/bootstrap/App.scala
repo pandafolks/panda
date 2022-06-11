@@ -50,7 +50,8 @@ object App extends MonixServerApp {
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(daosAndServices.getTokenService, daosAndServices.getUserService)
 
-      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getTokenService, daosAndServices.getUserService)
+      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getTokenService, daosAndServices.getUserService)(
+        appConfiguration.consistency.fullConsistencyMaxDelay)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       participantsRouting = new ParticipantsRouting(daosAndServices.getParticipantEventService, participantsCache)
       participantsAuthedService = authMiddleware(participantsRouting.getRoutes)

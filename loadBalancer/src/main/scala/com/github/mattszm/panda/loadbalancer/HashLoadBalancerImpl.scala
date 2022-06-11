@@ -21,7 +21,7 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
   private val random = new Random(System.currentTimeMillis())
 
   locally {
-    participantsCache.registerListener(consistentHashingState).runSyncUnsafe(10.seconds)
+    participantsCache.registerListener(consistentHashingState).runSyncUnsafe(30.seconds)
   }
 
   override def route(request: Request[Task], requestedPath: Uri.Path, group: Group): Task[Response[Task]] = {

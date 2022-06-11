@@ -17,8 +17,9 @@ final case class AppConfiguration(
                                    gatewayClient: Http4sBlazeClientConfig,
                                    gateway: GatewayConfig,
                                    db: DbConfig,
+                                   consistency: ConsistencyConfig,
                                    authTokens: TokensConfig,
-                                   initUser: UserCredentials
+                                   initUser: UserCredentials,
                                  )
 
 object AppConfiguration {
