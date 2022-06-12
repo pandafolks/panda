@@ -29,7 +29,7 @@ final class ParticipantsRouting(private val participantEventService: Participant
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
       handleParticipantsResponse(
         participantsCache.getAllGroups.
-          flatMap(groups => groups.map(group => participantsCache.getParticipantsAssociatedWithGroup(group)).sequence)
+          flatMap(groups => groups.map(group => participantsCache.getWorkingParticipantsAssociatedWithGroup(group)).sequence)
           .map(_.flatten)
       )
 
@@ -70,7 +70,7 @@ final class ParticipantsRouting(private val participantEventService: Participant
       } yield response
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group as _ =>
-      handleParticipantsResponse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))
+      handleParticipantsResponse(participantsCache.getWorkingParticipantsAssociatedWithGroup(Group(group)))
   }
 
   private def handleParticipantsResponse(participants: Task[Seq[Participant]]): Task[Response[Task]] =

@@ -40,7 +40,8 @@ object App extends MonixServerApp {
         Participant("127.0.0.1", 4000, Group("planes"), "planesInstance1")
       ) // temp solution //todo: delete
 
-      participantsCache <- Resource.eval(ParticipantsCacheImpl(tempParticipants))
+      participantsCache <- Resource.eval(ParticipantsCacheImpl(daosAndServices.getParticipantEventService,
+        tempParticipants, appConfiguration.consistency.fullConsistencyMaxDelay))
       loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
         client = httpGatewayClient,
         participantsCache = participantsCache

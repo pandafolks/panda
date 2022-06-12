@@ -2,6 +2,7 @@ package com.github.mattszm.panda.participant.event
 
 import cats.data.EitherT
 import cats.effect.Resource
+import com.github.mattszm.panda.participant.Participant
 import com.github.mattszm.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
 import com.github.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
@@ -101,6 +102,18 @@ final class ParticipantEventServiceImpl(
             )(sequenceOperator, participantEventOperator)
         } yield res
     }
+  }
+
+  override def constructAllParticipants(): Task[List[Participant]] = {
+    //todo mszmal: ...
+    c.use {
+      case (participantEventOperator, _) =>
+        for {
+          res <- participantEventOperator.source.findAll.toListL
+        } yield res
+    }
+
+    Task.now(List.empty)
   }
 
   private def insertEvent(

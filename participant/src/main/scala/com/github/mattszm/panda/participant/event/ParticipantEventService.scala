@@ -1,5 +1,6 @@
 package com.github.mattszm.panda.participant.event
 
+import com.github.mattszm.panda.participant.Participant
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
 import com.github.mattszm.panda.utils.PersistenceError
 import monix.eval.Task
@@ -29,4 +30,11 @@ trait ParticipantEventService {
    * @return                                Either empty if removed successfully or PersistenceError if the error during removing occurred
    */
   def removeParticipant(participantIdentifier: String): Task[Either[PersistenceError, String]]
+
+  /**
+   * Returns all participants that exists in the persistence layer.
+   *
+   * @return                                List of the participants
+   */
+  def constructAllParticipants(): Task[List[Participant]]
 }

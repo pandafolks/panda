@@ -9,6 +9,8 @@ trait ParticipantsCache {
 
   def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
+  def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
+
   def addParticipant(participant: Participant): Task[Unit]
 
   def addParticipants(participants: List[Participant]): Task[Unit]

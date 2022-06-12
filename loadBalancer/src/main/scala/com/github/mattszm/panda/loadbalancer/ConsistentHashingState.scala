@@ -1,6 +1,6 @@
 package com.github.mattszm.panda.loadbalancer
 
-import com.github.mattszm.panda.participant.Participant
+import com.github.mattszm.panda.participant.{Participant, Working}
 import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
@@ -13,6 +13,7 @@ import scala.util.Random
 final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100) extends ChangeListener[Participant] {
   // add a background job that will clear empty groups. It's more efficient to keep unused groups for a while
   // than check on every remove (cannot be performed in O(1))
+  // ConsistentHashingState should keep only WORKING participants
 
   @VisibleForTesting
   private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, Participant]] = new ConcurrentHashMap
@@ -54,7 +55,7 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
       ))
 
   override def notifyAboutAdd(items: List[Participant]): Task[Unit] =
-    Task.parTraverse(items)(item => Task.eval(add(item))).void
+    Task.parTraverse(items)(item => if (item.status == Working) Task.eval(add(item)) else Task.eval(remove(item))).void
 
   override def notifyAboutRemove(items: List[Participant]): Task[Unit] =
     Task.parTraverse(items)(item => Task.eval(remove(item))).void

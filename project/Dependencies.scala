@@ -4,6 +4,7 @@ object Dependencies {
   private val sstBundleMonixHttp4sBlaze = "com.avast" %% "sst-bundle-monix-http4s-blaze" % "0.15.7"
   private val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   private val scalaTest = "org.scalatest" %% "scalatest" % "3.2.3"
+  private val mockito = "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0"
   private val sstFlywayPureConfig = "com.avast" %% "sst-flyway-pureconfig" % Versions.sst
   private val sstHttp4sClientBlazePureConfig = "com.avast" %% "sst-http4s-client-blaze-pureconfig" % Versions.sst
   private val sstHttp4sClientMonixCatcap = "com.avast" %% "sst-http4s-client-monix-catnap" % Versions.sst
@@ -42,7 +43,8 @@ object Dependencies {
     scalaTest % Test,
     testContainers % Test,
     testMongoContainer % Test,
-    scalaCheck % Test
+    scalaCheck % Test,
+    mockito % Test
   )
 
   private val CommonDependencies = Seq(
