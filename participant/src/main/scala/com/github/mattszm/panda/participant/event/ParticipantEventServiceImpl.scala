@@ -2,13 +2,18 @@ package com.github.mattszm.panda.participant.event
 
 import cats.data.EitherT
 import cats.effect.Resource
-import com.github.mattszm.panda.participant.Participant
+import com.github.mattszm.panda.participant.{HeartbeatInfo, NotWorking, Participant}
 import com.github.mattszm.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
+import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import com.github.mattszm.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
+import monix.execution.Scheduler.global
+
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
 final class ParticipantEventServiceImpl(
                                          private val participantEventDao: ParticipantEventDao,
@@ -106,13 +111,25 @@ final class ParticipantEventServiceImpl(
 
   override def constructAllParticipants(): Task[List[Participant]] = {
     //todo mszmal: ...
-    c.use {
+    val dumbParticipant = Participant("", -1, Group(""), "", HeartbeatInfo(""), NotWorking)
+    val r = c.use {
       case (participantEventOperator, _) =>
-        for {
-          res <- participantEventOperator.source.findAll.toListL
-        } yield res
+        participantEventDao.getOrderedEvents(participantEventOperator)
+          .groupBy(_.participantIdentifier)
+          .mergeMap { participantEventsGroup =>
+            participantEventsGroup
+              .foldLeft((dumbParticipant, false)) {
+                case ((participant: Participant, shouldBeSkipped: Boolean), participantEvent: ParticipantEvent) =>
+                  participantEvent.convertEventIntoParticipant(participant, shouldBeSkipped)
+              }
+              .filterNot(_._2) // Do not return participants if there was a Removed event emitted and there was no Created event after it.
+              .map(_._1)
+          }
+          .toListL
     }
 
+    val a = Await.result(r.runToFuture(global), 10.seconds) // todo mszmal: work in progress...
+    println(a)
     Task.now(List.empty)
   }
 

@@ -38,6 +38,7 @@ final class ParticipantsRouting(private val participantEventService: Participant
         participantDtos <- req.req.as[Seq[ParticipantModificationDto]]
         saveResults <- participantDtos.map(participantEventService.createParticipant).sequence
         successfullySaved = parseSuccessfulResults(saveResults)
+        _ <- participantEventService.constructAllParticipants() // todo mszmal: remove!!!
         response <- Ok(ParticipantsModificationResult(
           message = s"Created successfully ${successfullySaved.size} participants out of ${saveResults.size} requested",
           successfulParticipantIdentifiers = successfullySaved,

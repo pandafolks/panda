@@ -1,5 +1,7 @@
 package com.github.mattszm.panda.participant.event
 
+import com.github.mattszm.panda.participant.{HeartbeatInfo, NotWorking, Participant, Working}
+import com.github.mattszm.panda.routes.Group
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.UuidRepresentation
 import org.bson.codecs.UuidCodec
@@ -14,7 +16,47 @@ final case class ParticipantEvent(
                                    participantDataModification: ParticipantEventDataModification,
                                    eventId: BsonInt32, // the _id precision is in seconds and it is not sufficient
                                    eventType: ParticipantEventType,
-                                 )
+                                 ) {
+  def convertEventIntoParticipant(participant: Participant, shouldBeSkipped: Boolean = false): (Participant, Boolean) =
+    this.eventType match {
+      // MainState
+      case ParticipantEventType.Created() => // init
+        (participant.copy(
+          host = this.participantDataModification.host.getOrElse(""),
+          port = this.participantDataModification.port.getOrElse(-1),
+          group = Group(this.participantDataModification.groupName.getOrElse("")),
+          identifier = this.participantIdentifier,
+          heartbeatInfo = HeartbeatInfo(this.participantDataModification.heartbeatRoute.getOrElse("")),
+          status = NotWorking,
+        ), false)
+      case ParticipantEventType.Removed() =>
+        (participant.copy(
+          status = NotWorking,
+        ), true)
+
+      // SubState
+      case ParticipantEventType.TurnedOn() =>
+        (participant.copy(
+          status = Working,
+        ), shouldBeSkipped)
+      case ParticipantEventType.TurnedOff() =>
+        (participant.copy(
+          status = NotWorking,
+        ), shouldBeSkipped)
+
+      // ModifiedData
+      case ParticipantEventType.ModifiedData() =>
+        (participant.copy(
+          host = this.participantDataModification.host.getOrElse(participant.host),
+          port = this.participantDataModification.port.getOrElse(participant.port),
+          group = this.participantDataModification.groupName.map(gn => Group(gn)).getOrElse(participant.group),
+          heartbeatInfo = this.participantDataModification.heartbeatRoute.map(hr => HeartbeatInfo(hr)).getOrElse(participant.heartbeatInfo),
+        ), shouldBeSkipped)
+
+      //todo mszmal: finish...
+      case _ => (participant, shouldBeSkipped)
+    }
+}
 
 object ParticipantEvent {
   final val PARTICIPANT_EVENTS_COLLECTION_NAME = "participant_events"

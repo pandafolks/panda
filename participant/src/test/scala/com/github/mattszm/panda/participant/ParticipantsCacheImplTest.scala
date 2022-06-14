@@ -12,8 +12,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class
-ParticipantsCacheImplTest extends AsyncFlatSpec {
+class ParticipantsCacheImplTest extends AsyncFlatSpec {
   implicit final val scheduler: Scheduler = global
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
