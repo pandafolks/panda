@@ -115,6 +115,35 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     }
   }
 
+  it should "insert Created event if there is already a participant with requested identifier, but there was a " +
+    "Removed event emitted after last Created event occurrence" in {
+    val identifier = randomString("identifier")
+
+    val f = participantEventService.createParticipant(ParticipantModificationDto(
+      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+    )).flatMap(_ =>
+      participantEventService.removeParticipant(identifier)
+    ).flatMap(_ =>
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.0.0.1"), port = Some(141414), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+      ))
+    ).flatMap(res =>
+      participantEventsAndSequencesConnection.use(p =>
+        p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL.map(_.sortBy(event => -event.eventId.intValue()))
+      ).map(events => (res, events))
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res._1.toOption.get should be(identifier)
+      res._2.size should be(3)
+      res._2.head.eventType should be(ParticipantEventType.Created())
+      res._2.head.participantDataModification.heartbeatRoute should be(Some("/api/check"))
+      res._2.head.participantDataModification.host should be(Some("127.0.0.1"))
+      res._2.head.participantDataModification.port should be(Some(141414))
+      res._2.head.participantDataModification.groupName should be(Some("planes"))
+    }
+  }
+
   "modifyParticipant" should "fail if there is participant with requested identifier" in {
     val identifier = randomString("identifier")
 
