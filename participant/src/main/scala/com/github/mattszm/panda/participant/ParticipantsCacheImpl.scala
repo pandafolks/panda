@@ -67,7 +67,7 @@ final class ParticipantsCacheImpl(private val participantEventService: Participa
 object ParticipantsCacheImpl {
   def apply(participantEventService: ParticipantEventService,
             initParticipants: List[Participant] = List.empty,
-            cacheRefreshInterval: Int = Int.MaxValue): Task[ParticipantsCacheImpl] =
+            cacheRefreshInterval: Int = -1): Task[ParticipantsCacheImpl] =
     for {
       participantsByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(initParticipants.map(p => (p.group, p))))
