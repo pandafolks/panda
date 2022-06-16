@@ -17,9 +17,9 @@ object Token {
     new UuidCodec(UuidRepresentation.STANDARD)
   )
 
-  def getCollection(dbName: String): CollectionCodecRef[Token] = CollectionCodecRef(
+  def getCollection(dbName: String, collectionName: String = TOKENS_COLLECTION_NAME): CollectionCodecRef[Token] = CollectionCodecRef(
     dbName,
-    TOKENS_COLLECTION_NAME,
+    collectionName,
     classOf[Token],
     fromRegistries(fromProviders(classOf[Token]), javaCodecs)
   )

@@ -4,6 +4,8 @@ import cats.data.EitherT
 import cats.effect.Resource
 import com.github.mattszm.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
 import com.github.mattszm.panda.participant.dto.ParticipantModificationDto
+import com.github.mattszm.panda.participant.{HeartbeatInfo, NotWorking, Participant}
+import com.github.mattszm.panda.routes.Group
 import com.github.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import com.github.mattszm.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
@@ -100,6 +102,25 @@ final class ParticipantEventServiceImpl(
               ParticipantEventType.Removed()
             )(sequenceOperator, participantEventOperator)
         } yield res
+    }
+  }
+
+  override def constructAllParticipants(): Task[List[Participant]] = {
+    val dumbParticipant = Participant("", -1, Group(""), "", HeartbeatInfo(""), NotWorking)
+    c.use {
+      case (participantEventOperator, _) =>
+        participantEventDao.getOrderedEvents(participantEventOperator)
+          .groupBy(_.participantIdentifier)
+          .mergeMap { participantEventsGroup =>
+            participantEventsGroup
+              .foldLeft((dumbParticipant, false)) {
+                case ((participant: Participant, shouldBeSkipped: Boolean), participantEvent: ParticipantEvent) =>
+                  participantEvent.convertEventIntoParticipant(participant, shouldBeSkipped)
+              }
+              .filterNot(_._2) // Do not return participants if there was a Removed event emitted and there was no Created event after it.
+              .map(_._1)
+          }
+          .toListL
     }
   }
 

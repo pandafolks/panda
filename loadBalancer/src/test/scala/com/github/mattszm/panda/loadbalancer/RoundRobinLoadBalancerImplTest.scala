@@ -1,5 +1,6 @@
 package com.github.mattszm.panda.loadbalancer
 
+import com.github.mattszm.panda.participant.event.ParticipantEventService
 import com.github.mattszm.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.mattszm.panda.routes.Group
 import monix.eval.Task
@@ -7,6 +8,7 @@ import monix.execution.Scheduler
 import monix.execution.Scheduler.global
 import org.http4s.dsl.io.Path
 import org.http4s.{Response, Status}
+import org.mockito.Mockito.mock
 import org.scalatest.Assertion
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.must.Matchers.be
@@ -18,6 +20,8 @@ import scala.concurrent.duration.DurationInt
 
 class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
   implicit final val scheduler: Scheduler = global
+
+  private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 
   private def createRoundRobinLBWithSingleGroup(containAvailable: Boolean = true): LoadBalancer =
     new RoundRobinLoadBalancerImpl(
@@ -61,7 +65,8 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
       Participant("193.207.130.133", 3000, Group("cars")),
       Participant("218.214.92.75", 4002, Group("cars"))
     )
-    val participantsCache: ParticipantsCache = Await.result(ParticipantsCacheImpl(tempParticipants).runToFuture, 5.seconds)
+    val participantsCache: ParticipantsCache = Await.result(
+      ParticipantsCacheImpl(mockParticipantEventService, tempParticipants).runToFuture, 5.seconds)
     val loadBalancer: LoadBalancer = new RoundRobinLoadBalancerImpl(client, participantsCache)
 
     loadBalancer.route(

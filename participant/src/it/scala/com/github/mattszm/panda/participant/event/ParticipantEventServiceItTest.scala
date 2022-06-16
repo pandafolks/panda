@@ -9,16 +9,22 @@ import monix.execution.Scheduler
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, EitherValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues}
 
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
+class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
+  with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach {
   implicit val scheduler: Scheduler = Scheduler.io("participant-event-service-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
   override protected def afterAll(): Unit = mongoContainer.stop()
+
+  override protected def beforeEach(): Unit = Await.result(participantEventsAndSequencesConnection.use {
+    case (p, _) => p.db.dropCollection(participantEventsColName)
+  }.runToFuture, 5.seconds)
 
   "createParticipant" should "insert Created event and assign default identifier" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.1", 1001, "cars")
@@ -112,6 +118,35 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     whenReady(f) { res =>
       res.isLeft should be(true)
       res should be(Left(AlreadyExists("Participant with identifier \"" + identifier + "\" already exists")))
+    }
+  }
+
+  it should "insert Created event if there is already a participant with requested identifier, but there was a " +
+    "Removed event emitted after last Created event occurrence" in {
+    val identifier = randomString("identifier")
+
+    val f = participantEventService.createParticipant(ParticipantModificationDto(
+      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+    )).flatMap(_ =>
+      participantEventService.removeParticipant(identifier)
+    ).flatMap(_ =>
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.0.0.1"), port = Some(141414), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+      ))
+    ).flatMap(res =>
+      participantEventsAndSequencesConnection.use(p =>
+        p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL.map(_.sortBy(event => -event.eventId.intValue()))
+      ).map(events => (res, events))
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res._1.toOption.get should be(identifier)
+      res._2.size should be(3)
+      res._2.head.eventType should be(ParticipantEventType.Created())
+      res._2.head.participantDataModification.heartbeatRoute should be(Some("/api/check"))
+      res._2.head.participantDataModification.host should be(Some("127.0.0.1"))
+      res._2.head.participantDataModification.port should be(Some(141414))
+      res._2.head.participantDataModification.groupName should be(Some("planes"))
     }
   }
 

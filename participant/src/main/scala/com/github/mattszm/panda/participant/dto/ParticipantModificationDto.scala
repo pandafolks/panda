@@ -3,12 +3,12 @@ package com.github.mattszm.panda.participant.dto
 import com.github.mattszm.panda.participant.Participant
 
 final case class ParticipantModificationDto(
-                                         host: Option[String],
-                                         port: Option[Int],
-                                         groupName: Option[String],
-                                         identifier: Option[String],
-                                         heartbeatRoute: Option[String],
-                                         working: Option[Boolean],
+                                         host: Option[String] = Option.empty,
+                                         port: Option[Int] = Option.empty,
+                                         groupName: Option[String] = Option.empty,
+                                         identifier: Option[String] = Option.empty,
+                                         heartbeatRoute: Option[String] = Option.empty,
+                                         working: Option[Boolean] = Option.empty,
                                        ) {
   def getIdentifier: Option[String] =
     identifier.orElse(

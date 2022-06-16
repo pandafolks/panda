@@ -18,13 +18,14 @@ object Sequence {
     new UuidCodec(UuidRepresentation.STANDARD)
   )
 
-  def getCollection(dbName: String): CollectionCodecRef[Sequence] = CollectionCodecRef(
-    dbName,
-    SEQUENCE_COLLECTION_NAME,
-    classOf[Sequence],
-    fromRegistries(fromProviders(
+  def getCollection(dbName: String, collectionName: String = SEQUENCE_COLLECTION_NAME): CollectionCodecRef[Sequence] =
+    CollectionCodecRef(
+      dbName,
+      collectionName,
       classOf[Sequence],
-      classOf[SequenceKey]
-    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
-  )
+      fromRegistries(fromProviders(
+        classOf[Sequence],
+        classOf[SequenceKey]
+      ), javaCodecs, DEFAULT_CODEC_REGISTRY)
+    )
 }

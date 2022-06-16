@@ -30,15 +30,9 @@ object LoadBalancerTestUtils {
 
       override def getAllGroups: Task[List[Group]] = ???
 
-      override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
+      override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
-      override def addParticipant(participant: Participant): Task[Unit] = ???
-
-      override def addParticipants(participants: List[Participant]): Task[Unit] = ???
-
-      override def removeParticipant(participant: Participant): Task[Unit] = ???
-
-      override def removeAllParticipantsAssociatedWithGroup(group: Group): Task[Unit] = ???
+      override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
 
       override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.toList)
     }
