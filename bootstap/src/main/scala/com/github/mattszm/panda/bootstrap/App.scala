@@ -9,9 +9,9 @@ import com.avast.sst.pureconfig.PureConfigModule
 import com.github.mattszm.panda.bootstrap.configuration.AppConfiguration
 import com.github.mattszm.panda.db.MongoAppClient
 import com.github.mattszm.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
-import com.github.mattszm.panda.participant.{Participant, ParticipantsCacheImpl, ParticipantsRouting}
+import com.github.mattszm.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
+import com.github.mattszm.panda.routes.RoutesTrees
 import com.github.mattszm.panda.routes.dto.RoutesMappingInitDto
-import com.github.mattszm.panda.routes.{Group, RoutesTrees}
 import com.github.mattszm.panda.user.AuthRouting
 import com.github.mattszm.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
@@ -34,14 +34,11 @@ object App extends MonixServerApp {
       daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
-      tempParticipants = List(
-        Participant("127.0.0.1", 3000, Group("cars")),
-        Participant("localhost", 3001, Group("cars")),
-        Participant("127.0.0.1", 4000, Group("planes"), "planesInstance1")
-      ) // temp solution //todo: delete
 
-      participantsCache <- Resource.eval(ParticipantsCacheImpl(daosAndServices.getParticipantEventService,
-        tempParticipants, appConfiguration.consistency.fullConsistencyMaxDelay))
+      participantsCache <- Resource.eval(ParticipantsCacheImpl(
+        daosAndServices.getParticipantEventService,
+        cacheRefreshInterval = appConfiguration.consistency.fullConsistencyMaxDelay
+      ))
       loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
         client = httpGatewayClient,
         participantsCache = participantsCache
