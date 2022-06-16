@@ -23,8 +23,8 @@ trait UserTokenFixture {
       }
       ).build()
 
-  private val usersCol: CollectionCodecRef[User] = User.getCollection(dbName)
-  private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(dbName)
+  private val usersCol: CollectionCodecRef[User] = User.getCollection(dbName, randomString(User.USERS_COLLECTION_NAME))
+  private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(dbName, randomString(Token.TOKENS_COLLECTION_NAME))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
 
   private val userDao: UserDao = new UserDaoImpl(usersWithTokensConnection)

@@ -18,11 +18,12 @@ object User {
     new UuidCodec(UuidRepresentation.STANDARD)
   )
 
-  def getCollection(dbName: String): CollectionCodecRef[User] = CollectionCodecRef(
-    dbName,
-    USERS_COLLECTION_NAME,
-    classOf[User],
-    fromRegistries(fromProviders(classOf[User]), javaCodecs)
-  )
+  def getCollection(dbName: String, collectionName: String = USERS_COLLECTION_NAME): CollectionCodecRef[User] =
+    CollectionCodecRef(
+      dbName,
+      collectionName,
+      classOf[User],
+      fromRegistries(fromProviders(classOf[User]), javaCodecs)
+    )
 }
 

@@ -57,14 +57,15 @@ object ParticipantEvent {
     new UuidCodec(UuidRepresentation.STANDARD)
   )
 
-  def getCollection(dbName: String): CollectionCodecRef[ParticipantEvent] = CollectionCodecRef(
-    dbName,
-    PARTICIPANT_EVENTS_COLLECTION_NAME,
-    classOf[ParticipantEvent],
-    fromRegistries(fromProviders(
+  def getCollection(dbName: String, collectionName: String = PARTICIPANT_EVENTS_COLLECTION_NAME): CollectionCodecRef[ParticipantEvent] =
+    CollectionCodecRef(
+      dbName,
+      collectionName,
       classOf[ParticipantEvent],
-      classOf[ParticipantEventDataModification],
-      classOf[ParticipantEventType]
-    ), javaCodecs, DEFAULT_CODEC_REGISTRY)
-  )
+      fromRegistries(fromProviders(
+        classOf[ParticipantEvent],
+        classOf[ParticipantEventDataModification],
+        classOf[ParticipantEventType]
+      ), javaCodecs, DEFAULT_CODEC_REGISTRY)
+    )
 }

@@ -24,8 +24,10 @@ trait ParticipantEventFixture {
       }
       ).build()
 
-  private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(dbName)
-  private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(dbName)
+  protected val sequenceColName: String = randomString(Sequence.SEQUENCE_COLLECTION_NAME)
+  protected val participantEventsColName: String = randomString(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME)
+  private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(dbName, sequenceColName)
+  private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(dbName, participantEventsColName)
 
   protected val participantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     MongoConnection.create2(settings, (participantEventsCol, sequenceCol))

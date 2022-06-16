@@ -9,16 +9,22 @@ import monix.execution.Scheduler
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, EitherValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues}
 
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
+class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
+  with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach {
   implicit val scheduler: Scheduler = Scheduler.io("participant-event-service-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
   override protected def afterAll(): Unit = mongoContainer.stop()
+
+  override protected def beforeEach(): Unit = Await.result(participantEventsAndSequencesConnection.use {
+    case (p, _) => p.db.dropCollection(participantEventsColName)
+  }.runToFuture, 5.seconds)
 
   "createParticipant" should "insert Created event and assign default identifier" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.1", 1001, "cars")
