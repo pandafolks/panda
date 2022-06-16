@@ -71,6 +71,10 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
                   Indexes.ascending("participantIdentifier"),
                   Indexes.descending("eventId")
                 ),
+                IndexOptions().background(true).unique(true)
+              ),
+              IndexModel(
+                Indexes.ascending("eventId"),
                 IndexOptions().background(false).unique(true)
               )
             )

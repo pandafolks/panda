@@ -8,10 +8,21 @@ import com.github.mattszm.panda.utils.{ChangeListener, DefaultPublisher}
 import monix.eval.Task
 
 import scala.collection.immutable.MultiDict
+import scala.concurrent.duration.DurationInt
 
 final class ParticipantsCacheImpl(private val participantEventService: ParticipantEventService,
                                   private val cacheRefreshInterval: Int)(
   private val cacheByGroup: Ref[Task, MultiDict[Group, Participant]]) extends ParticipantsCache {
+
+  locally {
+    import monix.execution.Scheduler.{global => scheduler}
+
+    if (cacheRefreshInterval > 0) {
+      scheduler.scheduleAtFixedRate(0.seconds, cacheRefreshInterval.seconds) {
+        participantEventService.constructAllParticipants().foreach(println)(scheduler)
+      }
+    }
+  }
 
   private val publisher: DefaultPublisher[Participant] = new DefaultPublisher[Participant]()
 

@@ -22,39 +22,31 @@ final case class ParticipantEvent(
       // MainState
       case ParticipantEventType.Created() => // init
         (participant.copy(
-          host = this.participantDataModification.host.getOrElse(""),
-          port = this.participantDataModification.port.getOrElse(-1),
-          group = Group(this.participantDataModification.groupName.getOrElse("")),
-          identifier = this.participantIdentifier,
-          heartbeatInfo = HeartbeatInfo(this.participantDataModification.heartbeatRoute.getOrElse("")),
+          host = participantDataModification.host.getOrElse(""),
+          port = participantDataModification.port.getOrElse(-1),
+          group = Group(participantDataModification.groupName.getOrElse("")),
+          identifier = participantIdentifier,
+          heartbeatInfo = HeartbeatInfo(participantDataModification.heartbeatRoute.getOrElse("")),
           status = NotWorking,
         ), false)
-      case ParticipantEventType.Removed() =>
-        (participant.copy(
-          status = NotWorking,
-        ), true)
+      case ParticipantEventType.Removed() => (participant.copy(status = NotWorking), true)
 
       // SubState
-      case ParticipantEventType.TurnedOn() =>
-        (participant.copy(
-          status = Working,
-        ), shouldBeSkipped)
-      case ParticipantEventType.TurnedOff() =>
-        (participant.copy(
-          status = NotWorking,
-        ), shouldBeSkipped)
+      case ParticipantEventType.TurnedOn() => (participant.copy(status = Working), shouldBeSkipped)
+      case ParticipantEventType.TurnedOff() => (participant.copy(status = NotWorking), shouldBeSkipped)
 
       // ModifiedData
       case ParticipantEventType.ModifiedData() =>
         (participant.copy(
-          host = this.participantDataModification.host.getOrElse(participant.host),
-          port = this.participantDataModification.port.getOrElse(participant.port),
-          group = this.participantDataModification.groupName.map(gn => Group(gn)).getOrElse(participant.group),
-          heartbeatInfo = this.participantDataModification.heartbeatRoute.map(hr => HeartbeatInfo(hr)).getOrElse(participant.heartbeatInfo),
+          host = participantDataModification.host.getOrElse(participant.host),
+          port = participantDataModification.port.getOrElse(participant.port),
+          group = participantDataModification.groupName.map(gn => Group(gn)).getOrElse(participant.group),
+          heartbeatInfo = participantDataModification.heartbeatRoute.map(hr => HeartbeatInfo(hr)).getOrElse(participant.heartbeatInfo),
         ), shouldBeSkipped)
 
-      //todo mszmal: finish...
-      case _ => (participant, shouldBeSkipped)
+      // Connection
+      case ParticipantEventType.Joined() => (participant.copy(status = Working), shouldBeSkipped)
+      case ParticipantEventType.Disconnected() => (participant.copy(status = NotWorking), shouldBeSkipped)
     }
 }
 

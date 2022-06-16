@@ -42,7 +42,7 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
     participantEventOperator.source.aggregate(
       List(
         Aggregates.filter(Filters.gt("eventId", offset)),
-        Aggregates.sort(Sorts.ascending("eventId"))
+        Aggregates.sort(Sorts.ascending("eventId")),
       ), classOf[ParticipantEvent]
     )
 }
