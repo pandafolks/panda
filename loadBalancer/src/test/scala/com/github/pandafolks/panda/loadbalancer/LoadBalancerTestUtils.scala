@@ -1,8 +1,8 @@
 package com.github.pandafolks.panda.loadbalancer
 
-import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
+import com.github.pandafolks.panda.participant.{Healthy, Participant, ParticipantsCache}
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.Listener
 import monix.eval.Task
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
@@ -21,7 +21,7 @@ object LoadBalancerTestUtils {
       (Participant("13.204.158.90", 3000, Group("cars")), true),     // 3 - first available
       (Participant("44.233.130.109", 4001, Group("cars")), false),   // 4
       (Participant("193.207.130.133", 3000, Group("cars")), true),   // 5 - second available
-      (Participant("218.214.92.75", 4002, Group("cars")), false) // 6
+      (Participant("218.214.92.75", 4002, Group("cars")), false)     // 6
     ).filter(p => containAvailable || !p._2)
       .filter(p => containUnavailable || p._2)
       .map(_._1)
@@ -32,9 +32,11 @@ object LoadBalancerTestUtils {
 
       override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
-      override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
+      override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
-      override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.toList)
+      override def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
+
+      override def registerListener(listener: Listener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
     }
   }
 

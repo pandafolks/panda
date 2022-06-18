@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.participant.event
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.Listener
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.mockito.ArgumentMatchers.{any, argThat}
@@ -19,6 +19,8 @@ import scala.concurrent.duration.DurationInt
 
 class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach with PrivateMethodTester {
+  //  todo mszmal: Once the health check mechanism is implemented and there are methods for inserting Joined/Disconnected
+  //   events extend these tests by adding checks on getHealthyParticipantsAssociatedWithGroup method
   implicit val scheduler: Scheduler = Scheduler.io("participant-cache-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
@@ -29,14 +31,14 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
     case (p, _) => p.db.dropCollection(participantEventsColName)
   }.runToFuture, 5.seconds)
 
-  private def createParticipantsCacheWithMockedListener(): (ParticipantsCache, ChangeListener[Participant]) = {
+  private def createParticipantsCacheWithMockedListener(): (ParticipantsCache, Listener[Participant]) = {
     val cache = Await.result(ParticipantsCacheImpl(
       participantEventService = participantEventService,
       List.empty,
       -1 // background refresh job disabled
     ).runToFuture, 5.seconds)
 
-    val participantChangeListener = mock(classOf[ChangeListener[Participant]])
+    val participantChangeListener = mock(classOf[Listener[Participant]])
     when(participantChangeListener.notifyAboutAdd(any[Iterable[Participant]]())) thenReturn Task.unit
     when(participantChangeListener.notifyAboutRemove(any[Iterable[Participant]]())) thenReturn Task.unit
 

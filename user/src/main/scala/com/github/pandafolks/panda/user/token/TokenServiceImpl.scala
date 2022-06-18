@@ -23,8 +23,11 @@ final class TokenServiceImpl(private val config: TokensConfig)(private val c: Re
 
   private val readmeText : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
     .getOrElse(Random.alphanumeric.take(20).mkString(""))
+
   private final val key = PrivateKey(Codec.toUTF8(readmeText))
+
   @VisibleForTesting private final val crypto = CryptoBits(key)
+
   private final val clock = java.time.Clock.systemUTC
   private final val tokenTimeToLive = config.timeToLive
 

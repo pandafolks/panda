@@ -17,7 +17,7 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
   private val lastUsedIndexes: ConcurrentHashMap[Group, AtomicInt] = new ConcurrentHashMap
 
   override def route(request: Request[Task], requestedPath: Uri.Path, group: Group): Task[Response[Task]] =
-    participantsCache.getWorkingParticipantsAssociatedWithGroup(group).flatMap {
+    participantsCache.getHealthyParticipantsAssociatedWithGroup(group).flatMap {
       case eligibleParticipants if eligibleParticipants.isEmpty =>
         lastUsedIndexes.remove(group)
         LoadBalancer.noAvailableInstanceLog(requestedPath, logger)
