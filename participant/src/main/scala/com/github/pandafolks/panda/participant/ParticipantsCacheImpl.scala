@@ -4,7 +4,7 @@ import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.{ChangeListener, DefaultPublisher}
+import com.github.pandafolks.panda.utils.{Listener, DefaultPublisher}
 import monix.eval.Task
 import org.slf4j.LoggerFactory
 
@@ -49,38 +49,38 @@ final class ParticipantsCacheImpl(private val participantEventService: Participa
   private def getParticipantsBelongingToGroup(cache: Ref[Task, MultiDict[Group, Participant]], group: Group): Task[Vector[Participant]] =
     cache.get.map(_.get(group)).map(_.toVector)
 
-  override def registerListener(listener: ChangeListener[Participant]): Task[Unit] =
+  override def registerListener(listener: Listener[Participant]): Task[Unit] =
     for {
       _ <- publisher.register(listener)
       cache <- byGroup.get
       _ <- listener.notifyAboutAdd(cache.values.toList) // initial load to the listener
     } yield ()
 
-  private def refreshCache(): Task[Unit] = //todo mszmal: refactor to for syntax
-    participantEventService.constructAllParticipants()
-      .flatMap(participants =>
-        Task.eval(participants.map(p => (p.group, p)))
-          .flatMap(groupsWithParticipants =>
-            Task.parZip3(
-              byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
-              workingByGroup.getAndSet(MultiDict.from(groupsWithParticipants.filter(_._2.status == Working))),
-              healthyByGroup.getAndSet(MultiDict.from(groupsWithParticipants.filter(t => t._2.status == Working && t._2.health == Healthy)))
-            )
-          )
-          .flatMap {
-            case (prevByGroupCacheState, _, _) =>
-              Task.parZip2(
-                // Find all participants that were present inside the cache, but either no longer are or some of their
-                // properties changed and send an event to listeners about remove action.
-                Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
-                  .flatMap(participantsNoMorePresentInCache =>
-                    publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
-                  ),
-                // Send an event about gotten participants. The listener should handle duplicates on its own.
-                publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
-              )
-          }.void
+  private def refreshCache(): Task[Unit] =
+    for {
+      participants <- participantEventService.constructAllParticipants()
+      groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
+      prevCacheStates <- Task.parZip3(
+        byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
+        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.status == Working))),
+        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.status == Working && t._2.health == Healthy)))
       )
+      (prevByGroupCacheState, _, _) = prevCacheStates
+      _ <- Task.parZip2(
+        // Find all participants that were present inside the cache, but either no longer are or some of their
+        // properties changed and send an event to listeners about remove action.
+        Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
+          .flatMap(participantsNoMorePresentInCache =>
+            publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
+          ),
+        // Send an event about gotten participants. The listener should handle duplicates on its own.
+        // There is a place for optimization - we know that e.g. ConsistentHashingState discards all participants that
+        // are either not working or not healthy. Because of that, we could simply put here healthyByGroup values.
+        // If the participant was working/healthy and is not anymore, it will be in `participantsNoMorePresentInCache` anyway.
+        // However, let's leave it as it is in order to have more generic listeners and go back here once we reach the bottleneck.
+        publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
+      )
+    } yield ()
 }
 
 object ParticipantsCacheImpl {

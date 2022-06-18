@@ -2,7 +2,7 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.{Healthy, Participant, ParticipantsCache}
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.Listener
 import monix.eval.Task
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
@@ -36,7 +36,7 @@ object LoadBalancerTestUtils {
 
       override def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
 
-      override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
+      override def registerListener(listener: Listener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
     }
   }
 
