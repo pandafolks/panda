@@ -15,7 +15,7 @@ final case class Participant(
                               identifier: String,
                               heartbeatInfo: HeartbeatInfo,
                               status: ParticipantStatus,
-                              health: ParticipantHealth = NotHealthy // Participant will become healthy after first successful health check
+                              health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
                             )
 
 object Participant {

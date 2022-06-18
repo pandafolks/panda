@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.{Healthy, HeartbeatInfo, NotHealthy, NotWorking, Participant, Working}
+import com.github.pandafolks.panda.participant.{Healthy, HeartbeatInfo, Unhealthy, NotWorking, Participant, Working}
 import com.github.pandafolks.panda.routes.Group
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.UuidRepresentation
@@ -46,7 +46,7 @@ final case class ParticipantEvent(
 
       // Connection
       case ParticipantEventType.Joined() => (participant.copy(health = Healthy), shouldBeSkipped)
-      case ParticipantEventType.Disconnected() => (participant.copy(health = NotHealthy), shouldBeSkipped)
+      case ParticipantEventType.Disconnected() => (participant.copy(health = Unhealthy), shouldBeSkipped)
     }
 }
 

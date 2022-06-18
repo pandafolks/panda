@@ -81,11 +81,11 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, NotHealthy),
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, Unhealthy),
         Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
         Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
-        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
         Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
         Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
       )
@@ -101,10 +101,10 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, NotHealthy),
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, Unhealthy),
         Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
-        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
-        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
         Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
         Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
       )
