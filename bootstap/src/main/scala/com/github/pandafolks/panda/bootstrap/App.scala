@@ -9,6 +9,7 @@ import com.avast.sst.pureconfig.PureConfigModule
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
+import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
 import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
 import com.github.pandafolks.panda.routes.RoutesTrees
 import com.github.pandafolks.panda.routes.dto.RoutesMappingInitDto
@@ -44,6 +45,8 @@ object App extends MonixServerApp {
         participantsCache = participantsCache
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTrees)
+      _ = new DistributedHealthCheckServiceImpl(
+        daosAndServices.getParticipantEventService, participantsCache)(appConfiguration.healthCheckConfig)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(daosAndServices.getTokenService, daosAndServices.getUserService)
