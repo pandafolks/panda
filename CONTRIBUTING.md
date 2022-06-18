@@ -1,6 +1,6 @@
 # Contributing to Panda
 
-Hello everyone, This project was created mainly in order to evolve participants' skills and have fun. 
+Hello everyone, this project was created mainly in order to evolve contributors' skills and have fun. 
 If you don't have either scala or distributed systems experience, that's all right, you can play around here! 
 We don't have deadlines or any other pressure, so the quality of the solutions is a crucial factor.
 
