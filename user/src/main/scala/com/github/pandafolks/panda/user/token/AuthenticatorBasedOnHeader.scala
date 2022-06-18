@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.user.token
 
 import cats.data.{EitherT, Kleisli, OptionT}
-import com.github.pandafolks.panda.user.cache.{CustomCache, CustomCacheImpl}
+import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import com.github.pandafolks.panda.user.{User, UserId, UserService}
 import monix.eval.Task
 import org.http4s.headers.Authorization
