@@ -38,32 +38,32 @@ free to make a Pull Request with improvement.
 
 ## Hints
 
-#### Application entry point
+### Application entry point
 `bootstap/src/main/scala/com/github/pandafolks/panda/bootstrap/App.scala`
 
-#### Current authentication model
+### Current authentication model
 `http://localhost:8080/api/v1/auth/register` endpoint creates a new user. However, it is accessible only to authenticated users.
 Because of that, new users can be only created by existing ones and that's why `application.conf` is prefilled with `init-user`.
 `init-user` will be created during app startup only if there is no other user present in the DB.
 
-#### Dependencies
+### Dependencies
 Inside `exampleExternalDependencies` directory you could find docker files that runs required components.
 At this moment panda requires:
 1. MongoDB
 
-#### Service examples used for manual testing
+### Service examples used for manual testing
 As Panda is an API gateway, it is useful to have some services it can communicate to.
 Inside `auxiliaryServices` directory you may find `docker-compose.yml` file which runs some simple services.
 You could register them inside Panda by running `registerInsidePanda.sh` script. 
 
-#### Creating executable jar
+### Creating executable jar
 ```sbtshell
 sbt assembly
 ```
 You would find `panda.jar` inside your `/target` directory.
 You could run it with `java -jar panda.jar`.
 
-#### Using your own config file
+### Using your own config file
 By default, Panda will use `application.conf` config from `bootstap/src/main/resources`. 
 Feel free to create your own config, you could use it inside panda by adding VM option: 
 ```sbtshell
