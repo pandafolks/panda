@@ -1,8 +1,8 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild(List(
-  organization := "com.github.mattszm",
-  homepage := Some(url("https://github.com/MattSzm/panda")),
+  organization := "com.github.pandafolks",
+  homepage := Some(url("https://github.com/pandafolks/panda")),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
   developers := List(
     Developer(
@@ -80,7 +80,7 @@ lazy val panda = (project in file("."))
   .settings(sharedSettings)
   .settings(
     name := "panda",
-    assembly / mainClass := Some("com.github.mattszm.panda.bootstrap.App"),
+    assembly / mainClass := Some("com.github.pandafolks.panda.bootstrap.App"),
     assembly / assemblyJarName := "panda.jar",
   )
   .aggregate(bootstap, db, gateway, loadBalancer, participant, routes, sequence, user, utils)
@@ -96,7 +96,7 @@ lazy val sequence = pandaConnector("sequence", Dependencies.sequenceDependencies
 lazy val user = pandaConnector("user", Dependencies.userDependencies, Seq(utils))
 lazy val utils = pandaConnector("utils", Dependencies.utilsDependencies)
 
-mainClass in (Compile, run) := Some("com.github.mattszm.panda.bootstrap.App")
+mainClass in (Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App")
 
 ThisBuild / assemblyMergeStrategy := {
   case PathList("META-INF", _*) => MergeStrategy.discard
