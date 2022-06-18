@@ -1,4 +1,4 @@
-package com.github.pandafolks.panda.user.cache
+package com.github.pandafolks.panda.utils.cache
 
 import com.google.common.cache.{Cache, CacheBuilder}
 import monix.eval.Task

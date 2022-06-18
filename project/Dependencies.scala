@@ -85,11 +85,12 @@ object Dependencies {
   val userDependencies: Seq[ModuleID] = Seq(
     tsec,
     tsecPassword,
-    cryptoBits,
+    cryptoBits
+  ) ++ CommonDependencies
+
+  val utilsDependencies: Seq[ModuleID] = Seq(
     scalaCacheCore,
     scalaCacheGuava,
     scalaCacheCats
   ) ++ CommonDependencies
-
-  val utilsDependencies: Seq[ModuleID] = CommonDependencies
 }

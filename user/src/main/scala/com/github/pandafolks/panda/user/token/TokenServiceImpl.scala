@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.user.token
 import cats.data.OptionT
 import cats.effect.Resource
 import com.github.pandafolks.panda.user.{User, UserId}
-import com.github.pandafolks.panda.user.cache.{CustomCache, CustomCacheImpl}
+import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import com.google.common.annotations.VisibleForTesting
 import com.mongodb.client.model.Filters
 import monix.connect.mongodb.client.CollectionOperator
@@ -35,7 +35,7 @@ final class TokenServiceImpl(private val config: TokensConfig)(private val c: Re
         tokenOperator.source
           .find(Filters.eq("tempId", tempId))
           .toListL
-          .map(_.sortBy(t => -t.creationTimeStamp)) // very little collision chance
+          .map(_.sortBy(t => -t.creationTimeStamp)) // very little collision chance so sorting in memory is ok
           .map(_.headOption)
     }
   )(maximumSize = 50L, ttl = 60.seconds)
