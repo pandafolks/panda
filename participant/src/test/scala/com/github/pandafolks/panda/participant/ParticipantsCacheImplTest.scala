@@ -76,4 +76,40 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
 
     cache.getWorkingParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l.size should be(0))
   }
+
+  "ParticipantsCacheImpl#getHealthyParticipantsAssociatedWithGroup" should "return appropriate healthy (and working at the same time) participants for the requested group" in {
+    val cache = Await.result(ParticipantsCacheImpl(
+      mockParticipantEventService,
+      List(
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, NotHealthy),
+        Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+      )
+    ).runToFuture, 5.seconds)
+
+    cache.getHealthyParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(_.toList).map(l => l should
+      contain theSameElementsAs List(
+      Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy)
+    ))
+  }
+
+  it should "return empty vector if there are no healthy elements associated with the group" in {
+    val cache = Await.result(ParticipantsCacheImpl(
+      mockParticipantEventService,
+      List(
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, NotHealthy),
+        Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, NotHealthy),
+        Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+      )
+    ).runToFuture, 5.seconds)
+
+    cache.getHealthyParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(l => l.size should be(0))
+  }
 }

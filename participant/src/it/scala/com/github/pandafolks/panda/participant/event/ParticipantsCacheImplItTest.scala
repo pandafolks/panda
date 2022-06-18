@@ -19,6 +19,8 @@ import scala.concurrent.duration.DurationInt
 
 class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach with PrivateMethodTester {
+  //  todo mszmal: Once the health check mechanism is implemented and there are methods for inserting Joined/Disconnected
+  //   events extend these tests by adding checks on getHealthyParticipantsAssociatedWithGroup method
   implicit val scheduler: Scheduler = Scheduler.io("participant-cache-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)

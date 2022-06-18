@@ -12,5 +12,7 @@ trait ParticipantsCache {
 
   def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
+  def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
+
   def registerListener(listener: ChangeListener[Participant]): Task[Unit]
 }

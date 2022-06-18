@@ -15,6 +15,7 @@ final case class Participant(
                               identifier: String,
                               heartbeatInfo: HeartbeatInfo,
                               status: ParticipantStatus,
+                              health: ParticipantHealth = NotHealthy // Participant will become healthy after first successful health check
                             )
 
 object Participant {
@@ -53,7 +54,7 @@ object Participant {
   def createDefaultIdentifier(host: String, port: Int, groupName: String): String =
     List(host, port, groupName).mkString("-")
 
-  def createHeartbeatInfo(host: String, port: Int, route: String): HeartbeatInfo =
+  private def createHeartbeatInfo(host: String, port: Int, route: String): HeartbeatInfo =
     HeartbeatInfo(
       Path.unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
         .concat(Path.unsafeFromString(route))

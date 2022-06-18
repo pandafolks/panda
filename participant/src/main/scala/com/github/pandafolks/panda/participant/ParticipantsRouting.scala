@@ -12,11 +12,11 @@ import io.circe.generic.auto._
 import monix.eval.Task
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder, Response}
+import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder, QueryParamDecoder, Response}
 
 
 final class ParticipantsRouting(private val participantEventService: ParticipantEventService,
-                              private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
+                                private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
   with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
@@ -26,13 +26,24 @@ final class ParticipantsRouting(private val participantEventService: Participant
         case _ => Task.eval(Response.notFound)
       }
 
-    case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
+    case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
       handleParticipantsResponse(
-        participantsCache.getAllGroups.
-          flatMap(groups => groups.map(group => participantsCache.getParticipantsAssociatedWithGroup(group)).sequence)
-          .map(_.flatten)
+        participantsCache.getAllGroups
+          .flatMap(groups =>
+            groups.map(group => maybeFilter
+              .map(_.getParticipants(group))
+              .getOrElse(participantsCache.getParticipantsAssociatedWithGroup(group))
+            ).sequence
+          ).map(_.flatten)
       )
 
+    case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
+      handleParticipantsResponse(maybeFilter
+        .map(_.getParticipants(Group(group)))
+        .getOrElse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))
+      )
+
+    // participants modification endpoints:
     case req@POST -> Root / API_NAME / API_VERSION_1 / "participants" as _ =>
       for {
         participantDtos <- req.req.as[Seq[ParticipantModificationDto]]
@@ -69,8 +80,6 @@ final class ParticipantsRouting(private val participantEventService: Participant
         ))
       } yield response
 
-    case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group as _ =>
-      handleParticipantsResponse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))
   }
 
   private def handleParticipantsResponse(participants: Task[Seq[Participant]]): Task[Response[Task]] =
@@ -98,9 +107,44 @@ final class ParticipantsRouting(private val participantEventService: Participant
   implicit val stringSeqEncoder: EntityDecoder[Task, Seq[String]] = jsonOf[Task, Seq[String]]
 
   implicit val createdParticipantsResultEncoder: EntityEncoder[Task, ParticipantsModificationResult] = jsonEncoderOf[Task, ParticipantsModificationResult]
+
+  object ParticipantsFilter {
+
+    sealed trait ParticipantsFilter {
+      def getParticipants(group: Group): Task[Vector[Participant]]
+    }
+
+    final case object AllParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants(group: Group): Task[Vector[Participant]] =
+        participantsCache.getParticipantsAssociatedWithGroup(group)
+    }
+
+    final case object WorkingParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants(group: Group): Task[Vector[Participant]] =
+        participantsCache.getWorkingParticipantsAssociatedWithGroup(group)
+    }
+
+    final case object HealthyParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants(group: Group): Task[Vector[Participant]] =
+        participantsCache.getHealthyParticipantsAssociatedWithGroup(group)
+    }
+
+  }
+
+  implicit val filterQueryParamDecoder: QueryParamDecoder[ParticipantsFilter.ParticipantsFilter] =
+    QueryParamDecoder[String].map(_.toLowerCase match {
+      case "working" => ParticipantsFilter.WorkingParticipantsFilter
+      case "healthy" => ParticipantsFilter.HealthyParticipantsFilter
+      case _ => ParticipantsFilter.AllParticipantsFilter
+    })
+
+  object OptionalFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[ParticipantsFilter.ParticipantsFilter]("filter")
+
 }
 
 object ManagementRouting {
+
   case class ParticipantsModificationResult(message: String, successfulParticipantIdentifiers: List[String], errors: List[String])
+
 }
 

@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.loadbalancer
 
-import com.github.pandafolks.panda.participant.{Participant, Working}
+import com.github.pandafolks.panda.participant.{Healthy, Participant, Working}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
@@ -51,7 +51,9 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
       ))
 
   override def notifyAboutAdd(items: Iterable[Participant]): Task[Unit] =
-    Task.parTraverse(items)(item => if (item.status == Working) Task.eval(add(item)) else Task.eval(remove(item))).void // ConsistentHashingState should track only working participants
+    Task.parTraverse(items)(item =>
+      if (item.status == Working && item.health == Healthy) Task.eval(add(item)) else Task.eval(remove(item))
+    ).void // ConsistentHashingState should track only working and healthy participants
 
   override def notifyAboutRemove(items: Iterable[Participant]): Task[Unit] =
     Task.parTraverse(items)(item => Task.eval(remove(item))).void
