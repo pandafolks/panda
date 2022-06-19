@@ -90,6 +90,8 @@ object Dependencies {
     cryptoBits
   ) ++ CommonDependencies
 
+  val nodesTrackerDependencies: Seq[ModuleID] = CommonDependencies
+
   val utilsDependencies: Seq[ModuleID] = Seq(
     scalaCacheCore,
     scalaCacheGuava,

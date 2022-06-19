@@ -25,14 +25,14 @@ object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
+
       dbAppClient = new MongoAppClient(appConfiguration.db)
+      daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
 
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
       routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
       routesTrees = RoutesTrees.construct(routesMappingInitializationEntries)
-
-      daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
 

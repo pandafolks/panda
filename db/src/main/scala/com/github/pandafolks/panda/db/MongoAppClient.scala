@@ -1,6 +1,8 @@
 package com.github.pandafolks.panda.db
 
 import cats.effect.Resource
+import com.github.pandafolks.panda.nodestracker.Node
+import com.github.pandafolks.panda.nodestracker.Node.NODES_COLLECTION_NAME
 import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
@@ -39,13 +41,17 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
   private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName)
   private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
+  private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(config.dbName)
 
   private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
+  private val nodesConnection = MongoConnection.create1(settings, nodesCol)
 
   override def getParticipantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] = participantEventsAndSequencesConnection
 
   override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] = usersWithTokensConnection
+
+  override def getNodesConnection: Resource[Task, CollectionOperator[Node]] = nodesConnection
 
   locally {
     //    creating indexes
@@ -85,6 +91,16 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
             Seq(
               IndexModel(
                 Indexes.hashed("tempId"),
+                IndexOptions().background(false).unique(false)
+              )
+            )
+          )
+        ) >>
+        Task.fromReactivePublisher(
+          database.getCollection(NODES_COLLECTION_NAME).createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.ascending("lastUpdateTimestamp"),
                 IndexOptions().background(false).unique(false)
               )
             )

@@ -4,10 +4,11 @@ import cats.data.OptionT
 import cats.effect.Resource
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.user.token.Token
-import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError}
+import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError, PandaStartupException}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
+import org.slf4j.LoggerFactory
 import tsec.passwordhashers.jca.BCrypt
 
 import java.util.UUID
@@ -16,7 +17,10 @@ import scala.concurrent.duration.DurationInt
 final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials] = List.empty)(
   private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserService {
 
+  private val logger = LoggerFactory.getLogger(getClass.getName)
+
   locally {
+    // Inserting init user if there are no other users in the persistence layer (on startup).
     (for {
       empty <- userDao.checkIfEmpty
       _ <- if (empty)
@@ -25,7 +29,10 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
           .sequence
       else Task.unit
     } yield ())
-      .onErrorRecover { _ => () }
+      .onErrorRecover { e => {
+        logger.error("The error occurred during init user creation.")
+        throw new PandaStartupException(e.getMessage)
+      }}
       .delayExecution(5.seconds)
       .runAsyncAndForget
   }
