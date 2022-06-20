@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant
 
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.Listener
+import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
 
 trait ParticipantsCache {
@@ -49,5 +49,5 @@ trait ParticipantsCache {
    *
    * @return
    */
-  def registerListener(listener: Listener[Participant]): Task[Unit]
+  def registerListener(listener: ChangeListener[Participant]): Task[Unit]
 }

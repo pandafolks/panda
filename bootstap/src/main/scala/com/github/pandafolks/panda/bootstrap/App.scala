@@ -7,6 +7,7 @@ import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
+import com.github.pandafolks.panda.bootstrap.init.{DaosAndServicesInitializedAfterCachesFulfilled, DaosAndServicesInitializedBeforeCachesFulfilled}
 import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
@@ -27,7 +28,12 @@ object App extends MonixServerApp {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
 
       dbAppClient = new MongoAppClient(appConfiguration.db)
-      daosAndServices = new DaoAndServiceInitialization(dbAppClient, appConfiguration)
+      daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
+      participantsCache <- Resource.eval(ParticipantsCacheImpl(
+        daosAndServicesInitializedBeforeCaches.getParticipantEventService,
+        cacheRefreshInterval = appConfiguration.consistency.fullConsistencyMaxDelay
+      )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
+      _ = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
@@ -36,25 +42,22 @@ object App extends MonixServerApp {
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
 
-      participantsCache <- Resource.eval(ParticipantsCacheImpl(
-        daosAndServices.getParticipantEventService,
-        cacheRefreshInterval = appConfiguration.consistency.fullConsistencyMaxDelay
-      ))
-      loadBalancer = appConfiguration.gateway.loadBalanceAlgorithm.create(
+      loadBalancer = appConfiguration.gateway.loadBalancerAlgorithm.create(
         client = httpGatewayClient,
-        participantsCache = participantsCache
+        participantsCache = participantsCache,
+        appConfiguration.gateway.loadBalancerRetries
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTrees)
       _ = new DistributedHealthCheckServiceImpl(
-        daosAndServices.getParticipantEventService, participantsCache)(appConfiguration.healthCheckConfig)
+        daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)(appConfiguration.healthCheckConfig)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(daosAndServices.getTokenService, daosAndServices.getUserService)
+      authRouting = new AuthRouting(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)
 
-      authenticator = new AuthenticatorBasedOnHeader(daosAndServices.getTokenService, daosAndServices.getUserService)(
+      authenticator = new AuthenticatorBasedOnHeader(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)(
         appConfiguration.consistency.fullConsistencyMaxDelay)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
-      participantsRouting = new ParticipantsRouting(daosAndServices.getParticipantEventService, participantsCache)
+      participantsRouting = new ParticipantsRouting(daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)
       authedRoutes = authMiddleware(participantsRouting.getRoutesWithAuth <+> authRouting.getRoutesWithAuth)
 
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound

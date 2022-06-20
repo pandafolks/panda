@@ -7,24 +7,25 @@ import org.http4s.client.Client
 
 final case class GatewayConfig(
                                 mappingFile: String,
-                                loadBalanceAlgorithm: LoadBalanceAlgorithm
+                                loadBalancerAlgorithm: LoadBalanceAlgorithm,
+                                loadBalancerRetries: Option[Int]
                               )
 
 sealed trait LoadBalanceAlgorithm {
-  def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer
+  def create(client: Client[Task], participantsCache: ParticipantsCache, loadBalancerRetries: Option[Int] = Option.empty): LoadBalancer
 }
 
 case object RoundRobin extends LoadBalanceAlgorithm {
-  override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
+  override def create(client: Client[Task], participantsCache: ParticipantsCache, loadBalancerRetries: Option[Int] = Option.empty): LoadBalancer =
     new RoundRobinLoadBalancerImpl(client, participantsCache)
 }
 
 case object Random extends LoadBalanceAlgorithm {
-  override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
+  override def create(client: Client[Task], participantsCache: ParticipantsCache, loadBalancerRetries: Option[Int] = Option.empty): LoadBalancer =
     new RandomLoadBalancerImpl(client, participantsCache)
 }
 
 case object Hash extends LoadBalanceAlgorithm {
-  override def create(client: Client[Task], participantsCache: ParticipantsCache): LoadBalancer =
-    new HashLoadBalancerImpl(client, participantsCache, new ConsistentHashingState())
+  override def create(client: Client[Task], participantsCache: ParticipantsCache, loadBalancerRetries: Option[Int] = Option.empty): LoadBalancer =
+    new HashLoadBalancerImpl(client, participantsCache, new ConsistentHashingState(), loadBalancerRetries.getOrElse(10))
 }
