@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.nodestracker
 
 import com.github.pandafolks.panda.utils.PandaStartupException
+import monix.eval.Task
 import monix.execution.schedulers.CanBlock
 import org.slf4j.LoggerFactory
 
@@ -13,7 +14,9 @@ final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
+  // Every node notifies the tracker about its existence 4 times more often than the maximum time in which we obtain the full consistency.
   private val nodeTrackerRegistrationIntervalInMillis = fullConsistencyMaxDelay * 1000 / 4
+  private val nodeTrackerDeviationForGetWorkingNodesInMillis = (fullConsistencyMaxDelay * 1000 / 2).toLong
 
   private val nodeId: String = nodeTrackerDao.register()
     .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)
@@ -35,4 +38,6 @@ final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
   }
 
   override def getNodeId: String = nodeId
+
+  override def getWorkingNodes: Task[List[Node]] = nodeTrackerDao.getNodes(nodeTrackerDeviationForGetWorkingNodesInMillis)
 }

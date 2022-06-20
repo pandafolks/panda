@@ -9,6 +9,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.time.Clock
 import scala.concurrent.duration.DurationInt
 
 class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture with Matchers with ScalaFutures
@@ -19,7 +20,7 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
 
   override protected def afterAll(): Unit = mongoContainer.stop()
 
-  "nodeId" should "return randomly generated id once the service is initialized" in {
+  "getNodeId" should "return randomly generated id once the service is initialized" in {
     ObjectId.isValid(nodeTrackerService.getNodeId) should be(true)
   }
 
@@ -39,6 +40,31 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
       res.map(_._id).forall(_ == res.head._id) should be (true)
       res should contain theSameElementsInOrderAs res.sortBy(_.lastUpdateTimestamp)
     }
+  }
+
+  "getWorkingNodes" should "return all working nodes that notified tracker about itself no earlier than fullConsistencyMaxDelay / 2 seconds ago" in {
+    val clock: Clock = java.time.Clock.systemUTC
+    val validNode1 = Node(new ObjectId(), clock.millis() - 250)
+    val validNode2 = Node(new ObjectId(), clock.millis() - 101)
+    val notValidNode1 = Node(new ObjectId(), clock.millis() - 501)
+    val notValidNode2 = Node(new ObjectId(), clock.millis() - 999)
+    val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2)
+
+    val f = (nodesConnection.use(c =>
+      for {
+        _ <- c.single.insertOne(validNode1)
+        _ <- c.single.insertOne(validNode2)
+        _ <- c.single.insertOne(notValidNode1)
+        _ <- c.single.insertOne(notValidNode2)
+      } yield ()
+    ) >>
+      nodeTrackerService.getWorkingNodes
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res.filter(addedNodes.contains(_)) should contain theSameElementsAs List(validNode1, validNode2)
+    }
+
   }
 
   private def getNode: Task[Node] =

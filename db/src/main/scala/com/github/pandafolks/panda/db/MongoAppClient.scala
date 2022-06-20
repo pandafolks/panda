@@ -64,7 +64,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           Seq(
             IndexModel(
               Indexes.ascending("username"),
-              IndexOptions().background(true).unique(true)
+              IndexOptions().background(false).unique(true)
             )
           )
         )

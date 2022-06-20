@@ -38,4 +38,8 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
       }
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulUpdateOperation(t.getMessage))) }
   )
+
+  override def getNodes(timeStamp: Long): Task[List[Node]] = c.use(nodeOperator =>
+    nodeOperator.source.find(Filters.gte("lastUpdateTimestamp", clock.millis() - timeStamp)).toListL
+  )
 }
