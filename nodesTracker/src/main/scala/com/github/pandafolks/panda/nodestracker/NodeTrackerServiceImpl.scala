@@ -13,7 +13,7 @@ final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  private val nodeTrackerRegistrationIntervalInMillis = fullConsistencyMaxDelay * 1000 / 2
+  private val nodeTrackerRegistrationIntervalInMillis = fullConsistencyMaxDelay * 1000 / 4
 
   private val nodeId: String = nodeTrackerDao.register()
     .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)
