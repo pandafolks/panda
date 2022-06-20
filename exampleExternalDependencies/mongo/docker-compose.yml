@@ -2,6 +2,7 @@ version: '3.7'
 services:
   mongo_container:
     image: mongo:latest
+    container_name: mongo_container
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
@@ -10,4 +11,3 @@ services:
       - 27017:27017
     volumes:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-      - ./mongo-volume:/data/db
