@@ -21,6 +21,7 @@ trait NodeTrackerDao {
 
   /**
    * Get all [[Node]] with the timestamp field higher or equal to the current time minus deviation.
+   * Nodes are sorted by ID in ascending order.
    *
    * @param deviation      deviation expressed in milliseconds based on which the filtration of working nodes is carried out
    * @return               All found nodes

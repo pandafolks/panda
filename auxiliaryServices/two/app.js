@@ -18,6 +18,10 @@ app.get('/api/v2/planes/:plane_id/passengers', (req, res) => {
     res.send(jsonExample1);
 })
 
+app.get('/heartbeat', (req, res) => {
+    res.sendStatus(200);
+})
+
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
 })

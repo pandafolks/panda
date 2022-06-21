@@ -23,6 +23,10 @@ app.post('/api/v1/cars',(request, response) => {
     response.end("yes")
 });
 
+app.get('/api/v1/hb', (req, res) => {
+    res.sendStatus(200);
+})
+
 
 app.get('/api/v1/cars/rent/', (req, res) => {
     res.send(jsonExample2);

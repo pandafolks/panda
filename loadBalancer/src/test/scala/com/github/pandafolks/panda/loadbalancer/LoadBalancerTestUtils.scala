@@ -30,6 +30,12 @@ object LoadBalancerTestUtils {
 
       override def getAllGroups: Task[List[Group]] = ???
 
+      override def getAllParticipants: Task[List[Participant]] = ???
+
+      override def getAllWorkingParticipants: Task[List[Participant]] = ???
+
+      override def getAllHealthyParticipants: Task[List[Participant]] = ???
+
       override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
       override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???

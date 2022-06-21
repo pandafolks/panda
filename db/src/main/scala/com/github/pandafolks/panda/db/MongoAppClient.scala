@@ -3,12 +3,12 @@ package com.github.pandafolks.panda.db
 import cats.effect.Resource
 import com.github.pandafolks.panda.nodestracker.Node
 import com.github.pandafolks.panda.nodestracker.Node.NODES_COLLECTION_NAME
-import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
-import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.User
+import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
+import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
 import com.mongodb.connection.ClusterConnectionMode
 import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
@@ -110,6 +110,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           )
         )
       ).runSyncUnsafe(30.seconds)
+
     mongoClient.close()
   }
 }

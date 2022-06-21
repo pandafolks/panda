@@ -40,6 +40,12 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
 
   override def getAllGroups: Task[List[Group]] = byGroup.get.map(_.keySet).map(_.toList)
 
+  override def getAllParticipants: Task[List[Participant]] = byGroup.get.map(_.values.toList)
+
+  override def getAllWorkingParticipants: Task[List[Participant]] = workingByGroup.get.map(_.values.toList)
+
+  override def getAllHealthyParticipants: Task[List[Participant]] = healthyByGroup.get.map(_.values.toList)
+
   override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] =
     getParticipantsBelongingToGroup(byGroup, group)
 

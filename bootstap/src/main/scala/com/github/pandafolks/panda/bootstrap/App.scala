@@ -33,7 +33,7 @@ object App extends MonixServerApp {
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
         cacheRefreshInterval = appConfiguration.consistency.fullConsistencyMaxDelay
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
-      _ = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
+      daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
       routesMappingConfiguration <- Resource.eval(Task.evalOnce(
         ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
@@ -49,7 +49,11 @@ object App extends MonixServerApp {
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTrees)
       _ = new DistributedHealthCheckServiceImpl(
-        daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)(appConfiguration.healthCheckConfig)
+        daosAndServicesInitializedBeforeCaches.getParticipantEventService,
+        participantsCache,
+        daosAndServicesInitializedAfterCaches.getNodeTrackerService,
+        httpGatewayClient
+      )(appConfiguration.healthCheckConfig)
 
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)

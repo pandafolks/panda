@@ -46,12 +46,14 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     val clock: Clock = java.time.Clock.systemUTC
     val validNode1 = Node(new ObjectId(), clock.millis() - 250)
     val validNode2 = Node(new ObjectId(), clock.millis() - 101)
+    val validNode3 = Node(new ObjectId(), clock.millis() - 111)
     val notValidNode1 = Node(new ObjectId(), clock.millis() - 501)
     val notValidNode2 = Node(new ObjectId(), clock.millis() - 999)
-    val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2)
+    val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
 
     val f = (nodesConnection.use(c =>
       for {
+        _ <- c.single.insertOne(validNode3)
         _ <- c.single.insertOne(validNode1)
         _ <- c.single.insertOne(validNode2)
         _ <- c.single.insertOne(notValidNode1)
@@ -62,9 +64,8 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
       ).runToFuture
 
     whenReady(f) { res =>
-      res.filter(addedNodes.contains(_)) should contain theSameElementsAs List(validNode1, validNode2)
+      res.filter(addedNodes.contains(_)) should contain theSameElementsInOrderAs List(validNode1, validNode2, validNode3).sortBy(_._id)
     }
-
   }
 
   private def getNode: Task[Node] =
