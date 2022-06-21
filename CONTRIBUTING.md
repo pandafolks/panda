@@ -56,6 +56,13 @@ As Panda is an API gateway, it is useful to have some services it can communicat
 Inside `auxiliaryServices` directory you may find `docker-compose.yml` file which runs some simple services.
 You could register them inside Panda by running `registerInsidePanda.sh` script. 
 
+### Managing dependencies
+Panda provides `Makefile` file for managing project dependencies and tasks in the easy way. To see list of useful 
+commands run this in the repository root:
+```bash
+make help
+```
+
 ### Creating executable jar
 ```sbtshell
 sbt assembly

@@ -1,4 +1,5 @@
 MONGO_COMPOSE=docker-compose -f ./exampleExternalDependencies/mongo/docker-compose.yml
+MONGO_CONTAINER_NAME=mongo_container
 AUXILIARY_SERVICES_COMPOSE=docker-compose -f ./auxiliaryServices/docker-compose.yml
 
 help:
@@ -7,8 +8,7 @@ help:
 	@echo "  mongo-stop  		to stop mongo instance"
 	@echo "  mongo-reset    	to clear and rerun mongo database"
 	@echo "  mongo-shell  		to open mongo shell"
-	@echo "  aux-services-init  	to create example auxiliary services"
-	@echo "  aux-services-run   	to run auxiliary services"
+	@echo "  aux-services-run   	to initialize and run auxiliary services"
 	@echo "  aux-services-stop 	to stop auxiliary services"
 
 # MongoDB
@@ -20,17 +20,15 @@ mongo-stop:
 
 # Stop mongo container -> remove volumes -> recreate and run the container
 mongo-reset:
-	$(MONGO_COMPOSE) rm -fsv mongo_container
-	$(MONGO_COMPOSE) up --force-recreate mongo_container
+	$(MONGO_COMPOSE) down -v $(MONGO_CONTAINER_NAME)
+	$(MONGO_COMPOSE) up --force-recreate $(MONGO_CONTAINER_NAME)
 
 mongo-shell:
-	docker exec -it mongo_container mongosh
+	docker exec -it $(MONGO_CONTAINER_NAME) mongosh
 
 # Auxiliary services
-aux-services-init:
-	bash ./auxiliaryServices/registerInsidePanda.sh
-
 aux-services-run:
+	bash ./auxiliaryServices/registerInsidePanda.sh && \
 	$(AUXILIARY_SERVICES_COMPOSE) up
 
 aux-services-stop:
