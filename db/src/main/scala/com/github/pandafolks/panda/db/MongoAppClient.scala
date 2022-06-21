@@ -100,9 +100,12 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           database.getCollection(NODES_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
-                Indexes.ascending("lastUpdateTimestamp"),
+                Indexes.compoundIndex(
+                  Indexes.ascending("lastUpdateTimestamp"),
+                  Indexes.ascending("_id")
+                ),
                 IndexOptions().background(false).unique(false)
-              )
+              ),
             )
           )
         )

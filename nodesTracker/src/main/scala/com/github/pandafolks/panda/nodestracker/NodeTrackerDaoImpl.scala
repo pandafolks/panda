@@ -6,7 +6,7 @@ import monix.connect.mongodb.client.CollectionOperator
 import monix.connect.mongodb.domain.{RetryStrategy, UpdateResult}
 import monix.eval.Task
 import org.bson.types.ObjectId
-import org.mongodb.scala.model.{Filters, UpdateOptions, Updates}
+import org.mongodb.scala.model.{Aggregates, Filters, Sorts, UpdateOptions, Updates}
 
 final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
 
@@ -40,6 +40,11 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
   )
 
   override def getNodes(timeStamp: Long): Task[List[Node]] = c.use(nodeOperator =>
-    nodeOperator.source.find(Filters.gte("lastUpdateTimestamp", clock.millis() - timeStamp)).toListL
+    nodeOperator.source.aggregate(
+      List(
+        Aggregates.filter(Filters.gte("lastUpdateTimestamp", clock.millis() - timeStamp)),
+        Aggregates.sort(Sorts.ascending("_id"))
+      ), classOf[Node]
+    ).toListL
   )
 }
