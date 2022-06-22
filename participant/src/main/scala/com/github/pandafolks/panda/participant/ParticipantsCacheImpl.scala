@@ -29,7 +29,7 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
       // Initial cache load is made by ParticipantsCacheImpl#apply
       scheduler.scheduleAtFixedRate(cacheRefreshInterval.seconds, cacheRefreshInterval.seconds) {
         refreshCache()
-          .onErrorHandle { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
           .runToFuture(scheduler)
         ()
       }
@@ -71,8 +71,8 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
       groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
       prevCacheStates <- Task.parZip3(
         byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
-        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.status == Working))),
-        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.status == Working && t._2.health == Healthy)))
+        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
+        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorking && t._2.isHealthy)))
       )
       (prevByGroupCacheState, _, _) = prevCacheStates
       _ <- Task.parZip2(
@@ -103,9 +103,9 @@ object ParticipantsCacheImpl {
       groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
       participantsByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](MultiDict.from(groupsWithParticipants))
       workingParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
-        MultiDict.from(groupsWithParticipants.filter(_._2.status == Working)))
+        MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
-        MultiDict.from(groupsWithParticipants).filter(t => t._2.status == Working && t._2.health == Healthy))
+        MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorking && t._2.isHealthy))
     } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshInterval)(
       participantsByGroupRef,
       workingParticipantByGroupRef,

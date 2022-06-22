@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.db
 
 import cats.effect.Resource
+import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
 import com.github.pandafolks.panda.nodestracker.Node
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.user.User
@@ -16,4 +17,6 @@ trait DbAppClient {
   def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]
 
   def getNodesConnection: Resource[Task, CollectionOperator[Node]]
+
+  def getUnsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]]
 }

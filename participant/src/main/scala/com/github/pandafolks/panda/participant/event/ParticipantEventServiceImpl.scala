@@ -32,15 +32,16 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
-          initRes <- if (exists)
-            Task.now(Left(AlreadyExists("Participant with identifier \"" + participantIdentifier.get + "\" already exists")))
-          else
-            insertEvent(
+          initRes <- exists match {
+            case Right(true) => Task.now(Left(AlreadyExists("Participant with identifier \"" + participantIdentifier.get + "\" already exists")))
+            case Right(false) => insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.of(participantModificationDto)
                 .copy(heartbeatRoute = participantModificationDto.heartbeatRoute.orElse(Some(HEARTBEAT_DEFAULT_ROUTE))),
               ParticipantEventType.Created()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
 
           finalRes <-
             if (initRes.isLeft || !participantModificationDto.working.getOrElse(true)) Task.now(initRes)
@@ -64,14 +65,15 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
-          initRes <- if (!exists)
-            Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier.get + "\" does not exist")))
-          else
-            insertEvent(
+          initRes <- exists match {
+            case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier.get + "\" does not exist")))
+            case Right(true) => insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.of(participantModificationDto),
               ParticipantEventType.ModifiedData()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
 
           finalRes <-
             if (initRes.isLeft || participantModificationDto.working.isEmpty) Task.now(initRes)
@@ -93,14 +95,15 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier, participantEventOperator)
 
-          res <- if (!exists)
-            Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exist")))
-          else
-            insertEvent(
+          res <- exists match {
+            case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exist")))
+            case Right(true) => insertEvent(
               participantIdentifier,
               ParticipantEventDataModification.empty,
               ParticipantEventType.Removed()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
         } yield res
     }
   }

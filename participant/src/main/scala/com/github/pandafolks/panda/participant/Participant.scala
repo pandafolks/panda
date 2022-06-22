@@ -16,7 +16,11 @@ final case class Participant(
                               heartbeatInfo: HeartbeatInfo,
                               status: ParticipantStatus,
                               health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
-                            )
+                            ) {
+  def isWorking: Boolean = status == Working
+
+  def isHealthy: Boolean = health == Healthy
+}
 
 object Participant {
   final val HEARTBEAT_DEFAULT_ROUTE: String = "heartbeat"

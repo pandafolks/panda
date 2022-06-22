@@ -4,19 +4,19 @@ import com.github.pandafolks.panda.utils.{PersistenceError, UnsuccessfulUpdateOp
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
-import org.mongodb.scala.bson.BsonInt32
+import org.mongodb.scala.bson.BsonInt64
 
 final class SequenceDao {
 
-  def getNextSequence(key: SequenceKey, seqOperator: CollectionOperator[Sequence]): Task[Either[PersistenceError, BsonInt32]] = {
+  def getNextSequence(key: SequenceKey, seqOperator: CollectionOperator[Sequence]): Task[Either[PersistenceError, BsonInt64]] = {
     val filter = Filters.eq("key", key)
-    val update = Updates.combine(Updates.inc("seq", 1))
+    val update = Updates.inc("seq", 1L)
     val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
     seqOperator.source.findOneAndUpdate(
       filter = filter,
       update = update,
       findOneAndUpdateOptions = options
     ).map(_.map(_.seq))
-      .map(_.toRight(UnsuccessfulUpdateOperation("no update performed")))
+      .map(_.toRight(UnsuccessfulUpdateOperation("No update performed")))
   }
 }

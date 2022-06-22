@@ -48,10 +48,12 @@ object App extends MonixServerApp {
         appConfiguration.gateway.loadBalancerRetries
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTrees)
+
       _ = new DistributedHealthCheckServiceImpl(
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
         participantsCache,
         daosAndServicesInitializedAfterCaches.getNodeTrackerService,
+        daosAndServicesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
         httpGatewayClient
       )(appConfiguration.healthCheckConfig)
 

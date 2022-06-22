@@ -39,7 +39,6 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
           ).onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }
       }
 
-    rc(Math.abs(MurmurHash3.stringHash(request.remote.map(socketAddress =>
-      socketAddress.host.toUriString + socketAddress.port.value).getOrElse("0"))))
+    rc(Math.abs(MurmurHash3.stringHash(request.remote.map(_.host.toUriString).getOrElse("0"))))
   }
 }

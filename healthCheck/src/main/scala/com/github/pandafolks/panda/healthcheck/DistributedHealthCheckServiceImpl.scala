@@ -20,11 +20,14 @@ import scala.concurrent.duration.DurationInt
 final class DistributedHealthCheckServiceImpl(private val participantEventService: ParticipantEventService,
                                               private val participantsCache: ParticipantsCache,
                                               private val nodeTrackerService: NodeTrackerService,
+                                              private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
                                               private val client: Client[Task],
                                              )(private val healthCheckConfig: HealthCheckConfig) extends HealthCheckService {
 
   // todo mszmal: test
+
   import monix.execution.Scheduler.{global => scheduler}
+
   scheduler.scheduleAtFixedRate(0.seconds, 10.seconds) {
     backgroundJob().runToFuture(scheduler)
     ()
@@ -34,25 +37,32 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
   def backgroundJob(): Task[Unit] = {
     Task.parZip2(
       nodeTrackerService.getWorkingNodes.flatMap(nodes =>
-        Task.eval(nodes
-          .map(_._id.toString)
-          .indexOf(nodeTrackerService.getNodeId)
-        ).map {
-          case index if index >= 0 && nodes.nonEmpty => (Some(nodes.size), Some(index))
-          case _ => (Option.empty, Option.empty)
-        }
+        Task.eval(nodes.map(_._id.toString).indexOf(nodeTrackerService.getNodeId))
+          .map {
+            case index if index >= 0 && nodes.nonEmpty => (Some(nodes.size), Some(index))
+            case _ => (Option.empty, Option.empty)
+          }
       ),
       participantsCache.getAllWorkingParticipants
     ).flatMap {
-      // todo mszmal: continue ...
       case ((Some(nodesSize), Some(index)), participants) =>
+        Task
         Task.parTraverseUnordered(participants.filter(_.identifier.hashCode % nodesSize == index)) {
-          participant => performHeartbeatCall(participant).map(r => println(r.status))
-            .onErrorRecoverWith { case _ => println(participant.identifier + " fail"); Task.unit }
-        }.flatMap(_ => Task.unit)
+          participant =>
+            performHeartbeatCall(participant)
+              .map(_.status.isSuccess)
+              .onErrorRecoverWith { _ => Task.now(false) }
+              .map(heartbeatCallSuccessful =>
+                if (heartbeatCallSuccessful)
+                  if (participant.isHealthy) ??? // do nothing
+                  else ??? // save event that participant is healthy and reset record in unhealthy table
+                else ???
+                // increment record in unhealthy table and insert event based on this info ..
+              ) // todo mszmal: continue
 
-      case ((_, _), _)
-      => Task.unit
+        }.flatMap((_: Seq[Any]) => Task.unit)
+
+      case ((_, _), _) => Task.unit
     }
   }
 
