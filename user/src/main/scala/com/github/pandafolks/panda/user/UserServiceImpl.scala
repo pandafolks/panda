@@ -54,7 +54,7 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
       case (userOperator, _) =>
         OptionT(userDao.validateUser(credentials, userOperator))
           .foldF(Task.now(false))(userDao.delete(_, userOperator))
-    }.onErrorRecoverWith { _ => Task.now(false) }
+    }
 
   override def create(username: String, password: String): Task[Either[PersistenceError, UserId]] =
     c.use {
