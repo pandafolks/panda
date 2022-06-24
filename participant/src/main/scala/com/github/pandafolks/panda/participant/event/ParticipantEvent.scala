@@ -18,7 +18,7 @@ final case class ParticipantEvent(
                                    eventType: ParticipantEventType,
                                  ) {
   def convertEventIntoParticipant(participant: Participant, shouldBeSkipped: Boolean = false): (Participant, Boolean) =
-    this.eventType match {
+    eventType match {
       // MainState
       case ParticipantEventType.Created() => // init
         (participant.copy(

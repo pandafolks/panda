@@ -37,4 +37,20 @@ trait ParticipantEventService {
    * @return                                List of the participants
    */
   def constructAllParticipants(): Task[List[Participant]]
+
+  /**
+   * Marks a participant with a specified identifier as connected, in other words healthy.
+   *
+   * @param participantIdentifier           A unique across all groups identifier
+   * @return                                Either empty if marked successfully or PersistenceError if the error occurred
+   */
+  def markParticipantAsHealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]]
+
+  /**
+   * Marks a participant with a specified identifier as disconnected, in other words unhealthy.
+   *
+   * @param participantIdentifier           A unique across all groups identifier
+   * @return                                Either empty if marked successfully or PersistenceError if the error occurred
+   */
+  def markParticipantAsUnhealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]]
 }

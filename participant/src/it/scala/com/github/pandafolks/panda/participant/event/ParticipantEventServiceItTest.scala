@@ -26,7 +26,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     case (p, _) => p.db.dropCollection(participantEventsColName)
   }.runToFuture, 5.seconds)
 
-  "createParticipant" should "insert Created event and assign default identifier" in {
+  "ParticipantEventService#createParticipant" should "insert Created event and assign default identifier" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.1", 1001, "cars")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
@@ -150,7 +150,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     }
   }
 
-  "modifyParticipant" should "fail if there is participant with requested identifier" in {
+  "ParticipantEventService#modifyParticipant" should "fail if there is participant with requested identifier" in {
     val identifier = randomString("identifier")
 
     val f = participantEventService.modifyParticipant(ParticipantModificationDto(
@@ -177,11 +177,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
         participantEventService.modifyParticipant(ParticipantModificationDto(
           host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(defaultIdentifier), heartbeatRoute = Some("SomePath/"), working = Option.empty
         ))
-    )
+      )
       .flatMap(res =>
-      participantEventsAndSequencesConnection.use(p =>
-        p._1.source.find(Filters.eq("participantIdentifier", defaultIdentifier)).toListL
-      ).map(events => (res, events)))
+        participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", defaultIdentifier)).toListL
+        ).map(events => (res, events)))
       .runToFuture
 
     whenReady(f) { res =>
@@ -206,9 +206,9 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
         ))
       )
       .flatMap(res =>
-      participantEventsAndSequencesConnection.use(p =>
-        p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
-      ).map(events => (res, events)))
+        participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
+        ).map(events => (res, events)))
       .runToFuture
 
     whenReady(f) { res =>
@@ -294,7 +294,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     }
   }
 
-  "removeParticipant" should "insert Removed event if the participant with requested identifier exists - not matter what happened before" in {
+  "ParticipantEventService#removeParticipant" should "insert Removed event if the participant with requested identifier exists - not matter what happened before" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.1.1.4", 1026, "ships")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
@@ -332,6 +332,82 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
 
     whenReady(f) { res =>
       res should be(Left(NotExists("Participant with identifier \"" + identifier + "\" does not exist")))
+    }
+  }
+
+  "ParticipantEventService#markParticipantAsHealthy" should "insert Joined event if the participant with requested identifier exists" in {
+    val identifier = randomString("markParticipantAsHealthy")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), heartbeatRoute = Some("api/hb"), working = Some(true)))
+        >> participantEventService.markParticipantAsHealthy(identifier)
+        .flatMap(res => participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
+        ).map(events => (res, events)))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res._1.toOption.get should be (())
+      res._2.size should be (3)
+      res._2.maxBy(_.eventId).eventType should be (ParticipantEventType.Joined())
+    }
+  }
+
+  it should "return NotExists if there is not participant with requested identifier" in {
+    val identifier = randomString("markParticipantAsHealthy")
+    val anotherIdentifier = randomString("SomeRandomIdentifier")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), heartbeatRoute = Some("api/hb"), working = Some(true)))
+        >> participantEventService.markParticipantAsHealthy(identifier)
+        .flatMap(res => participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
+        ).map(events => (res, events)))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res._1 should be (Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
+      res._2.size should be (0)
+    }
+  }
+
+  "ParticipantEventService#markParticipantAsUnhealthy" should "insert Disconnected event if the participant with requested identifier exists" in {
+    val identifier = randomString("markParticipantAsUnhealthy")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), heartbeatRoute = Some("api/hb"), working = Some(false)))
+        >> participantEventService.markParticipantAsUnhealthy(identifier)
+        .flatMap(res => participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
+        ).map(events => (res, events)))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res._1.toOption.get should be (())
+      res._2.size should be (2)
+      res._2.maxBy(_.eventId).eventType should be (ParticipantEventType.Disconnected())
+    }
+  }
+
+  it should "return NotExists if there is not participant with requested identifier" in {
+    val identifier = randomString("markParticipantAsUnhealthy")
+    val anotherIdentifier = randomString("SomeRandomIdentifier")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), heartbeatRoute = Some("api/hb"), working = Some(false)))
+        >> participantEventService.markParticipantAsUnhealthy(identifier)
+        .flatMap(res => participantEventsAndSequencesConnection.use(p =>
+          p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
+        ).map(events => (res, events)))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res._1 should be (Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
+      res._2.size should be (0)
     }
   }
 }

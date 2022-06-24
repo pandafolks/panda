@@ -47,13 +47,15 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
         Task.parTraverseUnordered(pickParticipantsForNode(participants, nodesSize, currentNodeIndex)) {
           participant =>
             performHeartbeatCallAndReturnResult(participant)
-              .map(heartbeatCallSuccessful =>
-                if (heartbeatCallSuccessful)
-                  if (participant.isHealthy) ??? // do nothing
-                  else ??? // save event that participant is healthy and reset record in unhealthy table
-                else ???
-                // increment record in unhealthy table and insert event based on this info ..
-              ) // todo mszmal: continue
+              .map {
+                case true if !participant.isHealthy =>
+                case false if participant.isHealthy =>
+                // 2 scenarios where actions are not needed:
+                //    - hearthbeat successful + participant healthy (all good)
+                //    - hearthbeat failed + participant not healthy (we already are aware that participant is not healthy, so no event needs to be emitted)
+                case _ => Task.unit
+
+              }
 
 
 
