@@ -48,16 +48,16 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking),
-        Participant("59.145.84.52", 4001, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), Working),
-        Participant("59.145.84.53", 4002, Group("planes"), "id3", HeartbeatInfo("/heartbeat"), Working)
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
+        Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working),
+        Participant("59.145.84.53", 4002, Group("planes"), "id3", HealthcheckInfo("/heartbeat"), Working)
       )
     ).runToFuture, 5.seconds)
 
     cache.getAllWorkingParticipants.runToFuture.map(_.toList).map(l => l should
       contain theSameElementsAs List(
-      Participant("59.145.84.52", 4001, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), Working),
-      Participant("59.145.84.53", 4002, Group("planes"), "id3", HeartbeatInfo("/heartbeat"), Working)
+      Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working),
+      Participant("59.145.84.53", 4002, Group("planes"), "id3", HealthcheckInfo("/heartbeat"), Working)
     ))
   }
 
@@ -65,20 +65,20 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, Unhealthy),
-        Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
-        Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
+        Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4003, Group("cars"), "id3", HealthcheckInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4006, Group("planes"), "id6", HealthcheckInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.53", 4007, Group("planes"), "id7", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
       )
     ).runToFuture, 5.seconds)
 
     cache.getAllHealthyParticipants.runToFuture.map(_.toList).map(l => l should
       contain theSameElementsAs List(
-      Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy),
-      Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
+      Participant("59.145.84.51", 4003, Group("cars"), "id3", HealthcheckInfo("/heartbeat"), Working, Healthy),
+      Participant("59.145.84.53", 4006, Group("planes"), "id6", HealthcheckInfo("/heartbeat"), Working, Healthy),
 
     ))
   }
@@ -102,15 +102,15 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking),
-        Participant("59.145.84.52", 4001, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), Working),
-        Participant("59.145.84.53", 4002, Group("planes"), "id3", HeartbeatInfo("/heartbeat"), Working)
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
+        Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working),
+        Participant("59.145.84.53", 4002, Group("planes"), "id3", HealthcheckInfo("/heartbeat"), Working)
       )
     ).runToFuture, 5.seconds)
 
     cache.getWorkingParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(_.toList).map(l => l should
       contain theSameElementsAs List(
-      Participant("59.145.84.52", 4001, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), Working)
+      Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working)
     ))
   }
 
@@ -118,9 +118,9 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking),
-        Participant("59.145.84.52", 4001, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking),
-        Participant("59.145.84.53", 4002, Group("planes"), "id3", HeartbeatInfo("/heartbeat"), Working)
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
+        Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking),
+        Participant("59.145.84.53", 4002, Group("planes"), "id3", HealthcheckInfo("/heartbeat"), Working)
       )
     ).runToFuture, 5.seconds)
 
@@ -131,19 +131,19 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, Unhealthy),
-        Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
-        Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
+        Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4003, Group("cars"), "id3", HealthcheckInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4006, Group("planes"), "id6", HealthcheckInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.53", 4007, Group("planes"), "id7", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
       )
     ).runToFuture, 5.seconds)
 
     cache.getHealthyParticipantsAssociatedWithGroup(Group("cars")).runToFuture.map(_.toList).map(l => l should
       contain theSameElementsAs List(
-      Participant("59.145.84.51", 4003, Group("cars"), "id3", HeartbeatInfo("/heartbeat"), Working, Healthy)
+      Participant("59.145.84.51", 4003, Group("cars"), "id3", HealthcheckInfo("/heartbeat"), Working, Healthy)
     ))
   }
 
@@ -151,12 +151,12 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
       List(
-        Participant("59.145.84.51", 4001, Group("cars"), "id1", HeartbeatInfo("/heartbeat"), NotWorking, Unhealthy),
-        Participant("59.145.84.51", 4002, Group("cars"), "id2", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
-        Participant("59.145.84.52", 4004, Group("cars"), "id4", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4005, Group("planes"), "id5", HeartbeatInfo("/heartbeat"), Working, Unhealthy),
-        Participant("59.145.84.53", 4006, Group("planes"), "id6", HeartbeatInfo("/heartbeat"), Working, Healthy),
-        Participant("59.145.84.53", 4007, Group("planes"), "id7", HeartbeatInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
+        Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
+        Participant("59.145.84.52", 4004, Group("cars"), "id4", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4005, Group("planes"), "id5", HealthcheckInfo("/heartbeat"), Working, Unhealthy),
+        Participant("59.145.84.53", 4006, Group("planes"), "id6", HealthcheckInfo("/heartbeat"), Working, Healthy),
+        Participant("59.145.84.53", 4007, Group("planes"), "id7", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
       )
     ).runToFuture, 5.seconds)
 

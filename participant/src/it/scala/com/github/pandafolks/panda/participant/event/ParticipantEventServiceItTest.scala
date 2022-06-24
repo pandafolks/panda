@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant.event
 
 import com.github.pandafolks.panda.participant.Participant
-import com.github.pandafolks.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
+import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
 import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
@@ -30,7 +30,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.1", 1001, "cars")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Option.empty, heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
         p._1.source.find(Filters.eq("participantIdentifier", defaultIdentifier)).toListL
@@ -41,7 +41,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._1.toOption.get should be(defaultIdentifier)
       res._2.size should be(1)
       res._2.head.eventType should be(ParticipantEventType.Created())
-      res._2.head.participantDataModification.heartbeatRoute should be(Some(HEARTBEAT_DEFAULT_ROUTE))
+      res._2.head.participantDataModification.healthcheckRoute should be(Some(HEALTHCHECK_DEFAULT_ROUTE))
       res._2.head.participantDataModification.host should be(Some("127.0.0.1"))
       res._2.head.participantDataModification.port should be(Some(1001))
       res._2.head.participantDataModification.groupName should be(Some("cars"))
@@ -52,7 +52,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(true)
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
         p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -67,11 +67,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     }
   }
 
-  it should "insert Created event, insert TurnedOn event (working attribute not set) and apply custom heartbeat path" in {
+  it should "insert Created event, insert TurnedOn event (working attribute not set) and apply custom healthcheck path" in {
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Option.empty
+      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
         p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -82,7 +82,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._1.toOption.get should be(identifier)
       res._2.size should be(2)
       res._2.minBy(_.eventId).eventType should be(ParticipantEventType.Created())
-      res._2.minBy(_.eventId).participantDataModification.heartbeatRoute should be(Some("/api/check"))
+      res._2.minBy(_.eventId).participantDataModification.healthcheckRoute should be(Some("/api/check"))
       res._2.sortBy(_.eventId).tail.head.eventType should be(ParticipantEventType.TurnedOn())
     }
   }
@@ -91,7 +91,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Option.empty
+      host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
         p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -108,10 +108,10 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Option.empty
+      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(_ =>
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.0.0.1"), port = Some(131213), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check2"), working = Option.empty
+        host = Some("127.0.0.1"), port = Some(131213), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check2"), working = Option.empty
       ))
     ).runToFuture
 
@@ -126,12 +126,12 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+      host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Some(false)
     )).flatMap(_ =>
       participantEventService.removeParticipant(identifier)
     ).flatMap(_ =>
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.0.0.1"), port = Some(141414), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Some(false)
+        host = Some("127.0.0.1"), port = Some(141414), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Some(false)
       ))
     ).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -143,7 +143,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._1.toOption.get should be(identifier)
       res._2.size should be(3)
       res._2.head.eventType should be(ParticipantEventType.Created())
-      res._2.head.participantDataModification.heartbeatRoute should be(Some("/api/check"))
+      res._2.head.participantDataModification.healthcheckRoute should be(Some("/api/check"))
       res._2.head.participantDataModification.host should be(Some("127.0.0.1"))
       res._2.head.participantDataModification.port should be(Some(141414))
       res._2.head.participantDataModification.groupName should be(Some("planes"))
@@ -154,7 +154,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.modifyParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Some("/api/check"), working = Option.empty
+      host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
         p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -171,11 +171,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.2", 1002, "ships")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("ships"), identifier = Option.empty, heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
         participantEventService.modifyParticipant(ParticipantModificationDto(
-          host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(defaultIdentifier), heartbeatRoute = Some("SomePath/"), working = Option.empty
+          host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(defaultIdentifier), healthcheckRoute = Some("SomePath/"), working = Option.empty
         ))
       )
       .flatMap(res =>
@@ -188,9 +188,9 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._1.toOption.get should be(defaultIdentifier)
       res._2.size should be(2)
       res._2.minBy(_.eventId).eventType should be(ParticipantEventType.Created())
-      res._2.minBy(_.eventId).participantDataModification.heartbeatRoute should be(Some(HEARTBEAT_DEFAULT_ROUTE))
+      res._2.minBy(_.eventId).participantDataModification.healthcheckRoute should be(Some(HEALTHCHECK_DEFAULT_ROUTE))
       res._2.sortBy(_.eventId).tail.head.eventType should be(ParticipantEventType.ModifiedData())
-      res._2.sortBy(_.eventId).tail.head.participantDataModification.heartbeatRoute should be(Some("SomePath/"))
+      res._2.sortBy(_.eventId).tail.head.participantDataModification.healthcheckRoute should be(Some("SomePath/"))
     }
   }
 
@@ -198,11 +198,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
         participantEventService.modifyParticipant(ParticipantModificationDto(
-          host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(identifier), heartbeatRoute = Option.empty, working = Some(true)
+          host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(true)
         ))
       )
       .flatMap(res =>
@@ -230,11 +230,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("identifier")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
         participantEventService.modifyParticipant(ParticipantModificationDto(
-          host = Some("127.0.0.2"), port = Some(1003), groupName = Some("ships"), identifier = Some(identifier), heartbeatRoute = Option.empty, working = Some(false)
+          host = Some("127.0.0.2"), port = Some(1003), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
         ))
       )
       .flatMap(res =>
@@ -256,7 +256,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._2.sortBy(_.eventId).tail.head.participantDataModification.host should be(Some("127.0.0.2"))
       res._2.sortBy(_.eventId).tail.head.participantDataModification.port should be(Some(1003))
       res._2.sortBy(_.eventId).tail.head.participantDataModification.groupName should be(Some("ships"))
-      res._2.sortBy(_.eventId).tail.head.participantDataModification.heartbeatRoute should be(Option.empty)
+      res._2.sortBy(_.eventId).tail.head.participantDataModification.healthcheckRoute should be(Option.empty)
 
 
       res._2.sortBy(_.eventId).tail.last.eventType should be(ParticipantEventType.TurnedOff())
@@ -268,11 +268,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.4", 1006, "ships")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.0.0.4"), port = Some(1006), groupName = Some("ships"), identifier = Option.empty, heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.4"), port = Some(1006), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
         participantEventService.modifyParticipant(ParticipantModificationDto(
-          host = Some("127.0.0.9"), port = Some(1234), groupName = Some("ships2"), identifier = Option.empty, heartbeatRoute = Some("SomePath2/"), working = Option.empty
+          host = Some("127.0.0.9"), port = Some(1234), groupName = Some("ships2"), identifier = Option.empty, healthcheckRoute = Some("SomePath2/"), working = Option.empty
         ))
       )
       .flatMap(res =>
@@ -290,7 +290,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._2.minBy(_.eventId).participantDataModification.host should be(Some("127.0.0.4"))
       res._2.minBy(_.eventId).participantDataModification.port should be(Some(1006))
       res._2.minBy(_.eventId).participantDataModification.groupName should be(Some("ships"))
-      res._2.minBy(_.eventId).participantDataModification.heartbeatRoute should be(Some(HEARTBEAT_DEFAULT_ROUTE))
+      res._2.minBy(_.eventId).participantDataModification.healthcheckRoute should be(Some(HEALTHCHECK_DEFAULT_ROUTE))
     }
   }
 
@@ -298,7 +298,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val defaultIdentifier = Participant.createDefaultIdentifier("127.1.1.4", 1026, "ships")
 
     val f = participantEventService.createParticipant(ParticipantModificationDto(
-      host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Option.empty, heartbeatRoute = Some("api/hb"), working = Some(false)
+      host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Some("api/hb"), working = Some(false)
     ))
       .flatMap(_ => participantEventService.removeParticipant(defaultIdentifier))
       .flatMap(res =>
@@ -316,13 +316,13 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._2.minBy(_.eventId).participantDataModification.host should be(Some("127.1.1.4"))
       res._2.minBy(_.eventId).participantDataModification.port should be(Some(1026))
       res._2.minBy(_.eventId).participantDataModification.groupName should be(Some("ships"))
-      res._2.minBy(_.eventId).participantDataModification.heartbeatRoute should be(Some("api/hb"))
+      res._2.minBy(_.eventId).participantDataModification.healthcheckRoute should be(Some("api/hb"))
 
       res._2.sortBy(_.eventId).tail.head.eventType should be(ParticipantEventType.Removed())
       res._2.sortBy(_.eventId).tail.head.participantDataModification.host should be(Option.empty)
       res._2.sortBy(_.eventId).tail.head.participantDataModification.port should be(Option.empty)
       res._2.sortBy(_.eventId).tail.head.participantDataModification.groupName should be(Option.empty)
-      res._2.sortBy(_.eventId).tail.head.participantDataModification.heartbeatRoute should be(Option.empty)
+      res._2.sortBy(_.eventId).tail.head.participantDataModification.healthcheckRoute should be(Option.empty)
     }
   }
 
@@ -340,7 +340,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
 
     val f = (
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), heartbeatRoute = Some("api/hb"), working = Some(true)))
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventService.markParticipantAsHealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
           p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -360,7 +360,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
 
     val f = (
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), heartbeatRoute = Some("api/hb"), working = Some(true)))
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventService.markParticipantAsHealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
           p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -378,7 +378,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
 
     val f = (
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), heartbeatRoute = Some("api/hb"), working = Some(false)))
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(false)))
         >> participantEventService.markParticipantAsUnhealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
           p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL
@@ -398,7 +398,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
 
     val f = (
       participantEventService.createParticipant(ParticipantModificationDto(
-        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), heartbeatRoute = Some("api/hb"), working = Some(false)))
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), healthcheckRoute = Some("api/hb"), working = Some(false)))
         >> participantEventService.markParticipantAsUnhealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
           p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL

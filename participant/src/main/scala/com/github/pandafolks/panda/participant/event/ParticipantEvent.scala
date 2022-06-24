@@ -26,7 +26,7 @@ final case class ParticipantEvent(
           port = participantDataModification.port.getOrElse(-1),
           group = Group(participantDataModification.groupName.getOrElse("")),
           identifier = participantIdentifier,
-          heartbeatInfo = HeartbeatInfo(participantDataModification.heartbeatRoute.getOrElse("")),
+          healthcheckInfo = HealthcheckInfo(participantDataModification.healthcheckRoute.getOrElse("")),
           status = NotWorking,
         ), false)
       case ParticipantEventType.Removed() => (participant.copy(status = NotWorking), true)
@@ -41,7 +41,7 @@ final case class ParticipantEvent(
           host = participantDataModification.host.getOrElse(participant.host),
           port = participantDataModification.port.getOrElse(participant.port),
           group = participantDataModification.groupName.map(gn => Group(gn)).getOrElse(participant.group),
-          heartbeatInfo = participantDataModification.heartbeatRoute.map(hr => HeartbeatInfo(hr)).getOrElse(participant.heartbeatInfo),
+          healthcheckInfo = participantDataModification.healthcheckRoute.map(hr => HealthcheckInfo(hr)).getOrElse(participant.healthcheckInfo),
         ), shouldBeSkipped)
 
       // Connection

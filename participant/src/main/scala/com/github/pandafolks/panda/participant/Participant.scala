@@ -13,7 +13,7 @@ final case class Participant(
                               port: Int,
                               group: Group,
                               identifier: String,
-                              heartbeatInfo: HeartbeatInfo,
+                              healthcheckInfo: HealthcheckInfo,
                               status: ParticipantStatus,
                               health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
                             ) {
@@ -23,7 +23,7 @@ final case class Participant(
 }
 
 object Participant {
-  final val HEARTBEAT_DEFAULT_ROUTE: String = "heartbeat"
+  final val HEALTHCHECK_DEFAULT_ROUTE: String = "healthcheck"
 
   def apply(host: String, port: Int, group: Group): Participant =
     new Participant(
@@ -31,7 +31,7 @@ object Participant {
       port = port,
       group = group,
       identifier = createDefaultIdentifier(host, port, group.name),
-      heartbeatInfo = HeartbeatInfo(HEARTBEAT_DEFAULT_ROUTE),
+      healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
       status = Working,
     )
 
@@ -41,17 +41,17 @@ object Participant {
       port = port,
       group = group,
       identifier = identifier,
-      heartbeatInfo = HeartbeatInfo(HEARTBEAT_DEFAULT_ROUTE),
+      healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
       status = Working,
     )
 
-  def apply(host: String, port: Int, group: Group, heartbeatInfo: HeartbeatInfo): Participant =
+  def apply(host: String, port: Int, group: Group, healthcheckInfo: HealthcheckInfo): Participant =
     new Participant(
       host = host,
       port = port,
       group = group,
       identifier = createDefaultIdentifier(host, port, group.name),
-      heartbeatInfo = heartbeatInfo,
+      healthcheckInfo = healthcheckInfo,
       status = Working
     )
 
@@ -59,7 +59,7 @@ object Participant {
     List(host, port, groupName).mkString("-")
 
   @Deprecated
-  def createHeartbeatEndpoint(host: String, port: Int, route: String): String =
+  def createHealthcheckEndpoint(host: String, port: Int, route: String): String =
       Path.unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
         .concat(Path.unsafeFromString(route))
         .renderString

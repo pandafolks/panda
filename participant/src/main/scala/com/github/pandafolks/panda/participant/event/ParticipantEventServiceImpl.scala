@@ -2,9 +2,9 @@ package com.github.pandafolks.panda.participant.event
 
 import cats.data.EitherT
 import cats.effect.Resource
-import com.github.pandafolks.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
+import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
 import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
-import com.github.pandafolks.panda.participant.{Healthy, HeartbeatInfo, NotWorking, Participant, ParticipantHealth, Unhealthy}
+import com.github.pandafolks.panda.participant.{Healthy, HealthcheckInfo, NotWorking, Participant, ParticipantHealth, Unhealthy}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
@@ -37,7 +37,7 @@ final class ParticipantEventServiceImpl(
             case Right(false) => insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.of(participantModificationDto)
-                .copy(heartbeatRoute = participantModificationDto.heartbeatRoute.orElse(Some(HEARTBEAT_DEFAULT_ROUTE))),
+                .copy(healthcheckRoute = participantModificationDto.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))),
               ParticipantEventType.Created()
             )(sequenceOperator, participantEventOperator)
             case Left(value) => Task.now(Left(value))
@@ -109,7 +109,7 @@ final class ParticipantEventServiceImpl(
   }
 
   override def constructAllParticipants(): Task[List[Participant]] = {
-    val dumbParticipant = Participant("", -1, Group(""), "", HeartbeatInfo(""), NotWorking)
+    val dumbParticipant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
     c.use {
       case (participantEventOperator, _) =>
         participantEventDao.getOrderedEvents(participantEventOperator)

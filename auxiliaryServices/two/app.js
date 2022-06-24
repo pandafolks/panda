@@ -18,7 +18,7 @@ app.get('/api/v2/planes/:plane_id/passengers', (req, res) => {
     res.send(jsonExample1);
 })
 
-app.get('/heartbeat', (req, res) => {
+app.get('/healthcheck', (req, res) => {
     res.sendStatus(200);
 })
 

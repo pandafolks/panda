@@ -56,10 +56,10 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
     val identifier1 = randomString("identifier1")
     val identifier2 = randomString("identifier2")
     val participantEvent1 = ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(false)
     )
     val participantEvent2 = ParticipantModificationDto(
-      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
     val f = (Task.sequence(List(
@@ -98,13 +98,13 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
     val identifier2 = randomString("identifier4")
     val identifier3 = randomString("identifier5")
     val participantEvent1 = ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), heartbeatRoute = Option.empty, working = Some(false)
+      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(false)
     )
     val participantEvent2 = ParticipantModificationDto(
-      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
     val participantEvent3 = ParticipantModificationDto(
-      host = Some("127.0.0.3"), port = Some(1003), groupName = Some("cars"), identifier = Some(identifier3), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.3"), port = Some(1003), groupName = Some("cars"), identifier = Some(identifier3), healthcheckRoute = Option.empty, working = Some(true)
     )
 
     val f = (Task.sequence(List(
@@ -151,10 +151,10 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
     val identifier1 = randomString("identifier6")
     val identifier2 = randomString("identifier7")
     val participantEvent1 = ParticipantModificationDto(
-      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(true)
     )
     val participantEvent2 = ParticipantModificationDto(
-      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), heartbeatRoute = Option.empty, working = Some(true)
+      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
     val f = (Task.sequence(List(

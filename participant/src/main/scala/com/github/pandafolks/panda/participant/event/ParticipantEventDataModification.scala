@@ -6,7 +6,7 @@ case class ParticipantEventDataModification(
                                              host: Option[String],
                                              port: Option[Int],
                                              groupName: Option[String],
-                                             heartbeatRoute: Option[String]
+                                             healthcheckRoute: Option[String]
                                       )
 
 object ParticipantEventDataModification {
@@ -17,6 +17,6 @@ object ParticipantEventDataModification {
       host = dto.host,
       port = dto.port,
       groupName = dto.groupName,
-      heartbeatRoute = dto.heartbeatRoute
+      healthcheckRoute = dto.healthcheckRoute
     )
 }
