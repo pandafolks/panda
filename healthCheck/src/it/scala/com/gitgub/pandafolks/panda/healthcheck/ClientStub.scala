@@ -1,19 +1,18 @@
-package com.github.pandafolks.panda.loadbalancer
+package com.gitgub.pandafolks.panda.healthcheck
 
 import cats.data.Kleisli
 import cats.effect.Resource
 import monix.eval.Task
-import org.http4s.{EntityDecoder, Header, HttpApp, Request, Response, Status, Uri}
 import org.http4s.client.Client
-import org.typelevel.ci.CIString
+import org.http4s._
 
 final class ClientStub extends Client[Task] {
   override def run(req: Request[Task]): Resource[Task, Response[Task]] =
     Resource.eval(Task.eval(
       req.uri.toString.dropWhile(_ == '/') match {
-        case path if ClientStub.AVAILABLE_ROUTES.contains(path) =>
-          Response[Task]().withHeaders(Header.Raw(CIString("from"), path))
-        case _ => throw new Exception("Server Not accessible")
+        case path if ClientStub.AVAILABLE_WORKING_ROUTES.contains(path) =>
+          Response[Task](Status.Ok)
+        case _ => Response[Task](Status.ServiceUnavailable)
       }
     ))
 
@@ -73,8 +72,8 @@ final class ClientStub extends Client[Task] {
 }
 
 object ClientStub {
-  final val AVAILABLE_ROUTES: List[String] = List(
-    "13.204.158.90:3000/api/v1/cars/rent",
-    "193.207.130.133:3000/api/v1/cars/rent",
+  final val AVAILABLE_WORKING_ROUTES: List[String] = List(
+    "13.204.158.92:3000/api/v1/health",
+    "193.207.130.139:3005/healthcheck",
   )
 }

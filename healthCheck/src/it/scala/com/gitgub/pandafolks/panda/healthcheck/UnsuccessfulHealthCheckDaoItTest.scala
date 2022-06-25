@@ -14,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 
 class UnsuccessfulHealthCheckDaoItTest extends AsyncFlatSpec with UnsuccessfulHealthCheckFixture with Matchers with ScalaFutures
   with BeforeAndAfterAll with BeforeAndAfterEach {
-  implicit val scheduler: Scheduler = Scheduler.io("node-tracker-service-it-test")
+  implicit val scheduler: Scheduler = Scheduler.io("unsuccessful-health-check-dao-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

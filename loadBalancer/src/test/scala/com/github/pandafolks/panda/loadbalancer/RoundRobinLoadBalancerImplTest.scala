@@ -85,5 +85,5 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
 
   private def fromResponseAssert(response: Response[Task], availableRouteIndex: Int): Assertion =
     response.headers.headers.find(p => p.name == CIString("from"))
-        .fold(fail())(_.value should be (ClientStub.availableRoutes.toArray.apply(availableRouteIndex)))
+        .fold(fail())(_.value should be (ClientStub.AVAILABLE_ROUTES.toArray.apply(availableRouteIndex)))
 }

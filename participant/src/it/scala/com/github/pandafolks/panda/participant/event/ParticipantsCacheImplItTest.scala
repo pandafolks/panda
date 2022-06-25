@@ -5,7 +5,7 @@ import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
-import monix.execution.Scheduler
+import monix.execution.{CancelableFuture, Scheduler}
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.Mockito.{clearInvocations, mock, times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
@@ -19,8 +19,7 @@ import scala.concurrent.duration.DurationInt
 
 class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach with PrivateMethodTester {
-  //  todo mszmal: Once the health check mechanism is implemented and there are methods for inserting Joined/Disconnected
-  //   events extend these tests by adding checks on getHealthyParticipantsAssociatedWithGroup method
+
   implicit val scheduler: Scheduler = Scheduler.io("participant-cache-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
@@ -62,15 +61,16 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
-    val f = (Task.sequence(List(
+    val f: CancelableFuture[(List[Group], Vector[Participant], Vector[Participant], Vector[Participant])] = (Task.sequence(List(
       participantEventService.createParticipant(participantEvent1),
       participantEventService.createParticipant(participantEvent2)
     ))
       >> cache.invokePrivate(refreshCache())
-      >> Task.parZip3(
+      >> Task.parZip4(
       cache.getAllGroups,
       cache.getParticipantsAssociatedWithGroup(Group("cars")),
       cache.getWorkingParticipantsAssociatedWithGroup(Group("cars")),
+      cache.getHealthyParticipantsAssociatedWithGroup(Group("cars"))
     )).runToFuture
 
     whenReady(f) { res =>
@@ -85,7 +85,7 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       res._2.map(_.identifier) should contain theSameElementsAs List(identifier1, identifier2)
       res._3.size should be(1)
       res._3.head.identifier should be(identifier2)
-
+      res._4.size should be(0)
     }
   }
 
@@ -107,7 +107,7 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       host = Some("127.0.0.3"), port = Some(1003), groupName = Some("cars"), identifier = Some(identifier3), healthcheckRoute = Option.empty, working = Some(true)
     )
 
-    val f = (Task.sequence(List(
+    val f: CancelableFuture[(List[Group], Vector[Participant], Vector[Participant], Vector[Participant])] = (Task.sequence(List(
       participantEventService.createParticipant(participantEvent1),
       participantEventService.createParticipant(participantEvent2)
     ))
@@ -117,13 +117,15 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       participantEventService.modifyParticipant(ParticipantModificationDto(
         host = Some("127.1.1.1"), working = Some(false), identifier = Some(identifier2) // modification of seconds participant and turning it off
       )),
-      participantEventService.createParticipant(participantEvent3) // creation of third participant (working)
+        participantEventService.createParticipant(participantEvent3), // creation of third participant (working)
+        participantEventService.markParticipantAsHealthy(identifier3),
     ))
       >> cache.invokePrivate(refreshCache())
-      >> Task.parZip3(
+      >> Task.parZip4(
       cache.getAllGroups,
       cache.getParticipantsAssociatedWithGroup(Group("cars")),
       cache.getWorkingParticipantsAssociatedWithGroup(Group("cars")),
+      cache.getHealthyParticipantsAssociatedWithGroup(Group("cars")),
     )).runToFuture
 
     whenReady(f) { res =>
@@ -139,7 +141,8 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       res._2.map(_.identifier) should contain theSameElementsAs List(identifier1, identifier2, identifier3)
       res._3.size should be(1)
       res._3.head.identifier should be(identifier3)
-
+      res._4.size should be(1)
+      res._4.head.identifier should be(identifier3)
     }
   }
 
@@ -157,25 +160,31 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
-    val f = (Task.sequence(List(
+    val f: CancelableFuture[(List[Group], Vector[Participant], Vector[Participant], Vector[Participant])] = (Task.sequence(List(
       participantEventService.createParticipant(participantEvent1),
       participantEventService.createParticipant(participantEvent2)
     ))
       >> cache.invokePrivate(refreshCache())
       >> Task.now(clearInvocations(listener))
       >> participantEventService.removeParticipant(identifier2)
+
+      >> participantEventService.markParticipantAsHealthy(identifier1)
+      >> participantEventService.markParticipantAsUnhealthy(identifier1)
+      >> participantEventService.markParticipantAsHealthy(identifier1)
+
       >> cache.invokePrivate(refreshCache())
-      >> Task.parZip3(
+      >> Task.parZip4(
       cache.getAllGroups,
       cache.getParticipantsAssociatedWithGroup(Group("cars")),
       cache.getWorkingParticipantsAssociatedWithGroup(Group("cars")),
+      cache.getHealthyParticipantsAssociatedWithGroup(Group("cars")),
     )).runToFuture
 
     whenReady(f) { res =>
       verify(listener, times(1)).notifyAboutAdd(
         argThat((list: List[Participant]) => list.map(_.identifier).toSet == Set(identifier1))) // participant1 is still valid
       verify(listener, times(1)).notifyAboutRemove(
-        argThat((set: Set[Participant]) => set.head.identifier == identifier2)) // participant2 was present in cache before refresh, but it is not anymore
+        argThat((set: Set[Participant]) => set.map(_.identifier) == Set(identifier1, identifier2))) // participant2 was present in cache before refresh, but it is not anymore and participant1 changed state from unhealthy to healthy
 
       res._1.size should be(1)
       res._1.head.name should be("cars")
@@ -184,7 +193,8 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       res._2.map(_.identifier) should contain theSameElementsAs List(identifier1)
       res._3.size should be(1)
       res._3.head.identifier should be(identifier1)
+      res._4.size should be(1)
+      res._4.head.identifier should be(identifier1)
     }
   }
-
 }

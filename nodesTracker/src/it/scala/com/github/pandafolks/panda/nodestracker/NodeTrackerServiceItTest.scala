@@ -68,6 +68,34 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     }
   }
 
+  it should "always return nodes in the same order" in {
+    val clock: Clock = java.time.Clock.systemUTC
+    //  In this test case we are not checking the filtering property, but sorting, so in order to remove flakiness the creation timestamp of a node is in future
+    val validNode1 = Node(new ObjectId(), clock.millis() + 10250)
+    val validNode2 = Node(new ObjectId(), clock.millis() + 15101)
+    val validNode3 = Node(new ObjectId(), clock.millis() + 15111)
+    val notValidNode1 = Node(new ObjectId(), clock.millis() - 501)
+    val notValidNode2 = Node(new ObjectId(), clock.millis() - 999)
+    val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
+
+    val f = (nodesConnection.use(c =>
+      for {
+        _ <- c.single.insertOne(validNode3)
+        _ <- c.single.insertOne(validNode1)
+        _ <- c.single.insertOne(validNode2)
+        _ <- c.single.insertOne(notValidNode1)
+        _ <- c.single.insertOne(notValidNode2)
+      } yield ()
+    ) >>
+      Task.sequence(List.fill(20)(nodeTrackerService.getWorkingNodes))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      val filterOut = res.map(_.filter(addedNodes.contains(_)))
+      filterOut.forall(_ == filterOut.head) should be(true) // all nested lists are the same
+    }
+  }
+
   private def getNode: Task[Node] =
     nodesConnection.use(c => c.source.find(Filters.eq("_id", new ObjectId(nodeTrackerService.getNodeId))).firstL)
 }

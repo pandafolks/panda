@@ -58,7 +58,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
     }
   }
 
-  def backgroundJob(): Task[Unit] = {
+  private def backgroundJob(): Task[Unit] = {
     Task.parZip2(
       getNodesSizeWithCurrentNodePosition,
       participantsCache.getAllWorkingParticipants

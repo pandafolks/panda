@@ -59,10 +59,10 @@ object LoadBalancerTestUtils {
   def fromResponseAssert(response: Response[Task]): Assertion =
     response.headers.headers.find(p => p.name == CIString("from"))
       .fold(fail())(
-        header => ClientStub.availableRoutes should contain (header.value))
+        header => ClientStub.AVAILABLE_ROUTES should contain (header.value))
 
   def fromResponseAssertAndReturnFrom(response: Response[Task]): String =
     response.headers.headers.find(p => p.name == CIString("from"))
       .fold(fail())(
-        header => { ClientStub.availableRoutes should contain (header.value); header.value } )
+        header => { ClientStub.AVAILABLE_ROUTES should contain (header.value); header.value } )
 }
