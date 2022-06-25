@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.healthcheck
 import com.github.pandafolks.panda.nodestracker.NodeTrackerService
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
+import com.github.pandafolks.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 import org.http4s.Uri.{Authority, RegName}
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory
 import org.typelevel.ci.CIString
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.immutable
 import scala.concurrent.duration.DurationInt
 
 /**
@@ -25,7 +27,9 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
                                               private val nodeTrackerService: NodeTrackerService,
                                               private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
                                               private val client: Client[Task],
-                                             )(private val healthCheckConfig: HealthCheckConfig) extends HealthCheckService {
+                                             )(private val healthCheckConfig: HealthCheckConfig)
+  extends HealthCheckService with ChangeListener[Participant] {
+
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private sealed trait EmittedEventType
@@ -38,19 +42,17 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
   }
 
-  // todo mszmal: add a listener on participants cache and clear eventsEmittedSinceLastCacheRefresh on every cache refresh.
-
   // HealthCheckConfig#callsInterval and ConsistencyConfig#fullConsistencyMaxDelay are two independent params. In order to not produce multiple Connection events this map was added.
   private val eventsEmittedSinceLastCacheRefresh: ConcurrentHashMap[String, EmittedEventType] = new ConcurrentHashMap
 
   locally {
-    // todo mszmal: test -> add real implementation
-
     import monix.execution.Scheduler.{global => scheduler}
 
     if (healthCheckConfig.callsInterval > 0 && healthCheckConfig.numberOfFailuresNeededToReact > 0) {
-      scheduler.scheduleAtFixedRate(0.seconds, 10.seconds) {
-        backgroundJob().runToFuture(scheduler)
+      scheduler.scheduleAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds) {
+        backgroundJob()
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e) }
+          .runToFuture(scheduler)
         ()
       }
     }
@@ -64,9 +66,14 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
       case ((Some(nodesSize), Some(currentNodeIndex)), participants) =>
         Task.parTraverseUnordered(pickParticipantsForNode(participants, nodesSize, currentNodeIndex)) {
           participant =>
+            // We are reading eventEmittedSinceLastCacheRefresh as early as possible because there is the scenario
+            // when the health check could take some time and in the meantime, cache got refreshed and
+            // eventsEmittedSinceLastCacheRefresh cleared and as a result, we would insert redundant event - as this is
+            // not the end of the world and we handle this in the proper way, reading this value earlier minimizes the risk.
+          val eventEmittedSinceLastCacheRefresh = Option(eventsEmittedSinceLastCacheRefresh.get(participant.identifier))
             performHealthcheckCallAndReturnResult(participant)
-              .map {
-                // healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
+              .flatMap {
+                // Healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
                 case true if !participant.isHealthy =>
                   unsuccessfulHealthCheckDao.clear(participant.identifier)
                     .map {
@@ -75,8 +82,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
                         logger.error(error.getMessage)
                         ()
                       case _ => ()
-                    } >> Task.eval(Option(eventsEmittedSinceLastCacheRefresh.get(participant.identifier))
-                    .fold(true)(eventType => eventType != EmittedEventType.MarkedParticipantAsHealthy))
+                    } >> Task.eval(eventEmittedSinceLastCacheRefresh.fold(true)(_ != EmittedEventType.MarkedParticipantAsHealthy))
                     .flatMap { eventNeedsToBeEmitted =>
                       if (eventNeedsToBeEmitted)
                         participantEventService.markParticipantAsHealthy(participant.identifier)
@@ -94,13 +100,13 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
                       ()
                     case _ => ()
                   }
-                // healthcheck failed, but the latest participant state inside cache was healthy, so we are incrementing related failed healthchecks counter and if the counter reaches specified limit we mark participant as not healthy.
+
+                // Healthcheck failed, but the latest participant state inside cache was healthy, so we are incrementing related failed healthchecks counter and if the counter reaches specified limit we mark participant as not healthy.
                 case false if participant.isHealthy =>
                   unsuccessfulHealthCheckDao.incrementCounter(participant.identifier).map {
                     case Right(counter)
                       if counter >= healthCheckConfig.numberOfFailuresNeededToReact
-                        && Option(eventsEmittedSinceLastCacheRefresh.get(participant.identifier))
-                        .fold(true)(eventType => eventType != EmittedEventType.MarkedParticipantAsUnhealthy) => true
+                        && eventEmittedSinceLastCacheRefresh.fold(true)(_ != EmittedEventType.MarkedParticipantAsUnhealthy) => true
                     case Right(_) => false
                     case Left(error) =>
                       logger.error(s"Unsuccessful healthcheck counter of ${participant.identifier} not incremented because of error.")
@@ -123,15 +129,13 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
                       ()
                     case _ => ()
                   }
+
                 // 2 scenarios where actions are not needed:
                 //    - healthcheck successful + participant healthy (all good)
                 //    - healthcheck failed + participant not healthy (we already are aware that participant is not healthy, so no event needs to be emitted)
                 case _ => Task.unit
               }
-
-          // todo mszmal: start work here...
-        }.flatMap((_: Seq[Any]) => Task.unit)
-
+        }.flatMap(_ => Task.unit)
       case ((_, _), _) => Task.unit
     }
   }
@@ -165,4 +169,11 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
       .map(_.status.isSuccess)
       .onErrorRecoverWith { _ => Task.now(false) }
 
+  // Once the cache is refreshed, we can assume that if the event was inserted it already should be present in the cache.
+  // Even if there will be some race (cache refresh is quite expensive) and we will clear too early - this is ok
+  // because in the worst scenario there will be a second event inserted (the default logic
+  // saves an event if eventsEmittedSinceLastCacheRefresh does not contain the identifier that was asked)
+  override def notifyAboutAdd(items: immutable.Iterable[Participant]): Task[Unit] = Task.evalAsync(eventsEmittedSinceLastCacheRefresh.clear())
+
+  override def notifyAboutRemove(items: immutable.Iterable[Participant]): Task[Unit] = Task.unit // no action needs to be taken
 }
