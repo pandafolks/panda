@@ -173,7 +173,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
   // Even if there will be some race (cache refresh is quite expensive) and we will clear too early - this is ok
   // because in the worst scenario there will be a second event inserted (the default logic
   // saves an event if eventsEmittedSinceLastCacheRefresh does not contain the identifier that was asked)
-  override def notifyAboutAdd(items: immutable.Iterable[Participant]): Task[Unit] = Task.evalAsync(eventsEmittedSinceLastCacheRefresh.clear())
+  override def notifyAboutAdd(items: immutable.Iterable[Participant]): Task[Unit] = Task.eval(eventsEmittedSinceLastCacheRefresh.clear())
 
   override def notifyAboutRemove(items: immutable.Iterable[Participant]): Task[Unit] = Task.unit // no action needs to be taken
 }
