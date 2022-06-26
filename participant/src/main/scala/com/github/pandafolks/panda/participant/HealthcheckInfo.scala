@@ -1,3 +1,3 @@
 package com.github.pandafolks.panda.participant
 
-final case class HeartbeatInfo(path: String)
+final case class HealthcheckInfo(path: String)

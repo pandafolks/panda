@@ -2,7 +2,7 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.{Healthy, Participant, ParticipantsCache}
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.Listener
+import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
@@ -30,13 +30,19 @@ object LoadBalancerTestUtils {
 
       override def getAllGroups: Task[List[Group]] = ???
 
+      override def getAllParticipants: Task[List[Participant]] = ???
+
+      override def getAllWorkingParticipants: Task[List[Participant]] = ???
+
+      override def getAllHealthyParticipants: Task[List[Participant]] = ???
+
       override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
       override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
       override def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
 
-      override def registerListener(listener: Listener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
+      override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
     }
   }
 
@@ -53,10 +59,10 @@ object LoadBalancerTestUtils {
   def fromResponseAssert(response: Response[Task]): Assertion =
     response.headers.headers.find(p => p.name == CIString("from"))
       .fold(fail())(
-        header => ClientStub.availableRoutes should contain (header.value))
+        header => ClientStub.AVAILABLE_ROUTES should contain (header.value))
 
   def fromResponseAssertAndReturnFrom(response: Response[Task]): String =
     response.headers.headers.find(p => p.name == CIString("from"))
       .fold(fail())(
-        header => { ClientStub.availableRoutes should contain (header.value); header.value } )
+        header => { ClientStub.AVAILABLE_ROUTES should contain (header.value); header.value } )
 }

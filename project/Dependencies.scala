@@ -72,6 +72,8 @@ object Dependencies {
 
   val gatewayDependencies: Seq[ModuleID] = CommonDependencies
 
+  val healthCheckDependencies: Seq[ModuleID] = CommonDependencies
+
   val loadBalancerDependencies: Seq[ModuleID] = CommonDependencies
 
   val participantDependencies: Seq[ModuleID] = CommonDependencies
@@ -87,6 +89,8 @@ object Dependencies {
     tsecPassword,
     cryptoBits
   ) ++ CommonDependencies
+
+  val nodesTrackerDependencies: Seq[ModuleID] = CommonDependencies
 
   val utilsDependencies: Seq[ModuleID] = Seq(
     scalaCacheCore,

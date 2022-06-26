@@ -4,29 +4,32 @@ import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.{Listener, DefaultPublisher}
+import com.github.pandafolks.panda.utils.{ChangeListener, DefaultPublisher}
 import monix.eval.Task
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.MultiDict
 import scala.concurrent.duration.DurationInt
 
-final class ParticipantsCacheImpl(private val participantEventService: ParticipantEventService,
-                                  private val cacheRefreshInterval: Int)(
-                                   // it is much more efficient to keep multiple cache instances instead of filtering on each cache call.
-                                   private val byGroup: Ref[Task, MultiDict[Group, Participant]],
-                                   private val workingByGroup: Ref[Task, MultiDict[Group, Participant]],
-                                   private val healthyByGroup: Ref[Task, MultiDict[Group, Participant]], // healthy means both healthy and working
-                                 ) extends ParticipantsCache {
+final class ParticipantsCacheImpl private( // This constructor cannot be used directly
+                                           private val participantEventService: ParticipantEventService,
+                                           private val cacheRefreshInterval: Int
+                                         )(
+                                           // It is much more efficient to keep multiple cache instances instead of filtering on each cache call.
+                                           private val byGroup: Ref[Task, MultiDict[Group, Participant]],
+                                           private val workingByGroup: Ref[Task, MultiDict[Group, Participant]],
+                                           private val healthyByGroup: Ref[Task, MultiDict[Group, Participant]], // Healthy means both healthy and working
+                                         ) extends ParticipantsCache {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
     import monix.execution.Scheduler.{global => scheduler}
 
     if (cacheRefreshInterval > 0) {
-      scheduler.scheduleAtFixedRate(0.seconds, cacheRefreshInterval.seconds) {
+      // Initial cache load is made by ParticipantsCacheImpl#apply
+      scheduler.scheduleAtFixedRate(cacheRefreshInterval.seconds, cacheRefreshInterval.seconds) {
         refreshCache()
-          .onErrorHandle { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
           .runToFuture(scheduler)
         ()
       }
@@ -36,6 +39,12 @@ final class ParticipantsCacheImpl(private val participantEventService: Participa
   private val publisher: DefaultPublisher[Participant] = new DefaultPublisher[Participant]()
 
   override def getAllGroups: Task[List[Group]] = byGroup.get.map(_.keySet).map(_.toList)
+
+  override def getAllParticipants: Task[List[Participant]] = byGroup.get.map(_.values.toList)
+
+  override def getAllWorkingParticipants: Task[List[Participant]] = workingByGroup.get.map(_.values.toList)
+
+  override def getAllHealthyParticipants: Task[List[Participant]] = healthyByGroup.get.map(_.values.toList)
 
   override def getParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] =
     getParticipantsBelongingToGroup(byGroup, group)
@@ -49,7 +58,7 @@ final class ParticipantsCacheImpl(private val participantEventService: Participa
   private def getParticipantsBelongingToGroup(cache: Ref[Task, MultiDict[Group, Participant]], group: Group): Task[Vector[Participant]] =
     cache.get.map(_.get(group)).map(_.toVector)
 
-  override def registerListener(listener: Listener[Participant]): Task[Unit] =
+  override def registerListener(listener: ChangeListener[Participant]): Task[Unit] =
     for {
       _ <- publisher.register(listener)
       cache <- byGroup.get
@@ -62,8 +71,8 @@ final class ParticipantsCacheImpl(private val participantEventService: Participa
       groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
       prevCacheStates <- Task.parZip3(
         byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
-        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.status == Working))),
-        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.status == Working && t._2.health == Healthy)))
+        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
+        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorking && t._2.isHealthy)))
       )
       (prevByGroupCacheState, _, _) = prevCacheStates
       _ <- Task.parZip2(
@@ -87,15 +96,16 @@ object ParticipantsCacheImpl {
   def apply(
              participantEventService: ParticipantEventService,
              initParticipants: List[Participant] = List.empty,
-             cacheRefreshInterval: Int = -1 // by default background job turned off
+             cacheRefreshInterval: Int = -1 // By default, the background job is turned off and the cache is filled with initParticipants forever.
            ): Task[ParticipantsCacheImpl] =
     for {
-      groupsWithParticipants <- Task.eval(initParticipants.map(p => (p.group, p)))
+      participants <- if (cacheRefreshInterval != -1) participantEventService.constructAllParticipants() else Task.eval(initParticipants)
+      groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
       participantsByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](MultiDict.from(groupsWithParticipants))
       workingParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
-        MultiDict.from(groupsWithParticipants.filter(_._2.status == Working)))
+        MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
-        MultiDict.from(groupsWithParticipants).filter(t => t._2.status == Working && t._2.health == Healthy))
+        MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorking && t._2.isHealthy))
     } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshInterval)(
       participantsByGroupRef,
       workingParticipantByGroupRef,

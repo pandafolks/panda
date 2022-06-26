@@ -4,10 +4,11 @@ import cats.data.OptionT
 import cats.effect.Resource
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.user.token.Token
-import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError}
+import com.github.pandafolks.panda.utils.{AlreadyExists, PandaStartupException, PersistenceError, UndefinedPersistenceError}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
+import org.slf4j.LoggerFactory
 import tsec.passwordhashers.jca.BCrypt
 
 import java.util.UUID
@@ -16,23 +17,37 @@ import scala.concurrent.duration.DurationInt
 final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials] = List.empty)(
   private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserService {
 
+  private val logger = LoggerFactory.getLogger(getClass.getName)
+
   locally {
-    (for {
-      empty <- userDao.checkIfEmpty
-      _ <- if (empty)
-        initUsers
-          .map(u => create(u.username, u.password))
-          .sequence
-      else Task.unit
-    } yield ())
-      .onErrorRecover { _ => () }
-      .delayExecution(5.seconds)
-      .runAsyncAndForget
+    // Inserting init user if there are no other users in the persistence layer (on startup).
+    (
+      for {
+        empty <- userDao.checkIfEmpty
+        res <- if (empty)
+          initUsers
+            .map(u => create(u.username, u.password))
+            .sequence
+            .map(results =>
+              if (results.exists(_.isLeft)) Left(UndefinedPersistenceError("Could not create init users"))
+              else Right(())
+            )
+        else Task.now(Right(()))
+      } yield res
+      )
+      .onErrorRecoverWith { e => Task.now(Left(UndefinedPersistenceError(e.getMessage))) }
+      .runSyncUnsafe(10.seconds)
+      .fold(persistenceError => {
+        logger.error("The error occurred during init user creation.")
+        throw new PandaStartupException(persistenceError.getMessage)
+      }, _ => ())
   }
 
-  override def getById(id: UserId): Task[Option[User]] = userDao.byId(id)
+  override def getById(id: UserId): Task[Option[User]] =
+    userDao.byId(id).onErrorRecoverWith(_ => Task.now(Option.empty))
 
-  override def validateUser(credentials: UserCredentials): Task[Option[User]] = userDao.validateUser(credentials)
+  override def validateUser(credentials: UserCredentials): Task[Option[User]] =
+    userDao.validateUser(credentials).onErrorRecoverWith(_ => Task.now(Option.empty))
 
   override def delete(credentials: UserCredentials): Task[Boolean] =
     c.use {
@@ -53,5 +68,5 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
           else
             Task.now(Left(AlreadyExists("User with the username \"" + username + "\" already exists")))
         } yield result.map(_ => id)
-    }
+    }.onErrorRecoverWith { e => Task.now(Left(UndefinedPersistenceError(e.getMessage))) }
 }

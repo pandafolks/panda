@@ -1,19 +1,20 @@
-package com.github.pandafolks.panda.bootstrap
+package com.github.pandafolks.panda.bootstrap.init
 
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
+import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import com.pandafolks.mattszm.panda.sequence.SequenceDao
 
-final class DaoAndServiceInitialization(
-                                         private val dbAppClient: DbAppClient,
-                                         private val appConfiguration: AppConfiguration,
-                                       ) {
-
-  private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
-  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersWithTokensConnection)
+/**
+ * These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
+ */
+final class DaosAndServicesInitializedBeforeCachesFulfilled(
+                                                            private val dbAppClient: DbAppClient,
+                                                            private val appConfiguration: AppConfiguration,
+                                                          ) extends DaosAndServicesInitialization {
 
   private val sequenceDao: SequenceDao = new SequenceDao()
 
@@ -23,11 +24,19 @@ final class DaoAndServiceInitialization(
     sequenceDao = sequenceDao
   )(dbAppClient.getParticipantEventsAndSequencesConnection)
 
+  private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
+  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersWithTokensConnection)
+
   private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens)(dbAppClient.getUsersWithTokensConnection)
+
+  private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = new UnsuccessfulHealthCheckDaoImpl(dbAppClient.getUnsuccessfulHealthCheckConnection)
 
   def getUserService: UserService = userService
 
+  def getTokenService: TokenService = tokenService
+
   def getParticipantEventService: ParticipantEventService = participantEventService
 
-  def getTokenService: TokenService = tokenService
+  def getUnsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = unsuccessfulHealthCheckDao
+
 }

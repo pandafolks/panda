@@ -1,8 +1,8 @@
 package com.github.pandafolks.panda.loadbalancer
 
-import com.github.pandafolks.panda.participant.{Healthy, Participant, Working}
+import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.Listener
+import com.github.pandafolks.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 
@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.{Iterable, TreeMap}
 import scala.util.Random
 
-final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100) extends Listener[Participant] {
+final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100) extends ChangeListener[Participant] {
   @VisibleForTesting
   private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, Participant]] = new ConcurrentHashMap
   @VisibleForTesting
@@ -51,10 +51,10 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
       ))
 
   override def notifyAboutAdd(items: Iterable[Participant]): Task[Unit] =
-    Task.parTraverse(items)(item =>
-      if (item.status == Working && item.health == Healthy) Task.eval(add(item)) else Task.eval(remove(item))
-    ).void // ConsistentHashingState should track only working and healthy participants
+    Task.parTraverseUnordered(items)(item =>
+      if (item.isWorking && item.isHealthy) Task.eval(add(item)) else Task.eval(remove(item))
+    ).void // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
 
   override def notifyAboutRemove(items: Iterable[Participant]): Task[Unit] =
-    Task.parTraverse(items)(item => Task.eval(remove(item))).void
+    Task.parTraverseUnordered(items)(item => Task.eval(remove(item))).void
 }

@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.{Healthy, HeartbeatInfo, NotHealthy, NotWorking, Participant, Working}
+import com.github.pandafolks.panda.participant._
 import com.github.pandafolks.panda.routes.Group
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.UuidRepresentation
@@ -8,17 +8,17 @@ import org.bson.codecs.UuidCodec
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.mongodb.scala.bson.BsonInt32
+import org.mongodb.scala.bson.BsonInt64
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
 final case class ParticipantEvent(
                                    participantIdentifier: String,
                                    participantDataModification: ParticipantEventDataModification,
-                                   eventId: BsonInt32, // the _id precision is in seconds and it is not sufficient
+                                   eventId: BsonInt64, // the _id precision is in seconds and it is not sufficient
                                    eventType: ParticipantEventType,
                                  ) {
   def convertEventIntoParticipant(participant: Participant, shouldBeSkipped: Boolean = false): (Participant, Boolean) =
-    this.eventType match {
+    eventType match {
       // MainState
       case ParticipantEventType.Created() => // init
         (participant.copy(
@@ -26,7 +26,7 @@ final case class ParticipantEvent(
           port = participantDataModification.port.getOrElse(-1),
           group = Group(participantDataModification.groupName.getOrElse("")),
           identifier = participantIdentifier,
-          heartbeatInfo = HeartbeatInfo(participantDataModification.heartbeatRoute.getOrElse("")),
+          healthcheckInfo = HealthcheckInfo(participantDataModification.healthcheckRoute.getOrElse("")),
           status = NotWorking,
         ), false)
       case ParticipantEventType.Removed() => (participant.copy(status = NotWorking), true)
@@ -41,12 +41,12 @@ final case class ParticipantEvent(
           host = participantDataModification.host.getOrElse(participant.host),
           port = participantDataModification.port.getOrElse(participant.port),
           group = participantDataModification.groupName.map(gn => Group(gn)).getOrElse(participant.group),
-          heartbeatInfo = participantDataModification.heartbeatRoute.map(hr => HeartbeatInfo(hr)).getOrElse(participant.heartbeatInfo),
+          healthcheckInfo = participantDataModification.healthcheckRoute.map(hr => HealthcheckInfo(hr)).getOrElse(participant.healthcheckInfo),
         ), shouldBeSkipped)
 
       // Connection
       case ParticipantEventType.Joined() => (participant.copy(health = Healthy), shouldBeSkipped)
-      case ParticipantEventType.Disconnected() => (participant.copy(health = NotHealthy), shouldBeSkipped)
+      case ParticipantEventType.Disconnected() => (participant.copy(health = Unhealthy), shouldBeSkipped)
     }
 }
 

@@ -13,13 +13,17 @@ final case class Participant(
                               port: Int,
                               group: Group,
                               identifier: String,
-                              heartbeatInfo: HeartbeatInfo,
+                              healthcheckInfo: HealthcheckInfo,
                               status: ParticipantStatus,
-                              health: ParticipantHealth = NotHealthy // Participant will become healthy after first successful health check
-                            )
+                              health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
+                            ) {
+  def isWorking: Boolean = status == Working
+
+  def isHealthy: Boolean = health == Healthy
+}
 
 object Participant {
-  final val HEARTBEAT_DEFAULT_ROUTE: String = "heartbeat"
+  final val HEALTHCHECK_DEFAULT_ROUTE: String = "healthcheck"
 
   def apply(host: String, port: Int, group: Group): Participant =
     new Participant(
@@ -27,7 +31,7 @@ object Participant {
       port = port,
       group = group,
       identifier = createDefaultIdentifier(host, port, group.name),
-      heartbeatInfo = createHeartbeatInfo(host, port, HEARTBEAT_DEFAULT_ROUTE),
+      healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
       status = Working,
     )
 
@@ -37,29 +41,28 @@ object Participant {
       port = port,
       group = group,
       identifier = identifier,
-      heartbeatInfo = createHeartbeatInfo(host, port, HEARTBEAT_DEFAULT_ROUTE),
+      healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
       status = Working,
     )
 
-  def apply(host: String, port: Int, group: Group, heartbeatInfo: HeartbeatInfo): Participant =
+  def apply(host: String, port: Int, group: Group, healthcheckInfo: HealthcheckInfo): Participant =
     new Participant(
       host = host,
       port = port,
       group = group,
       identifier = createDefaultIdentifier(host, port, group.name),
-      heartbeatInfo = heartbeatInfo,
+      healthcheckInfo = healthcheckInfo,
       status = Working
     )
 
   def createDefaultIdentifier(host: String, port: Int, groupName: String): String =
     List(host, port, groupName).mkString("-")
 
-  private def createHeartbeatInfo(host: String, port: Int, route: String): HeartbeatInfo =
-    HeartbeatInfo(
+  @Deprecated
+  def createHealthcheckEndpoint(host: String, port: Int, route: String): String =
       Path.unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
         .concat(Path.unsafeFromString(route))
         .renderString
-    )
 
   implicit val participantEncoder: EntityEncoder[Task, Participant] = jsonEncoderOf[Task, Participant]
   implicit val participantSeqEncoder: EntityEncoder[Task, Seq[Participant]] = jsonEncoderOf[Task, Seq[Participant]]

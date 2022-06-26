@@ -27,14 +27,9 @@ final class ParticipantsRouting(private val participantEventService: Participant
       }
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
-      handleParticipantsResponse(
-        participantsCache.getAllGroups
-          .flatMap(groups =>
-            groups.map(group => maybeFilter
-              .map(_.getParticipants(group))
-              .getOrElse(participantsCache.getParticipantsAssociatedWithGroup(group))
-            ).sequence
-          ).map(_.flatten)
+      handleParticipantsResponse(maybeFilter
+        .map(_.getParticipants)
+        .getOrElse(participantsCache.getAllParticipants)
       )
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / "participants" / group :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
@@ -108,23 +103,32 @@ final class ParticipantsRouting(private val participantEventService: Participant
 
   implicit val createdParticipantsResultEncoder: EntityEncoder[Task, ParticipantsModificationResult] = jsonEncoderOf[Task, ParticipantsModificationResult]
 
+
   object ParticipantsFilter {
 
     sealed trait ParticipantsFilter {
+      def getParticipants: Task[List[Participant]]
+
       def getParticipants(group: Group): Task[Vector[Participant]]
     }
 
     final case object AllParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants: Task[List[Participant]] = participantsCache.getAllParticipants
+
       override def getParticipants(group: Group): Task[Vector[Participant]] =
         participantsCache.getParticipantsAssociatedWithGroup(group)
     }
 
     final case object WorkingParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants: Task[List[Participant]] = participantsCache.getAllWorkingParticipants
+
       override def getParticipants(group: Group): Task[Vector[Participant]] =
         participantsCache.getWorkingParticipantsAssociatedWithGroup(group)
     }
 
     final case object HealthyParticipantsFilter extends ParticipantsFilter {
+      override def getParticipants: Task[List[Participant]] = participantsCache.getAllHealthyParticipants
+
       override def getParticipants(group: Group): Task[Vector[Participant]] =
         participantsCache.getHealthyParticipantsAssociatedWithGroup(group)
     }

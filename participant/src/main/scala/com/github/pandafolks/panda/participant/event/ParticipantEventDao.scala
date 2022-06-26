@@ -13,16 +13,16 @@ trait ParticipantEventDao {
    *
    * @param identifier                  Participant unique identifier
    * @param participantEventOperator    Participant DB entry point
-   * @return                            True if exists, false otherwise
+   * @return                            True if exists, false if not or [[PersistenceError]] if the query could not be executed
    */
-  def exists(identifier: String, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Boolean]
+  def exists(identifier: String, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Either[PersistenceError, Boolean]]
 
   /**
    * Inserts participant event into the persistence layer.
    *
    * @param participantEvent            Participant event represented as an object of common type for all types of events
    * @param participantEventOperator    Participant DB entry point
-   * @return                            Either empty if saved successfully or PersistenceError if the error during saving occurred
+   * @return                            Either empty if saved successfully or [[PersistenceError]] if the error during saving occurred
    */
   def insertOne(participantEvent: ParticipantEvent, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Either[PersistenceError, Unit]]
 

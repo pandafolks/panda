@@ -11,7 +11,7 @@ final class ClientStub extends Client[Task] {
   override def run(req: Request[Task]): Resource[Task, Response[Task]] =
     Resource.eval(Task.eval(
       req.uri.toString.dropWhile(_ == '/') match {
-        case path if ClientStub.availableRoutes.contains(path) =>
+        case path if ClientStub.AVAILABLE_ROUTES.contains(path) =>
           Response[Task]().withHeaders(Header.Raw(CIString("from"), path))
         case _ => throw new Exception("Server Not accessible")
       }
@@ -73,7 +73,7 @@ final class ClientStub extends Client[Task] {
 }
 
 object ClientStub {
-  final val availableRoutes: List[String] = List(
+  final val AVAILABLE_ROUTES: List[String] = List(
     "13.204.158.90:3000/api/v1/cars/rent",
     "193.207.130.133:3000/api/v1/cars/rent",
   )

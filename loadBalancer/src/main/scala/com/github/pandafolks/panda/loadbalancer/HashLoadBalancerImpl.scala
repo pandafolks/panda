@@ -15,7 +15,7 @@ import scala.util.hashing.MurmurHash3
 final class HashLoadBalancerImpl(private val client: Client[Task],
                                  private val participantsCache: ParticipantsCache,
                                  private val consistentHashingState: ConsistentHashingState,
-                                 private val retriesNumber: Int = 9) extends LoadBalancer {
+                                 private val retriesNumber: Int = 10) extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val random = new Random(System.currentTimeMillis())
@@ -39,7 +39,6 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
           ).onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }
       }
 
-    rc(Math.abs(MurmurHash3.stringHash(request.remote.map(socketAddress =>
-      socketAddress.host.toUriString + socketAddress.port.value).getOrElse("0"))))
+    rc(Math.abs(MurmurHash3.stringHash(request.remote.map(_.host.toUriString).getOrElse("0"))))
   }
 }

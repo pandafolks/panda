@@ -14,7 +14,7 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
 class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matchers with ScalaFutures
-  with EitherValues with BeforeAndAfterAll with PrivateMethodTester{
+  with EitherValues with BeforeAndAfterAll with PrivateMethodTester {
   implicit val scheduler: Scheduler = Scheduler.io("user-service-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)

@@ -2,9 +2,9 @@ package com.github.pandafolks.panda.participant.event
 
 import cats.data.EitherT
 import cats.effect.Resource
-import com.github.pandafolks.panda.participant.Participant.HEARTBEAT_DEFAULT_ROUTE
+import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
 import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
-import com.github.pandafolks.panda.participant.{HeartbeatInfo, NotWorking, Participant}
+import com.github.pandafolks.panda.participant.{Healthy, HealthcheckInfo, NotWorking, Participant, ParticipantHealth, Unhealthy}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
@@ -32,15 +32,16 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
-          initRes <- if (exists)
-            Task.now(Left(AlreadyExists("Participant with identifier \"" + participantIdentifier.get + "\" already exists")))
-          else
-            insertEvent(
+          initRes <- exists match {
+            case Right(true) => Task.now(Left(AlreadyExists("Participant with identifier \"" + participantIdentifier.get + "\" already exists")))
+            case Right(false) => insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.of(participantModificationDto)
-                .copy(heartbeatRoute = participantModificationDto.heartbeatRoute.orElse(Some(HEARTBEAT_DEFAULT_ROUTE))),
+                .copy(healthcheckRoute = participantModificationDto.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))),
               ParticipantEventType.Created()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
 
           finalRes <-
             if (initRes.isLeft || !participantModificationDto.working.getOrElse(true)) Task.now(initRes)
@@ -64,14 +65,15 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier.get, participantEventOperator)
 
-          initRes <- if (!exists)
-            Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier.get + "\" does not exist")))
-          else
-            insertEvent(
+          initRes <- exists match {
+            case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier.get + "\" does not exist")))
+            case Right(true) => insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.of(participantModificationDto),
               ParticipantEventType.ModifiedData()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
 
           finalRes <-
             if (initRes.isLeft || participantModificationDto.working.isEmpty) Task.now(initRes)
@@ -93,20 +95,21 @@ final class ParticipantEventServiceImpl(
         for {
           exists <- participantEventDao.exists(participantIdentifier, participantEventOperator)
 
-          res <- if (!exists)
-            Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exist")))
-          else
-            insertEvent(
+          res <- exists match {
+            case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exist")))
+            case Right(true) => insertEvent(
               participantIdentifier,
               ParticipantEventDataModification.empty,
               ParticipantEventType.Removed()
             )(sequenceOperator, participantEventOperator)
+            case Left(value) => Task.now(Left(value))
+          }
         } yield res
     }
   }
 
   override def constructAllParticipants(): Task[List[Participant]] = {
-    val dumbParticipant = Participant("", -1, Group(""), "", HeartbeatInfo(""), NotWorking)
+    val dumbParticipant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
     c.use {
       case (participantEventOperator, _) =>
         participantEventDao.getOrderedEvents(participantEventOperator)
@@ -124,13 +127,37 @@ final class ParticipantEventServiceImpl(
     }
   }
 
+  override def markParticipantAsHealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]] =
+    markParticipantHealth(participantIdentifier, Healthy)
+
+  override def markParticipantAsUnhealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]] =
+    markParticipantHealth(participantIdentifier, Unhealthy)
+
+  private def markParticipantHealth(participantIdentifier: String, health: ParticipantHealth): Task[Either[PersistenceError, Unit]] =
+    c.use {
+      case (participantEventOperator, sequenceOperator) =>
+        for {
+          exists <- participantEventDao.exists(participantIdentifier, participantEventOperator)
+
+          res <- exists match {
+            case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exists")))
+            case Right(true) => insertEvent(
+              participantIdentifier,
+              ParticipantEventDataModification.empty,
+              if (health == Healthy) ParticipantEventType.Joined() else ParticipantEventType.Disconnected(),
+            )(sequenceOperator, participantEventOperator).map(_.map(_ => ()))
+            case Left(value) => Task.now(Left(value))
+          }
+        } yield res
+    }
+
   private def insertEvent(
                            participantIdentifier: String,
                            participantDataModification: ParticipantEventDataModification,
                            eventType: ParticipantEventType
                          )(
-    seqOperator: CollectionOperator[Sequence], participantEventOperator: CollectionOperator[ParticipantEvent]
-  ): Task[Either[PersistenceError, String]] =
+                           seqOperator: CollectionOperator[Sequence], participantEventOperator: CollectionOperator[ParticipantEvent]
+                         ): Task[Either[PersistenceError, String]] =
     EitherT(sequenceDao.getNextSequence(SequenceKey.getParticipantEventSequence, seqOperator))
       .flatMap(seq => EitherT(
         participantEventDao.insertOne(

@@ -8,6 +8,7 @@ import com.avast.sst.http4s.server.pureconfig.implicits._
 import com.avast.sst.http4s.client.pureconfig.implicits._
 import com.github.pandafolks.panda.db.DbConfig
 import com.github.pandafolks.panda.gateway.{GatewayConfig, LoadBalanceAlgorithm}
+import com.github.pandafolks.panda.healthcheck.HealthCheckConfig
 import com.github.pandafolks.panda.user.UserCredentials
 import com.github.pandafolks.panda.user.token.TokensConfig
 import pureconfig.generic.auto._
@@ -18,6 +19,7 @@ final case class AppConfiguration(
                                    gateway: GatewayConfig,
                                    db: DbConfig,
                                    consistency: ConsistencyConfig,
+                                   healthCheckConfig: HealthCheckConfig,
                                    authTokens: TokensConfig,
                                    initUser: UserCredentials,
                                  )
