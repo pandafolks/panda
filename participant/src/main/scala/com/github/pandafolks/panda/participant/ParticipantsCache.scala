@@ -66,7 +66,7 @@ trait ParticipantsCache {
    * that were present in cache but are no more. Listeners are invoked on every cache refresh.
 
    *
-   * @param group       listener that expects participants
+   * @param listener    [[ChangeListener]] that expects participants
    *
    * @return
    */

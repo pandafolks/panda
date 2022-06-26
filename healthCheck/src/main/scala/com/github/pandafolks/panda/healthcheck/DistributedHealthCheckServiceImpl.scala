@@ -6,6 +6,7 @@ import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
 import com.github.pandafolks.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
+import monix.execution.schedulers.CanBlock
 import org.http4s.Uri.{Authority, RegName}
 import org.http4s.client.Client
 import org.http4s.dsl.io.Path
@@ -47,6 +48,8 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
   locally {
     import monix.execution.Scheduler.{global => scheduler}
+
+    participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 
     if (healthCheckConfig.callsInterval > 0 && healthCheckConfig.numberOfFailuresNeededToReact > 0) {
       scheduler.scheduleAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds) {

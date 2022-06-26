@@ -4,12 +4,13 @@ import cats.data.EitherT
 import cats.effect.Resource
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
 import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
-import com.github.pandafolks.panda.participant.{Healthy, HealthcheckInfo, NotWorking, Participant, ParticipantHealth, Unhealthy}
+import com.github.pandafolks.panda.participant.{HealthcheckInfo, Healthy, NotWorking, Participant, ParticipantHealth, Unhealthy}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
+import monix.execution.atomic.AtomicLong
 
 final class ParticipantEventServiceImpl(
                                          private val participantEventDao: ParticipantEventDao,
@@ -108,8 +109,10 @@ final class ParticipantEventServiceImpl(
     }
   }
 
-  override def constructAllParticipants(): Task[List[Participant]] = {
+  override def constructAllParticipants(): Task[(List[Participant], Long)] = {
     val dumbParticipant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
+    val lastSeenEventId = AtomicLong(-1)
+
     c.use {
       case (participantEventOperator, _) =>
         participantEventDao.getOrderedEvents(participantEventOperator)
@@ -118,13 +121,14 @@ final class ParticipantEventServiceImpl(
             participantEventsGroup
               .foldLeft((dumbParticipant, false)) {
                 case ((participant: Participant, shouldBeSkipped: Boolean), participantEvent: ParticipantEvent) =>
+                  lastSeenEventId.transform(_.max(participantEvent.eventId.getValue))
                   participantEvent.convertEventIntoParticipant(participant, shouldBeSkipped)
               }
               .filterNot(_._2) // Do not return participants if there was a Removed event emitted and there was no Created event after it.
               .map(_._1)
           }
           .toListL
-    }
+    }.map((_, lastSeenEventId.get()))
   }
 
   override def markParticipantAsHealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]] =
@@ -132,6 +136,9 @@ final class ParticipantEventServiceImpl(
 
   override def markParticipantAsUnhealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]] =
     markParticipantHealth(participantIdentifier, Unhealthy)
+
+  override def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean] =
+    participantEventDao.checkIfThereAreNewerEvents(eventId)
 
   private def markParticipantHealth(participantIdentifier: String, health: ParticipantHealth): Task[Either[PersistenceError, Unit]] =
     c.use {

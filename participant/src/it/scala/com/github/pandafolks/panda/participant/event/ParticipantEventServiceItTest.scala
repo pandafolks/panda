@@ -410,4 +410,35 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       res._2.size should be (0)
     }
   }
+
+  "ParticipantEventService#checkIfThereAreNewerEvents" should "return true if there was newer event inserted" in {
+    val identifier = randomString("checkIfThereAreNewerEvents")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
+        >> participantEventsAndSequencesConnection.use(p => p._1.source.findAll.toListL).map(_.sortBy(_.eventId)).map(_.last.eventId)
+        .flatMap(lastSeenEventId => participantEventService.markParticipantAsUnhealthy(identifier).map(_ => lastSeenEventId))
+        .flatMap(lastSeenEventId => participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.getValue))
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res should be (true)
+    }
+  }
+
+  it should "return false if there was no new event inserted" in {
+    val identifier = randomString("checkIfThereAreNewerEvents")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationDto(
+        host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
+        >> participantEventsAndSequencesConnection.use(p => p._1.source.findAll.toListL).map(_.sortBy(_.eventId)).map(_.last.eventId)
+        .flatMap(lastSeenEventId => participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.getValue))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res should be (false)
+    }
+  }
 }

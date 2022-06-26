@@ -9,6 +9,7 @@ import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.reactive.Observable
+import org.mongodb.scala.bson.BsonInt64
 import org.mongodb.scala.model.{Aggregates, Sorts}
 
 final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOperator[ParticipantEvent],
@@ -44,4 +45,9 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
         Aggregates.sort(Sorts.ascending("eventId")),
       ), classOf[ParticipantEvent]
     )
+
+  override def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean] = c.use {
+    case (participantEventOperator,  _) =>
+      participantEventOperator.source.find(Filters.gt("eventId", BsonInt64(eventId))).nonEmptyL
+  }
 }
