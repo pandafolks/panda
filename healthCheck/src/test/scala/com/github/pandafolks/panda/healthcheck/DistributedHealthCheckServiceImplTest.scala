@@ -4,11 +4,13 @@ import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerService}
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
+import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.Scheduler.global
 import org.bson.types.ObjectId
 import org.http4s.client.Client
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
 import org.scalacheck.Gen
 import org.scalatest.PrivateMethodTester
@@ -25,9 +27,12 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
     when(mockNodeTrackerService.getWorkingNodes) thenReturn Task.now(List.empty)
     when(mockNodeTrackerService.getNodeId) thenReturn "randomId"
 
+    val participantsCacheMock = mock(classOf[ParticipantsCache])
+    when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
+
     val distributedHealthCheckServiceImpl = new DistributedHealthCheckServiceImpl(
       mock(classOf[ParticipantEventService]),
-      mock(classOf[ParticipantsCache]),
+      participantsCacheMock,
       mockNodeTrackerService,
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
@@ -45,9 +50,12 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
     when(mockNodeTrackerService.getWorkingNodes) thenReturn Task.now(List.fill(5)(Node(new ObjectId(), 1232134)))
     when(mockNodeTrackerService.getNodeId) thenReturn "randomId"
 
+    val participantsCacheMock = mock(classOf[ParticipantsCache])
+    when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
+
     val distributedHealthCheckServiceImpl = new DistributedHealthCheckServiceImpl(
       mock(classOf[ParticipantEventService]),
-      mock(classOf[ParticipantsCache]),
+      participantsCacheMock,
       mockNodeTrackerService,
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
@@ -66,9 +74,12 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
     when(mockNodeTrackerService.getWorkingNodes) thenReturn Task.now(allNodes)
     when(mockNodeTrackerService.getNodeId) thenReturn allNodes(3)._id.toHexString
 
+    val participantsCacheMock = mock(classOf[ParticipantsCache])
+    when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
+
     val distributedHealthCheckServiceImpl = new DistributedHealthCheckServiceImpl(
       mock(classOf[ParticipantEventService]),
-      mock(classOf[ParticipantsCache]),
+      participantsCacheMock,
       mockNodeTrackerService,
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
@@ -84,9 +95,12 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
   "DistributedHealthCheckServiceImpl#pickParticipantsForNode" should "pick appropriate participants based on delivered position and this choice must be repeatable" in {
     val participants = List.fill(20)(Participant("randomHost", -1, Group("randomGroup"), randomString("identifier")))
 
+    val participantsCacheMock = mock(classOf[ParticipantsCache])
+    when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
+
     val distributedHealthCheckServiceImpl = new DistributedHealthCheckServiceImpl(
       mock(classOf[ParticipantEventService]),
-      mock(classOf[ParticipantsCache]),
+      participantsCacheMock,
       mock(classOf[NodeTrackerService]),
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
@@ -102,9 +116,12 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
   it should "return nothing if delivered position is out of scope" in {
     val participants = List.fill(20)(Participant("randomHost", -1, Group("randomGroup"), randomString("anotherIdentifier")))
 
+    val participantsCacheMock = mock(classOf[ParticipantsCache])
+    when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
+
     val distributedHealthCheckServiceImpl = new DistributedHealthCheckServiceImpl(
       mock(classOf[ParticipantEventService]),
-      mock(classOf[ParticipantsCache]),
+      participantsCacheMock,
       mock(classOf[NodeTrackerService]),
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
