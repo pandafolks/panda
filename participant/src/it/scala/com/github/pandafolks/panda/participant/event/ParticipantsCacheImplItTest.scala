@@ -7,7 +7,7 @@ import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
 import monix.execution.{CancelableFuture, Scheduler}
 import org.mockito.ArgumentMatchers.{any, argThat}
-import org.mockito.Mockito.{clearInvocations, mock, times, verify, when}
+import org.mockito.Mockito.{clearInvocations, mock, never, times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -195,6 +195,42 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       res._3.head.identifier should be(identifier1)
       res._4.size should be(1)
       res._4.head.identifier should be(identifier1)
+    }
+  }
+
+  it should "not trigger participants reconstructions if there are no newer events being inserted since last method call" in {
+    val (cache, listener) = createParticipantsCacheWithMockedListener()
+
+    val refreshCache = PrivateMethod[Task[Unit]](Symbol("refreshCache"))
+
+    val identifier1 = randomString("identifier8")
+    val identifier2 = randomString("identifier9")
+    val participantEvent1 = ParticipantModificationDto(
+      host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(true)
+    )
+    val participantEvent2 = ParticipantModificationDto(
+      host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
+    )
+
+    val f = (Task.sequence(List(
+      participantEventService.createParticipant(participantEvent1),
+      participantEventService.createParticipant(participantEvent2)
+    ))
+      >> cache.invokePrivate(refreshCache())
+      >> Task.now(clearInvocations(listener))
+
+      // Redundant refreshCache calls - because there were no new events inserted, the reconstruction (and notifying listeners) should not be triggered
+      >> cache.invokePrivate(refreshCache())
+      >> cache.invokePrivate(refreshCache())
+      >> cache.invokePrivate(refreshCache())
+
+    ).runToFuture
+
+    whenReady(f) { _ =>
+      verify(listener, never).notifyAboutAdd(any[Iterable[Participant]]())
+      verify(listener, never).notifyAboutRemove(any[Iterable[Participant]]())
+
+      succeed
     }
   }
 }

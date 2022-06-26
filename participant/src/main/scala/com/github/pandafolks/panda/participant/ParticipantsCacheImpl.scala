@@ -6,6 +6,7 @@ import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.{ChangeListener, DefaultPublisher}
 import monix.eval.Task
+import monix.execution.atomic.AtomicLong
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.MultiDict
@@ -19,6 +20,7 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
                                            private val byGroup: Ref[Task, MultiDict[Group, Participant]],
                                            private val workingByGroup: Ref[Task, MultiDict[Group, Participant]],
                                            private val healthyByGroup: Ref[Task, MultiDict[Group, Participant]], // Healthy means both healthy and working
+                                           private val lastSeenEventId: AtomicLong,
                                          ) extends ParticipantsCache {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
@@ -65,31 +67,39 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
       _ <- listener.notifyAboutAdd(cache.values.toList) // initial load to the listener
     } yield ()
 
-  private def refreshCache(): Task[Unit] =
-    for {
-      participants <- participantEventService.constructAllParticipants()
-      groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
-      prevCacheStates <- Task.parZip3(
-        byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
-        workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
-        healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorking && t._2.isHealthy)))
-      )
-      (prevByGroupCacheState, _, _) = prevCacheStates
-      _ <- Task.parZip2(
-        // Find all participants that were present inside the cache, but either no longer are or some of their
-        // properties changed and send an event to listeners about remove action.
-        Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
-          .flatMap(participantsNoMorePresentInCache =>
-            publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
-          ),
-        // Send an event about gotten participants. The listener should handle duplicates on its own.
-        // There is a place for optimization - we know that e.g. ConsistentHashingState discards all participants that
-        // are either not working or not healthy. Because of that, we could simply put here healthyByGroup values.
-        // If the participant was working/healthy and is not anymore, it will be in `participantsNoMorePresentInCache` anyway.
-        // However, let's leave it as it is in order to have more generic listeners and go back here once we reach the bottleneck.
-        publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
-      )
-    } yield ()
+  private def refreshCache(): Task[Unit] = {
+    participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.get()).flatMap {
+      case true => for {
+        participantsWithHighestRetrievedEventId <- participantEventService.constructAllParticipants()
+        (participants, highestEventId) = participantsWithHighestRetrievedEventId
+        groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
+        prevCacheStates <- Task.parZip3(
+          byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
+          workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
+          healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorking && t._2.isHealthy)))
+        )
+        _ <- Task.now(lastSeenEventId.transform(_.max(highestEventId)))
+
+        (prevByGroupCacheState, _, _) = prevCacheStates
+        _ <- Task.parZip2(
+          // Find all participants that were present inside the cache, but either no longer are or some of their
+          // properties changed and send an event to listeners about remove action.
+          Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
+            .flatMap(participantsNoMorePresentInCache =>
+              publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
+            ),
+          // Send an event about gotten participants. The listener should handle duplicates on its own.
+          // There is a place for optimization - we know that e.g. ConsistentHashingState discards all participants that
+          // are either not working or not healthy. Because of that, we could simply put here healthyByGroup values.
+          // If the participant was working/healthy and is not anymore, it will be in `participantsNoMorePresentInCache` anyway.
+          // However, let's leave it as it is in order to have more generic listeners and go back here once we reach the bottleneck.
+          publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
+        )
+      } yield ()
+
+      case false => Task.unit
+    }
+  }
 }
 
 object ParticipantsCacheImpl {
@@ -99,16 +109,19 @@ object ParticipantsCacheImpl {
              cacheRefreshInterval: Int = -1 // By default, the background job is turned off and the cache is filled with initParticipants forever.
            ): Task[ParticipantsCacheImpl] =
     for {
-      participants <- if (cacheRefreshInterval != -1) participantEventService.constructAllParticipants() else Task.eval(initParticipants)
+      participantsWithHighestRetrievedEventId <- if (cacheRefreshInterval != -1) participantEventService.constructAllParticipants() else Task.eval((initParticipants, -1L))
+      (participants, highestEventId) = participantsWithHighestRetrievedEventId
       groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
+
       participantsByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](MultiDict.from(groupsWithParticipants))
       workingParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorking && t._2.isHealthy))
     } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshInterval)(
-      participantsByGroupRef,
-      workingParticipantByGroupRef,
-      healthyParticipantByGroupRef
+      byGroup = participantsByGroupRef,
+      workingByGroup = workingParticipantByGroupRef,
+      healthyByGroup = healthyParticipantByGroupRef,
+      lastSeenEventId = AtomicLong(highestEventId)
     )
 }

@@ -34,4 +34,12 @@ trait ParticipantEventDao {
    * @return                            Stream of the participant events
    */
   def getOrderedEvents(participantEventOperator: CollectionOperator[ParticipantEvent], offset: Int = -1): Observable[ParticipantEvent]
+
+  /**
+   * Checks whether there is at least one event with an ID strictly higher than provided eventId.
+   *
+   * @param eventId                         Determining how many events to discard
+   * @return                                True if there are events with higher ID, false otherwise
+   */
+  def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean]
 }

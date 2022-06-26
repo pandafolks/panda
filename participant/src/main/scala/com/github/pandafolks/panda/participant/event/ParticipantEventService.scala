@@ -32,11 +32,11 @@ trait ParticipantEventService {
   def removeParticipant(participantIdentifier: String): Task[Either[PersistenceError, String]]
 
   /**
-   * Returns all participants that exists in the persistence layer.
+   * Returns all participants that exist in the persistence layer together with the highest seen event ID.
    *
-   * @return                                List of the participants
+   * @return                                Tuple with list of the participants and event ID
    */
-  def constructAllParticipants(): Task[List[Participant]]
+  def constructAllParticipants(): Task[(List[Participant], Long)]
 
   /**
    * Marks a participant with a specified identifier as connected, in other words healthy.
@@ -53,4 +53,12 @@ trait ParticipantEventService {
    * @return                                Either empty if marked successfully or PersistenceError if the error occurred
    */
   def markParticipantAsUnhealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]]
+
+  /**
+   * Checks whether there is at least one event with an ID higher than provided eventId.
+   *
+   * @param eventId                         Determining how many events to discard
+   * @return                                True if there are events with higher ID, false otherwise
+   */
+  def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean]
 }
