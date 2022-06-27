@@ -31,7 +31,7 @@ object App extends MonixServerApp {
       daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
       participantsCache <- Resource.eval(ParticipantsCacheImpl(
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
-        cacheRefreshInterval = appConfiguration.consistency.fullConsistencyMaxDelay
+        cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
@@ -61,7 +61,7 @@ object App extends MonixServerApp {
       authRouting = new AuthRouting(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)
 
       authenticator = new AuthenticatorBasedOnHeader(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)(
-        appConfiguration.consistency.fullConsistencyMaxDelay)
+        appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       participantsRouting = new ParticipantsRouting(daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)
       authedRoutes = authMiddleware(participantsRouting.getRoutesWithAuth <+> authRouting.getRoutesWithAuth)

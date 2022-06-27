@@ -18,7 +18,7 @@ final class DaosAndServicesInitializedAfterCachesFulfilled(
                                                          ) extends DaosAndServicesInitialization {
 
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(dbAppClient.getNodesConnection)
-  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(appConfiguration.consistency.fullConsistencyMaxDelay)
+  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
 
   def getNodeTrackerService: NodeTrackerService = nodeTrackerService
 

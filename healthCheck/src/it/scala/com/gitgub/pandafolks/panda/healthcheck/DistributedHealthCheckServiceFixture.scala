@@ -59,7 +59,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
   private val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
-  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(1)
+  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(1000)
 
   protected val unsuccessfulHealthCheckColName: String = randomString(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
   private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)
