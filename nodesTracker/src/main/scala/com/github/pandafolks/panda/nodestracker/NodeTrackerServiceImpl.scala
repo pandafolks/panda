@@ -8,15 +8,15 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.DurationInt
 
 final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
-  private val fullConsistencyMaxDelay: Int) extends NodeTrackerService {
+  private val fullConsistencyMaxDelayInMillis: Int) extends NodeTrackerService {
 
   import monix.execution.Scheduler.{global => scheduler}
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   // Every node notifies the tracker about its existence 4 times more often than the maximum time in which we obtain the full consistency.
-  private val nodeTrackerRegistrationIntervalInMillis = fullConsistencyMaxDelay * 1000 / 4
-  private val nodeTrackerDeviationForGetWorkingNodesInMillis = (fullConsistencyMaxDelay * 1000 / 2).toLong
+  private val nodeTrackerRegistrationIntervalInMillis = fullConsistencyMaxDelayInMillis / 4
+  private val nodeTrackerDeviationForGetWorkingNodesInMillis = (fullConsistencyMaxDelayInMillis / 2).toLong
 
   private val nodeId: String = nodeTrackerDao.register()
     .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)

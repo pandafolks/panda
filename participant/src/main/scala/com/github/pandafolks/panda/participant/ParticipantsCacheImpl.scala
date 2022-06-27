@@ -14,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 
 final class ParticipantsCacheImpl private( // This constructor cannot be used directly
                                            private val participantEventService: ParticipantEventService,
-                                           private val cacheRefreshInterval: Int
+                                           private val cacheRefreshIntervalInMillis: Int
                                          )(
                                            // It is much more efficient to keep multiple cache instances instead of filtering on each cache call.
                                            private val byGroup: Ref[Task, MultiDict[Group, Participant]],
@@ -27,9 +27,9 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
   locally {
     import monix.execution.Scheduler.{global => scheduler}
 
-    if (cacheRefreshInterval > 0) {
+    if (cacheRefreshIntervalInMillis > 0) {
       // Initial cache load is made by ParticipantsCacheImpl#apply
-      scheduler.scheduleAtFixedRate(cacheRefreshInterval.seconds, cacheRefreshInterval.seconds) {
+      scheduler.scheduleAtFixedRate(cacheRefreshIntervalInMillis.millisecond, cacheRefreshIntervalInMillis.millisecond) {
         refreshCache()
           .onErrorRecover { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
           .runToFuture(scheduler)
@@ -106,10 +106,10 @@ object ParticipantsCacheImpl {
   def apply(
              participantEventService: ParticipantEventService,
              initParticipants: List[Participant] = List.empty,
-             cacheRefreshInterval: Int = -1 // By default, the background job is turned off and the cache is filled with initParticipants forever.
+             cacheRefreshIntervalInMillis: Int = -1 // By default, the background job is turned off and the cache is filled with initParticipants forever.
            ): Task[ParticipantsCacheImpl] =
     for {
-      participantsWithHighestRetrievedEventId <- if (cacheRefreshInterval != -1) participantEventService.constructAllParticipants() else Task.eval((initParticipants, -1L))
+      participantsWithHighestRetrievedEventId <- if (cacheRefreshIntervalInMillis != -1) participantEventService.constructAllParticipants() else Task.eval((initParticipants, -1L))
       (participants, highestEventId) = participantsWithHighestRetrievedEventId
       groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
 
@@ -118,7 +118,7 @@ object ParticipantsCacheImpl {
         MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorking && t._2.isHealthy))
-    } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshInterval)(
+    } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshIntervalInMillis)(
       byGroup = participantsByGroupRef,
       workingByGroup = workingParticipantByGroupRef,
       healthyByGroup = healthyParticipantByGroupRef,
