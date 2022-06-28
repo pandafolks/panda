@@ -1,9 +1,11 @@
 package com.github.pandafolks.panda.loadbalancer
 
+import com.comcast.ip4s.SocketAddress
 import com.github.pandafolks.panda.participant.{Healthy, Participant, ParticipantsCache}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
+import org.http4s.Request.Keys
 import org.http4s.dsl.io.Path
 import org.http4s.{Request, Response, Uri}
 import org.scalatest.Assertion
@@ -11,6 +13,7 @@ import org.scalatest.Assertions.fail
 import org.scalatest.matchers.must.Matchers.contain
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.typelevel.ci.CIString
+import org.typelevel.vault.Vault
 
 object LoadBalancerTestUtils {
   def createParticipantsCacheWithSingleGroup(containAvailable: Boolean = true, containUnavailable: Boolean = true): ParticipantsCache = {
@@ -47,7 +50,17 @@ object LoadBalancerTestUtils {
   }
 
   def createRequest(path: String): Request[Task] =
-    Request[Task](uri = new Uri(path = Path.unsafeFromString(path)))
+    Request[Task](uri = new Uri(path = Path.unsafeFromString(path)),
+      attributes = Vault.insert(
+        Keys.ConnectionInfo,
+        Request.Connection(
+          SocketAddress.fromStringIp("140.0.168.31:3002").get,
+          SocketAddress.fromStringIp("127.178.244.254:9999").get,
+          secure = false
+        ),
+        Vault.empty
+      )
+    )
 
   def commonRouteAction(loadBalancer: LoadBalancer): Task[Response[Task]] =
     loadBalancer.route(
