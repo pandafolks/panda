@@ -17,6 +17,7 @@ import org.typelevel.ci.CIString
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable
 import scala.concurrent.duration.DurationInt
+import scala.util.hashing.MurmurHash3
 
 /**
  * This is a distributed implementation of [[HealthCheckService]].
@@ -155,7 +156,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
   @VisibleForTesting
   private def pickParticipantsForNode(participants: List[Participant], nodesSize: Int, nodeIndex: Int): List[Participant] =
-    participants.filter(_.identifier.hashCode % nodesSize == nodeIndex)
+    participants.filter(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % nodesSize == nodeIndex)
 
   private def performHealthcheckCallAndReturnResult(participant: Participant): Task[Boolean] =
     client.run(

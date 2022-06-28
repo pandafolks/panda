@@ -19,6 +19,8 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
+import scala.util.hashing.MurmurHash3
+
 class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutures with PrivateMethodTester {
   implicit final val scheduler: Scheduler = global
 
@@ -109,7 +111,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
 
     val result = for (_ <- 0 until 10) yield distributedHealthCheckServiceImpl.invokePrivate(underTestMethod(participants, 5, 2)) // index 2 means third node out of 5
 
-    result.forall(chosenParticipants => chosenParticipants.forall(_.identifier.hashCode % 5 == 2)) should be (true)
+    result.forall(chosenParticipants => chosenParticipants.forall(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % 5 == 2)) should be (true)
     result.forall(_ == result.head) should be (true)
   }
 
