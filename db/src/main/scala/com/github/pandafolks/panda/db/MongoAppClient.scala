@@ -11,6 +11,7 @@ import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
 import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
+import com.mongodb.{ReadConcern, ReadPreference, WriteConcern}
 import com.mongodb.connection.ClusterConnectionMode
 import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
@@ -19,6 +20,7 @@ import monix.execution.Scheduler.Implicits.global
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
@@ -26,6 +28,16 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
 
   private val settings: MongoClientSettings =
     MongoClientSettings.builder()
+      .readPreference(ReadPreference.nearest())
+      .writeConcern(WriteConcern.MAJORITY)
+      .readConcern(ReadConcern.MAJORITY)
+      .retryReads(true)
+      .retryWrites(true)
+      .applyToServerSettings(builder => {
+        builder
+          .heartbeatFrequency(2000, TimeUnit.MILLISECONDS) // 2 seconds
+        ()
+      })
       .credential(MongoCredential.createCredential(config.username, config.dbName, config.password.toCharArray))
       .applyToClusterSettings(builder => {
         builder
