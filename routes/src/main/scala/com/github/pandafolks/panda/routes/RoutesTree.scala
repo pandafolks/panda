@@ -11,11 +11,11 @@ trait RoutesTree {
 
 object RoutesTree {
 
-  sealed trait ValueType
+  sealed trait SegmentType
 
-  final case object Pocket extends ValueType
+  final case object Pocket extends SegmentType
 
-  sealed trait Value extends ValueType
+  sealed trait Value extends SegmentType
 
   final case class Fixed(expression: String) extends Value
   final case object Wildcard extends Value

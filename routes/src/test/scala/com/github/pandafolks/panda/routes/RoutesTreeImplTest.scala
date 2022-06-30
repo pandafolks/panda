@@ -106,6 +106,10 @@ class RoutesTreeImplTest extends AnyFlatSpec {
       Some(GroupInfo(group = Group("planes"), Path.unsafeFromString("api/v2"))))
     tree.specifyGroup(Path.unsafeFromString("/planes/random Id 213/passengers")) should be(
       Some(GroupInfo(group = Group("planes"), Path.unsafeFromString("api/v2"))))
+    tree.specifyGroup(Path.unsafeFromString("cars/pocket/whatever")) should be(
+      Some(GroupInfo(group = Group("cars"), Path.unsafeFromString("api/v1"), isPocket = true)))
+    tree.specifyGroup(Path.unsafeFromString("cars/pocket/whatever/whatever2/whatever3/")) should be(
+      Some(GroupInfo(group = Group("cars"), Path.unsafeFromString("api/v1"), isPocket = true)))
   }
 
   it should "return None if there is no matching group" in {
@@ -150,8 +154,8 @@ class RoutesTreeImplTest extends AnyFlatSpec {
     tree.specifyGroup(Path.unsafeFromString("supercars/whatever/whatever2")) should be(
       Some(GroupInfo(group = Group("pocketGroup"), Path.empty, isPocket = true)))
 
-    // Corner case - even if there is `supercars/blabla/{{blabla if}}` this is still a pocket because
-    // there is no direct match, so the most appropriate Pocket is chosen.
+    // Corner case - even if there is `supercars/blabla/{{blabla if}}`, the `groupInfo` will be still a Pocket.
+    // This is because there is no direct match, so the most appropriate Pocket is chosen.
     tree.specifyGroup(Path.unsafeFromString("supercars/blabla/whatever/whatever2/")) should be(
       Some(GroupInfo(group = Group("pocketGroup"), Path.empty, isPocket = true)))
   }

@@ -50,7 +50,7 @@ object RoutesTreeImpl {
 
   private def insert(root: Node, path: String, info: GroupInfo): Node = {
 
-    def rc(parts: List[RoutesTree.ValueType], currentNode: Node): Node =
+    def rc(parts: List[RoutesTree.SegmentType], currentNode: Node): Node =
       parts.headOption match {
         case None => currentNode.copy(groupInfo = Some(info))
         case Some(RoutesTree.Pocket) => currentNode.copy(groupInfo = Some(info.copy(isPocket = true)))
@@ -61,10 +61,10 @@ object RoutesTreeImpl {
           )
       }
 
-    def splitIntoParts(path: String)(mapFunc: String => RoutesTree.ValueType): List[RoutesTree.ValueType] =
+    def splitIntoParts(path: String)(mapFunc: String => RoutesTree.SegmentType): List[RoutesTree.SegmentType] =
       path.split("/").filterNot(_ == "").map(mapFunc).toList
 
-    val mainParts: List[RoutesTree.ValueType] = splitIntoParts(path) {
+    val mainParts: List[RoutesTree.SegmentType] = splitIntoParts(path) {
       case "**" => RoutesTree.Pocket
       case entry if entry.startsWith("{{") && entry.endsWith("}}") => RoutesTree.Wildcard
       case entry => RoutesTree.Fixed(entry)
