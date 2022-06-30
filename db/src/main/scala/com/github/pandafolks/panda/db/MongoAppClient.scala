@@ -11,6 +11,7 @@ import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
 import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
+import com.github.pandafolks.panda.utils.PandaStartupException
 import com.mongodb.{ReadConcern, ReadPreference, WriteConcern}
 import com.mongodb.connection.ClusterConnectionMode
 import com.pandafolks.mattszm.panda.sequence.Sequence
@@ -44,7 +45,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           .hosts(config.contactPoints.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
           .mode(config.mode.toLowerCase() match {
             case "multiple" => ClusterConnectionMode.MULTIPLE
-            case "load_balanced" => ClusterConnectionMode.LOAD_BALANCED
+            case "load_balanced" => throw new PandaStartupException("MongoDB LOAD_BALANCED cluster mode is not supported.")
             case _ => ClusterConnectionMode.SINGLE
           })
         ()

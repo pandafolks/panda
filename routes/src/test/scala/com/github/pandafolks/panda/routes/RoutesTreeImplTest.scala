@@ -12,7 +12,7 @@ class RoutesTreeImplTest extends AnyFlatSpec {
       ("cars", "/api/v1/"), ("planes", "/api/v2")
     )),
     Map.from(List(
-      ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes")
+      ("/cars", "cars"), ("cars/rent", "cars"), ("planes/{{plane_id}}/passengers", "planes"), ("/cars/pocket/**", "cars")
     ))
   )
 
@@ -31,9 +31,13 @@ class RoutesTreeImplTest extends AnyFlatSpec {
 
     val childrenSecondLayer = childrenFirstLayer.flatMap(_.children)
     childrenSecondLayer.map(_.value) should contain theSameElementsAs List(
-      RoutesTree.Fixed("rent"), RoutesTree.Wildcard)
+      RoutesTree.Fixed("pocket"), RoutesTree.Fixed("rent"), RoutesTree.Wildcard
+    )
+    childrenSecondLayer.map(_.value).last should be (RoutesTree.Wildcard) // wildcard is always last
     childrenSecondLayer.filter(_.value == RoutesTree.Fixed("rent")).head.groupInfo should be(
       Some(GroupInfo(group = Group("cars"), prefix = Path.unsafeFromString("api/v1"))))
+    childrenSecondLayer.filter(_.value == RoutesTree.Fixed("pocket")).head.groupInfo should be(
+      Some(GroupInfo(group = Group("cars"), prefix = Path.unsafeFromString("api/v1"), isPocket = true)))
     childrenSecondLayer.filter(_.value == RoutesTree.Wildcard).head.groupInfo should be(None)
 
     val childrenThirdLayer = childrenSecondLayer.flatMap(_.children)
@@ -122,5 +126,33 @@ class RoutesTreeImplTest extends AnyFlatSpec {
 
     tree.specifyGroup(Path.unsafeFromString("/cars/random")) should be(None)
     tree.specifyGroup(Path.unsafeFromString("planes/somePlaneId123/passengers/")) should be(None)
+  }
+
+  it should "should handle Pocket while favoring Fixed paths and Wildcards" in {
+    val tree: RoutesTree = RoutesTreeImpl.unifyPrefixesAndConstruct(RoutesMappingInitDto(
+      Map.empty,
+      Map.from(List(
+        ("supercars/fixed/", "fixedGroup"),
+        ("supercars/**", "pocketGroup"),
+        ("supercars/blabla/{{blabla_id}}", "wildcardGroup"),
+        ("supercars/fixed/fixed2", "fixedGroup2"),
+      ))
+    ))
+
+    tree.specifyGroup(Path.unsafeFromString("supercars/fixed")) should be(
+      Some(GroupInfo(group = Group("fixedGroup"), Path.empty)))
+    tree.specifyGroup(Path.unsafeFromString("supercars/fixed/fixed2")) should be(
+      Some(GroupInfo(group = Group("fixedGroup2"), Path.empty)))
+
+    tree.specifyGroup(Path.unsafeFromString("supercars/blabla/someId")) should be(
+      Some(GroupInfo(group = Group("wildcardGroup"), Path.empty)))
+
+    tree.specifyGroup(Path.unsafeFromString("supercars/whatever/whatever2")) should be(
+      Some(GroupInfo(group = Group("pocketGroup"), Path.empty, isPocket = true)))
+
+    // Corner case - even if there is `supercars/blabla/{{blabla if}}` this is still a pocket because
+    // there is no direct match, so the most appropriate Pocket is chosen.
+    tree.specifyGroup(Path.unsafeFromString("supercars/blabla/whatever/whatever2/")) should be(
+      Some(GroupInfo(group = Group("pocketGroup"), Path.empty, isPocket = true)))
   }
 }
