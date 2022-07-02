@@ -12,8 +12,8 @@ import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
 import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
-import com.github.pandafolks.panda.routes.RoutesTrees
 import com.github.pandafolks.panda.routes.dto.RoutesMappingInitDto
+import com.github.pandafolks.panda.routes.{RoutesRouting, RoutesTrees}
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
@@ -64,7 +64,13 @@ object App extends MonixServerApp {
         appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       participantsRouting = new ParticipantsRouting(daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)
-      authedRoutes = authMiddleware(participantsRouting.getRoutesWithAuth <+> authRouting.getRoutesWithAuth)
+      routesRouting = new RoutesRouting(() => ???)
+
+      authedRoutes = authMiddleware(
+        participantsRouting.getRoutesWithAuth
+          <+> routesRouting.getRoutesWithAuth
+          <+> authRouting.getRoutesWithAuth
+      )
 
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound
       server <- Http4sBlazeServerModule.make[Task](

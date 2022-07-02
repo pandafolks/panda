@@ -7,7 +7,6 @@ import org.http4s.EntityEncoder
 import org.http4s.Uri.Path
 import org.http4s.circe.jsonEncoderOf
 
-
 final case class Participant(
                               host: String,
                               port: Int,

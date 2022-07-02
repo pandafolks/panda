@@ -148,7 +148,8 @@ final class ParticipantsRouting(private val participantEventService: Participant
 
 object ManagementRouting {
 
-  case class ParticipantsModificationResult(message: String, successfulParticipantIdentifiers: List[String], errors: List[String])
+  final case class ParticipantsModificationResult(message: String,
+                                                  successfulParticipantIdentifiers: List[String],
+                                                  errors: List[String])
 
 }
-
