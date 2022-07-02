@@ -159,10 +159,6 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
                   Indexes.ascending("httpMethod")
                 ),
                 IndexOptions().background(false).unique(true)
-              ),
-              IndexModel(
-                Indexes.ascending("groupName"),
-                IndexOptions().background(true).unique(false)
               )
             )
           )
