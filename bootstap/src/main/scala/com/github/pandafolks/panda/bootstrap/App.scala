@@ -64,7 +64,7 @@ object App extends MonixServerApp {
         appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
       participantsRouting = new ParticipantsRouting(daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)
-      routesRouting = new RoutesRouting(() => ???)
+      routesRouting = new RoutesRouting(daosAndServicesInitializedBeforeCaches.getRoutesService)
 
       authedRoutes = authMiddleware(
         participantsRouting.getRoutesWithAuth

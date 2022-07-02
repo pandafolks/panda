@@ -19,7 +19,6 @@ import scala.util.{Random, Try}
 
 final class TokenServiceImpl(private val config: TokensConfig)(private val c: Resource[Task,
   (CollectionOperator[User], CollectionOperator[Token])]) extends TokenService {
-  //todo: add background job which clears old, unused tokens
 
   private val readmeText : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
     .getOrElse(Random.alphanumeric.take(20).mkString(""))

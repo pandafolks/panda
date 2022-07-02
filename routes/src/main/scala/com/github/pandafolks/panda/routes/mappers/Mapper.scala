@@ -1,11 +1,10 @@
 package com.github.pandafolks.panda.routes.mappers
 
-import com.github.pandafolks.panda.routes.HttpMethod
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
-final case class Mapper(route: String, groupName: String, httpMethod: HttpMethod, lastUpdateTimestamp: Long)
+final case class Mapper(route: String, groupName: String, httpMethod: String, lastUpdateTimestamp: Long)
 
 object Mapper {
   final val MAPPERS_COLLECTION_NAME = "mappers"

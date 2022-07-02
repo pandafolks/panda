@@ -16,8 +16,9 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
 
     case req@POST -> Root / API_NAME / API_VERSION_1 / "routes" as _ =>
       for {
-        dtos <- req.req.as[RoutesResourceDto]
-        _ <- Task.now(dtos)
+        dto <- req.req.as[RoutesResourceDto]
+        res <- routesService.saveRoutes(dto)
+        _ <- Task.now(res)
         response <- Ok()
       } yield response
   }

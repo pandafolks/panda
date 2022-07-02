@@ -4,6 +4,7 @@ import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
+import com.github.pandafolks.panda.routes.{RoutesDao, RoutesDaoImpl, RoutesService, RoutesServiceImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import com.pandafolks.mattszm.panda.sequence.SequenceDao
@@ -31,6 +32,9 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
 
   private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = new UnsuccessfulHealthCheckDaoImpl(dbAppClient.getUnsuccessfulHealthCheckConnection)
 
+  private val routesDao: RoutesDao = new RoutesDaoImpl()
+  private val routesService: RoutesService = new RoutesServiceImpl(routesDao)(dbAppClient.getMappersAndPrefixesConnection)
+
   def getUserService: UserService = userService
 
   def getTokenService: TokenService = tokenService
@@ -38,5 +42,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   def getParticipantEventService: ParticipantEventService = participantEventService
 
   def getUnsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = unsuccessfulHealthCheckDao
+
+  def getRoutesService = routesService
 
 }
