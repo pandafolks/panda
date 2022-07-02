@@ -13,16 +13,16 @@ trait LoadBalancer {
    * Routes request to one of the participants belonging to a related group.
    * The participant choice depends on the type of the implemented load balancer.
    *
-   * @param request         Received request that needs to be forwarded
-   * @param requestedPath   Path that will be the request forwarded to
-   * @param group           The group from which the participant should be selected
-   * @return                Reply received from the end server
+   * @param request       Received request that needs to be forwarded
+   * @param requestedPath Path that will be the request forwarded to
+   * @param group         The group from which the participant should be selected
+   * @return Reply received from the end server
    */
   def route(request: Request[Task], requestedPath: Path, group: Group): Task[Response[Task]]
 }
 
 object LoadBalancer {
-  private final val HOST_NAME: String = "host"
+  private final val HOST_NAME: String = "Host"
 
   def fillRequestWithParticipant(request: Request[Task], participant: Participant, requestedPath: Path): Request[Task] =
     request
@@ -35,7 +35,9 @@ object LoadBalancer {
           path = requestedPath
         )
       )
-      .withHeaders(request.headers.put(Header.Raw(CIString(HOST_NAME), participant.host)))
+      .withHeaders(request.headers.put(
+        Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+      ))
 
   def notReachedAnyInstanceLog(requestedPath: Path, group: Group, logger: Logger): Unit =
     logger.info("[path: \"" + requestedPath.renderString + "\"]: " +

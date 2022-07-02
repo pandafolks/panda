@@ -7,6 +7,9 @@ import com.github.pandafolks.panda.nodestracker.Node
 import com.github.pandafolks.panda.nodestracker.Node.NODES_COLLECTION_NAME
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME
+import com.github.pandafolks.panda.routes.mappers.Mapper.MAPPERS_COLLECTION_NAME
+import com.github.pandafolks.panda.routes.mappers.Prefix.PREFIXES_COLLECTION_NAME
+import com.github.pandafolks.panda.routes.mappers.{Mapper, Prefix}
 import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
@@ -58,11 +61,14 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(config.dbName)
   private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(config.dbName)
+  private val mappersCol: CollectionCodecRef[Mapper] = Mapper.getCollection(config.dbName)
+  private val prefixesCol: CollectionCodecRef[Prefix] = Prefix.getCollection(config.dbName)
 
   private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
   private val nodesConnection = MongoConnection.create1(settings, nodesCol)
   private val unsuccessfulHealthCheckConnection = MongoConnection.create1(settings, unsuccessfulHealthCheckCol)
+  private val mappersAndPrefixesConnection = MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
   override def getParticipantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] = participantEventsAndSequencesConnection
 
@@ -71,6 +77,8 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
   override def getNodesConnection: Resource[Task, CollectionOperator[Node]] = nodesConnection
 
   override def getUnsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] = unsuccessfulHealthCheckConnection
+
+  override def getMappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = mappersAndPrefixesConnection
 
   locally {
     //    creating indexes
@@ -137,8 +145,36 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
               )
             )
           )
+        ) >>
+        Task.fromReactivePublisher(
+          database.getCollection(MAPPERS_COLLECTION_NAME).createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.ascending("lastUpdateTimestamp"),
+                IndexOptions().background(false).unique(false)
+              ),
+              IndexModel(
+                Indexes.ascending("route"),
+                IndexOptions().background(true).unique(false)
+              ),
+              IndexModel(
+                Indexes.ascending("groupName"),
+                IndexOptions().background(true).unique(false)
+              )
+            )
+          )
+        ) >>
+        Task.fromReactivePublisher(
+          database.getCollection(PREFIXES_COLLECTION_NAME).createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.ascending("groupName"),
+                IndexOptions().background(false).unique(true)
+              )
+            )
+          )
         )
-      ).runSyncUnsafe(30.seconds)
+      ).runSyncUnsafe(1.minutes)
 
     mongoClient.close()
   }
