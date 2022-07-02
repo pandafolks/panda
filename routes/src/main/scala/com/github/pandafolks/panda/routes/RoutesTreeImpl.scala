@@ -9,19 +9,25 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
   override def getRoot: Node = root.copy()
 
-  override def specifyGroup(path: Path): Option[GroupInfo] = {
+  override def specifyGroup(path: Path): Option[(GroupInfo, Map[String, String])] = {
     // Searching priority:
     //  - Fixed
     //  - Wildcard
     //  - Pocket
-    def rc(curr: Node, segments: List[Uri.Path.Segment]): Option[GroupInfo] = {
-      if (segments.isEmpty) curr.groupInfo
+    def rc(curr: Node, segments: List[Uri.Path.Segment]): Option[(GroupInfo, Map[String, String])] = {
+      if (segments.isEmpty) curr.groupInfo.map((_, Map.empty[String, String]))
       else curr.children.find(node => node.value match {
         case Fixed(expression) if expression == segments.head.encoded => true
         case _: Fixed => false
-        case Wildcard => true
-      }).flatMap(rc(_, segments.tail))
-        .orElse(curr.groupInfo.filter(_.isPocket))
+        case _: Wildcard => true
+      })
+        .flatMap(foundNode => rc(foundNode, segments.tail)
+          .map(res => foundNode.value match {
+            case Wildcard(expression) => (res._1, res._2 + (expression -> segments.head.encoded))
+            case _ => res
+          })
+        )
+        .orElse(curr.groupInfo.filter(_.isPocket).map((_, Map.empty[String, String])))
     }
 
     rc(root, path.segments.toList)
@@ -36,7 +42,7 @@ object RoutesTreeImpl {
   def construct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTree =
     new RoutesTreeImpl(
       data.get(httpMethod).iterator
-        .foldLeft(Node(RoutesTree.Wildcard, List.empty))((root, entry) =>
+        .foldLeft(Node(RoutesTree.Wildcard(), List.empty))((root, entry) =>
           insert(
             root = root,
             path = entry._1,
@@ -66,7 +72,7 @@ object RoutesTreeImpl {
 
     val mainParts: List[RoutesTree.SegmentType] = splitIntoParts(path) {
       case "**" => RoutesTree.Pocket
-      case entry if entry.startsWith("{{") && entry.endsWith("}}") => RoutesTree.Wildcard
+      case s"{{$entry}}" => RoutesTree.Wildcard(entry)
       case entry => RoutesTree.Fixed(entry)
     }
 
