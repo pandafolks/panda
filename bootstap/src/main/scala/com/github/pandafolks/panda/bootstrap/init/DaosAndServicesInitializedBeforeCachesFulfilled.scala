@@ -4,7 +4,7 @@ import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
-import com.github.pandafolks.panda.routes.{PrefixesDao, PrefixesDaoImpl, RoutesDao, RoutesDaoImpl, RoutesService, RoutesServiceImpl}
+import com.github.pandafolks.panda.routes.{PrefixesDao, PrefixesDaoImpl, MapperDao, MapperDaoImpl, RoutesService, RoutesServiceImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import com.pandafolks.mattszm.panda.sequence.SequenceDao
@@ -32,9 +32,9 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
 
   private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = new UnsuccessfulHealthCheckDaoImpl(dbAppClient.getUnsuccessfulHealthCheckConnection)
 
-  private val routesDao: RoutesDao = new RoutesDaoImpl()
+  private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixesDao: PrefixesDao = new PrefixesDaoImpl()
-  private val routesService: RoutesService = new RoutesServiceImpl(routesDao, prefixesDao)(dbAppClient.getMappersAndPrefixesConnection)
+  private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixesDao)(dbAppClient.getMappersAndPrefixesConnection)
 
   def getUserService: UserService = userService
 

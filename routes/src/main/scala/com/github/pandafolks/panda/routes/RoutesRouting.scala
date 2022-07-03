@@ -16,7 +16,7 @@ import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder}
 final class RoutesRouting(private val routesService: RoutesService) extends Http4sDsl[Task] with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
-    case _@GET -> Root / API_NAME / API_VERSION_1 / "routes" as _ => Ok()
+    case _@GET -> Root / API_NAME / API_VERSION_1 / "routes" as _ => Ok(routesService.findAll())
 
     case req@POST -> Root / API_NAME / API_VERSION_1 / "routes" as _ =>
       for {

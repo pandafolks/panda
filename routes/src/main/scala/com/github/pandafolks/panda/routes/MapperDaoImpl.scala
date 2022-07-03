@@ -5,13 +5,14 @@ import com.github.pandafolks.panda.routes.mappers.{Mapper, MappingContent}
 import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
+import monix.reactive.Observable
 import org.mongodb.scala.model.{Filters, UpdateOptions, Updates}
 
-final class RoutesDaoImpl extends RoutesDao {
+final class MapperDaoImpl extends MapperDao {
 
   private final val clock = java.time.Clock.systemUTC
 
-  override def saveRoute(route: String, mapperRecordDto: MapperRecordDto)(
+  override def saveMapper(route: String, mapperRecordDto: MapperRecordDto)(
     mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]] = {
     val unifiedHttpMethod = HttpMethod.unify(mapperRecordDto.method)
     mapperOperator.single.updateOne(
@@ -20,7 +21,7 @@ final class RoutesDaoImpl extends RoutesDao {
         Filters.eq(HTTP_METHOD_PROPERTY_NAME, unifiedHttpMethod)
       ),
       Updates.combine(
-        Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.of(mapperRecordDto.mapping)),
+        Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMapping(mapperRecordDto.mapping)),
         Updates.setOnInsert(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
@@ -30,4 +31,6 @@ final class RoutesDaoImpl extends RoutesDao {
     }
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
   }
+
+  override def findAll(prefixOperator: CollectionOperator[Mapper]): Observable[Mapper] = prefixOperator.source.findAll
 }
