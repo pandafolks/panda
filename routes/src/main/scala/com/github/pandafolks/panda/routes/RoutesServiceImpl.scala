@@ -27,7 +27,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
     case (mapperOperator, prefixesOperator) =>
       Task.parMap2(
         mapperDao.findAll(mapperOperator)
-          .map(mapper => (mapper.route, mapper.httpMethod, MappingContent.toMapping(mapper.mappingContent)))
+          .map(mapper => (mapper.route, mapper.httpMethod, MappingContent.toMappingDto(mapper.mappingContent)))
           .foldLeftL(Map.empty[String, MapperRecordDto])((prevState, p) => prevState + (p._1 -> MapperRecordDto(p._3, Some(p._2)))),
 
         prefixesDao.findAll(prefixesOperator)

@@ -5,9 +5,9 @@ final case class RoutesResourceDto(
                                     prefixes: Option[Map[String, String]] = Option.empty
                                   )
 
-final case class MapperRecordDto(mapping: Mapping, method: Option[String] = Option.empty)
+final case class MapperRecordDto(mapping: MappingDto, method: Option[String] = Option.empty)
 
-final case class Mapping(value: Either[String, Map[String, Mapping]])
+final case class MappingDto(value: Either[String, Map[String, MappingDto]])
 
 //{
 //  "mappers":{

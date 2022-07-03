@@ -6,6 +6,8 @@ import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
 final case class Mapper(route: String, mappingContent: MappingContent, httpMethod: String, lastUpdateTimestamp: Long)
+// todo mszmal: add `visible` flag. If false, the route can be only used within api composition, otherwise the route
+//  can be also achieved directly via gateway (Tree nodes also needs to have this flag and filter/not filter out based on use case).
 
 object Mapper {
   final val MAPPERS_COLLECTION_NAME = "mappers"

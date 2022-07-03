@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.routes
 
 import com.github.pandafolks.panda.routes.RoutesRouting.RoutesAndPrefixesModificationResult
-import com.github.pandafolks.panda.routes.dto.{MapperRecordDto, Mapping, RoutesResourceDto}
+import com.github.pandafolks.panda.routes.dto.{MapperRecordDto, MappingDto, RoutesResourceDto}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
 import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
 import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
@@ -47,10 +47,10 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
   implicit val mapperRecordDtoDecoder: EntityDecoder[Task, MapperRecordDto] = jsonOf[Task, MapperRecordDto]
   implicit val mapperRecordDtoEncoder: EntityEncoder[Task, MapperRecordDto] = jsonEncoderOf[Task, MapperRecordDto]
 
-  implicit val encodeIntOrString: Encoder[Mapping] = Encoder.instance(_.value.fold(_.asJson, _.asJson))
+  implicit val encodeIntOrString: Encoder[MappingDto] = Encoder.instance(_.value.fold(_.asJson, _.asJson))
 
-  implicit val decodeIntOrString: Decoder[Mapping] =
-    Decoder[String].map(v => Mapping(Left(v))).or(Decoder[Map[String, Mapping]].map(v => Mapping(Right(v))))
+  implicit val decodeIntOrString: Decoder[MappingDto] =
+    Decoder[String].map(v => MappingDto(Left(v))).or(Decoder[Map[String, MappingDto]].map(v => MappingDto(Right(v))))
 
   implicit val routesAndPrefixesModificationResultEncoder: EntityEncoder[Task, RoutesAndPrefixesModificationResult] = jsonEncoderOf[Task, RoutesAndPrefixesModificationResult]
 

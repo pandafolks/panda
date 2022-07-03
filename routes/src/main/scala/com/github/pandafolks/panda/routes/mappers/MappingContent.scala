@@ -1,13 +1,13 @@
 package com.github.pandafolks.panda.routes.mappers
 
-import com.github.pandafolks.panda.routes.dto.Mapping
+import com.github.pandafolks.panda.routes.dto.MappingDto
 
 
 final case class MappingContent(left: Option[String], right: Option[Map[String, MappingContent]]) // mongo cannot handle `Either`s
 
 object MappingContent {
-  def fromMapping(mapping: Mapping): MappingContent = {
-    def rc(mapping: Mapping): MappingContent =
+  def fromMappingDto(mapping: MappingDto): MappingContent = {
+    def rc(mapping: MappingDto): MappingContent =
       mapping.value match {
         case Left(v) => MappingContent(left = Some(v), right = Option.empty)
         case Right(map) => MappingContent(
@@ -22,14 +22,14 @@ object MappingContent {
     // todo mszmal: add tests
   }
 
-  def toMapping(mappingContent: MappingContent): Mapping = {
-    def rc(mappingContent: MappingContent): Mapping =
-      Mapping(
+  def toMappingDto(mappingContent: MappingContent): MappingDto = {
+    def rc(mappingContent: MappingContent): MappingDto =
+      MappingDto(
         // 😍
         mappingContent.left.map(Left(_))
           .orElse(mappingContent.right.map(v => Right(v.iterator
-            .foldLeft(Map.empty[String, Mapping])((prev, item) => prev + (item._1 -> rc(item._2))))))
-          .getOrElse(Right(Map.empty[String, Mapping]))
+            .foldLeft(Map.empty[String, MappingDto])((prev, item) => prev + (item._1 -> rc(item._2))))))
+          .getOrElse(Right(Map.empty[String, MappingDto]))
       )
 
     rc(mappingContent)

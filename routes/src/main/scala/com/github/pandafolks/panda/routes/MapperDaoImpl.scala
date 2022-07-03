@@ -21,7 +21,7 @@ final class MapperDaoImpl extends MapperDao {
         Filters.eq(HTTP_METHOD_PROPERTY_NAME, unifiedHttpMethod)
       ),
       Updates.combine(
-        Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMapping(mapperRecordDto.mapping)),
+        Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingDto(mapperRecordDto.mapping)),
         Updates.setOnInsert(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
