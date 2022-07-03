@@ -3,6 +3,8 @@ package com.github.pandafolks.panda.loadbalancer
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
+import monix.execution.Scheduler
+import monix.execution.Scheduler.global
 import org.scalatest.PrivateMethodTester
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
@@ -13,13 +15,13 @@ import org.scalatest.time.{Seconds, Span}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.TreeMap
-import scala.concurrent.ExecutionContext.global
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester with ScalaFutures {
-  implicit final val scheduler: ExecutionContextExecutor = global
+  implicit final val scheduler: Scheduler = global
 
   "get" should "always return appropriate identifier" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
@@ -243,6 +245,35 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
         underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group1.name)) should be (400)
         underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group2.name)) should be (400)
         underTest.invokePrivate(usedIdentifiersWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group3.name)) should be (400)
+    }
+  }
+
+  it should "clear empty groups" in {
+    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+
+    val group1 = Group("cars")
+    val group2 = Group("planes")
+
+    for (i <- 1 to 500) {
+      underTest.add(Participant("ip", 123, group1, group1.name + i))
+      underTest.add(Participant("ip", 123, group2, group2.name + i))
+    }
+
+    var futures: List[Future[Unit]] = List()
+    for (i <- 1 to 500) {
+      futures = Future(underTest.remove(Participant("ip", 123, group1, group1.name + i))) :: futures
+      futures = Future(underTest.remove(Participant("ip", 123, group2, group2.name + i))) :: futures
+    }
+    val futureWithList: Future[List[Unit]] = futures.sequence
+
+    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
+      _ =>
+        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
+        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty should be(true)
+        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty should be(true)
+        Await.result(underTest.clearEmptyGroups().runToFuture, 5.seconds)
+        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(0)
     }
   }
 }

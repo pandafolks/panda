@@ -5,9 +5,11 @@ import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
+import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.{Iterable, TreeMap}
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100) extends ChangeListener[Participant] {
@@ -16,6 +18,18 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
   @VisibleForTesting
   private val usedIdentifiersWithPositions: ConcurrentHashMap[Participant, List[Int]] = new ConcurrentHashMap // Participants are equal only if all their properties are equal
   private val random = new Random(System.currentTimeMillis())
+  private val clearEmptyGroupsIntervalInHours = 12
+  private val logger = LoggerFactory.getLogger(getClass.getName)
+
+  locally {
+    import monix.execution.Scheduler.{global => scheduler}
+      scheduler.scheduleAtFixedRate(clearEmptyGroupsIntervalInHours.hours, clearEmptyGroupsIntervalInHours.hours) {
+        clearEmptyGroups()
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot clear ${getClass.getName} empty groups.", e) }
+          .runToFuture(scheduler)
+        ()
+    }
+  }
 
   def get(group: Group, requestedPosition: Int): Option[Participant] =
     Option(usedPositionsGroupedByGroup.get(group)).flatMap {
@@ -57,4 +71,10 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
 
   override def notifyAboutRemove(items: Iterable[Participant]): Task[Unit] =
     Task.parTraverseUnordered(items)(item => Task.eval(remove(item))).void
+
+  def clearEmptyGroups(): Task[Unit] =
+    Task.apply(usedPositionsGroupedByGroup.forEach((g, _) => {
+      usedPositionsGroupedByGroup.remove(g, TreeMap.empty[Int, Participant])
+      ()
+    }))
 }
