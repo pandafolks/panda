@@ -15,4 +15,11 @@ trait RoutesService {
    * @return                      Routes and Prefixes creation results
    */
   def saveRoutes(routesResourceDto: RoutesResourceDto): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
+
+  /**
+   * Returns all Routes and Prefixes present in the persistence layer as a [[RoutesResourceDto]].
+   *
+   * @return                      Routes and Prefixes creation results
+   */
+  def findAll(): Task[RoutesResourceDto]
 }
