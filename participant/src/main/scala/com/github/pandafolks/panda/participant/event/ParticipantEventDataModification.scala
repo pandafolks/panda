@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
+import com.github.pandafolks.panda.participant.ParticipantModificationPayload
 
 case class ParticipantEventDataModification(
                                              host: Option[String],
@@ -12,11 +12,11 @@ case class ParticipantEventDataModification(
 object ParticipantEventDataModification {
   def empty: ParticipantEventDataModification = new ParticipantEventDataModification(None, None, None, None)
 
-  def of(dto: ParticipantModificationDto): ParticipantEventDataModification =
+  def of(participantModificationPayload: ParticipantModificationPayload): ParticipantEventDataModification =
     new ParticipantEventDataModification(
-      host = dto.host,
-      port = dto.port,
-      groupName = dto.groupName,
-      healthcheckRoute = dto.healthcheckRoute
+      host = participantModificationPayload.host,
+      port = participantModificationPayload.port,
+      groupName = participantModificationPayload.groupName,
+      healthcheckRoute = participantModificationPayload.healthcheckRoute
     )
 }

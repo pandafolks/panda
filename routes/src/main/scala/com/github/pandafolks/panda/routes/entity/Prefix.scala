@@ -1,4 +1,4 @@
-package com.github.pandafolks.panda.routes.mappers
+package com.github.pandafolks.panda.routes.entity
 
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}

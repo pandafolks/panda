@@ -1,18 +1,18 @@
-package com.github.pandafolks.panda.routes.mappers
+package com.github.pandafolks.panda.routes.entity
 
-import com.github.pandafolks.panda.routes.dto.MappingDto
+import com.github.pandafolks.panda.routes.payload.MappingPayload
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
 class MappingContentTest extends AnyFlatSpec {
-  private val mappingDto = MappingDto(
+  private val mappingPayload = MappingPayload(
     Right(Map(
-      "property1" -> MappingDto(Left("someEndpoint1")),
-      "property2" -> MappingDto(Right(Map("property22" -> MappingDto(Left("someEndpoint2"))))),
-      "property3" -> MappingDto(Right(Map(
-        "property4" -> MappingDto(Right(Map("property5" -> MappingDto(Left("someEndpoint3"))))),
-        "property6" -> MappingDto(Left("someEndpoint4"))
+      "property1" -> MappingPayload(Left("someEndpoint1")),
+      "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+      "property3" -> MappingPayload(Right(Map(
+        "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+        "property6" -> MappingPayload(Left("someEndpoint4"))
       )))
     )
     ))
@@ -42,12 +42,12 @@ class MappingContentTest extends AnyFlatSpec {
     ))
   )
 
-  "fromMappingDto" should "create MappingContent based on MappingDto" in {
-    MappingContent.fromMappingDto(mappingDto) should be(mappingContent)
+  "fromMappingPayload" should "create MappingContent based on MappingPayload" in {
+    MappingContent.fromMappingPayload(mappingPayload) should be(mappingContent)
   }
 
-  "toMappingDto" should "create MappingDto based on MappingContent" in {
-    MappingContent.toMappingDto(mappingContent) should be(mappingDto)
+  "toMappingPayload" should "create MappingPayload based on MappingContent" in {
+    MappingContent.toMappingPayload(mappingContent) should be(mappingPayload)
   }
 
 }

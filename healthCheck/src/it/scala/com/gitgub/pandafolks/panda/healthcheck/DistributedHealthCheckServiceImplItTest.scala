@@ -1,8 +1,7 @@
 package com.gitgub.pandafolks.panda.healthcheck
 
 import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
-import com.github.pandafolks.panda.participant.Participant
-import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
+import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload}
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEventType.{Disconnected, Joined, ModifiedData}
 import monix.eval.Task
@@ -52,15 +51,15 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
 
     // creating all three participants as working, so the healthcheck will be made on all three of them
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto( // creating identifier1Healthy with wrong healthcheck path
+      participantEventService.createParticipant(ParticipantModificationPayload( // creating identifier1Healthy with wrong healthcheck path
         host = Some("13.204.158.92"), port = Some(3000), groupName = Some("cars"), identifier = Some(identifier1Healthy), healthcheckRoute = Some("badPath"), working = Some(true)
       ))
         >>
-        participantEventService.createParticipant(ParticipantModificationDto(
+        participantEventService.createParticipant(ParticipantModificationPayload(
           host = Some("193.207.130.139"), port = Some(3005), groupName = Some("notcars"), identifier = Some(identifier2Healthy), working = Some(true)
         ))
         >>
-        participantEventService.createParticipant(ParticipantModificationDto(
+        participantEventService.createParticipant(ParticipantModificationPayload(
           host = Some("193.207.130.140"), port = Some(9991), groupName = Some("notcars"), identifier = Some(identifier3Unhealthy), working = Some(true)
         ))
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
@@ -69,14 +68,14 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
         >> participantsCache.getAllHealthyParticipants.map { res => firstParticipantsCacheCheck.set(res); () }
 
         // fixing healthcheck path of participant with identifier1Healthy
-        >> participantEventService.modifyParticipant(ParticipantModificationDto(identifier = Some(identifier1Healthy), healthcheckRoute = Some("/api/v1/health")))
+        >> participantEventService.modifyParticipant(ParticipantModificationPayload(identifier = Some(identifier1Healthy), healthcheckRoute = Some("/api/v1/health")))
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // second background job run
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> participantsCache.getAllHealthyParticipants.map { res => secondParticipantsCacheCheck.set(res); () }
 
         // simulating healthcheck fail by setting wrong healthcheck path once again
-        >> participantEventService.modifyParticipant(ParticipantModificationDto(identifier = Some(identifier1Healthy), healthcheckRoute = Some("another/bad/path")))
+        >> participantEventService.modifyParticipant(ParticipantModificationPayload(identifier = Some(identifier1Healthy), healthcheckRoute = Some("another/bad/path")))
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // third background job run
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
@@ -88,7 +87,7 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL).map { res => firstUnsuccessfulHealthCheckResult.set(res); () } // there should be only one element with identifier: identifier1Healthy
 
         // fixing healthcheck path of participant with identifier1Healthy once again
-        >> participantEventService.modifyParticipant(ParticipantModificationDto(identifier = Some(identifier1Healthy), healthcheckRoute = Some("/api/v1/health")))
+        >> participantEventService.modifyParticipant(ParticipantModificationPayload(identifier = Some(identifier1Healthy), healthcheckRoute = Some("/api/v1/health")))
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // fifth background job run
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
@@ -98,7 +97,7 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
 
     whenReady(f) { _ =>
       firstParticipantsCacheCheck.get().size should be(1)
-      firstParticipantsCacheCheck.get()(0).identifier should be(identifier2Healthy)
+      firstParticipantsCacheCheck.get().head.identifier should be(identifier2Healthy)
 
       secondParticipantsCacheCheck.get().size should be(2)
       secondParticipantsCacheCheck.get().map(_.identifier) should contain theSameElementsAs List(identifier1Healthy, identifier2Healthy)
@@ -107,9 +106,9 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
       thirdParticipantsCacheCheck.get().map(_.identifier) should contain theSameElementsAs List(identifier1Healthy, identifier2Healthy)
 
       fourthParticipantsCacheCheck.get().size should be(1)
-      fourthParticipantsCacheCheck.get()(0).identifier should be(identifier2Healthy)
+      fourthParticipantsCacheCheck.get().head.identifier should be(identifier2Healthy)
       firstUnsuccessfulHealthCheckResult.get().size should be(1)
-      firstUnsuccessfulHealthCheckResult.get()(0).counter should be(2)
+      firstUnsuccessfulHealthCheckResult.get().head.counter should be(2)
 
       fifthParticipantsCacheCheck.get().size should be(2)
       fifthParticipantsCacheCheck.get().map(_.identifier) should contain theSameElementsAs List(identifier1Healthy, identifier2Healthy)
@@ -125,10 +124,10 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
     val secondParticipantEventsRetrieve = new AtomicReference[List[ParticipantEvent]]()
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto( // creating identifier1Healthy with wrong healthcheck path
+      participantEventService.createParticipant(ParticipantModificationPayload( // creating identifier1Healthy with wrong healthcheck path
         host = Some("13.204.158.92"), port = Some(3000), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Some("api/v1/health"), working = Some(true)
       ))
-        >> participantEventService.createParticipant(ParticipantModificationDto(
+        >> participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("193.207.130.139"), port = Some(3005), groupName = Some("notcars"), identifier = Some(identifier2), working = Some(true)
       ))
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL) // in order to pre-initialize collection and remove flakes
@@ -138,14 +137,14 @@ class DistributedHealthCheckServiceImplItTest extends AsyncFlatSpec with Distrib
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // and third ...
         >> participantEventsAndSequencesConnection.use { case (p, _) => p.source.findAll.toListL }.map { res => firstParticipantEventsRetrieve.set(res); ()}
 
-        >> participantEventService.modifyParticipant(ParticipantModificationDto(identifier = Some(identifier2), healthcheckRoute = Some("another/bad/path")))
+        >> participantEventService.modifyParticipant(ParticipantModificationPayload(identifier = Some(identifier2), healthcheckRoute = Some("another/bad/path")))
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // counter for identifier2 increased, but no event emitted yet
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // counter for identifier2 equal 2 and event about being `Unhealthy` emitted
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // first redundant ...
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // second redundant ...
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // third redundant ...
-        >> participantEventService.modifyParticipant(ParticipantModificationDto(identifier = Some(identifier2), healthcheckRoute = Some("healthcheck"))) // fixing healthcheck route
+        >> participantEventService.modifyParticipant(ParticipantModificationPayload(identifier = Some(identifier2), healthcheckRoute = Some("healthcheck"))) // fixing healthcheck route
         >> participantsCache.invokePrivate(refreshCachePrivateMethod()) // refreshing cache in order to get a new, fixed healthcheck route for identifier2
         >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // this recognized that identifier2 is up and emits `Healthy` event for it
         >> participantEventsAndSequencesConnection.use { case (p, _) => p.source.findAll.toListL }.map { res => secondParticipantEventsRetrieve.set(res); ()}

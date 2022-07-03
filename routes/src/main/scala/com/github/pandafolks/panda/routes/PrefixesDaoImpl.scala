@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.routes
-import com.github.pandafolks.panda.routes.mappers.Prefix
-import com.github.pandafolks.panda.routes.mappers.Prefix.{GROUP_NAME_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, VALUE_PROPERTY_NAME}
-import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError, UnsuccessfulSaveOperation}
+import com.github.pandafolks.panda.routes.entity.Prefix
+import com.github.pandafolks.panda.routes.entity.Prefix.{GROUP_NAME_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, VALUE_PROPERTY_NAME}
+import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulDeleteOperation, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.reactive.Observable
@@ -27,4 +27,12 @@ final class PrefixesDaoImpl extends PrefixesDao {
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
 
   override def findAll(prefixOperator: CollectionOperator[Prefix]): Observable[Prefix] = prefixOperator.source.findAll
+
+  override def delete(groupName: String)(prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]] =
+    prefixOperator.single.deleteMany(Filters.eq(GROUP_NAME_PROPERTY_NAME, groupName))
+      .map { deleteRes =>
+        if (deleteRes.deleteCount > 0) Right(groupName) else Left(NotExists(s"There is no prefix associated with the group \'$groupName\'"))
+      }
+      .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
+
 }

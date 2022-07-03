@@ -1,25 +1,34 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.dto.RoutesResourceDto
+import com.github.pandafolks.panda.routes.payload.{RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
 import monix.eval.Task
 
 trait RoutesService {
 
   /**
-   * Saves all Routes and Prefixes delivered with the [[RoutesResourceDto]]. The method discards all duplicates
-   * and saves in the persistence layer only those that have been not present before.
+   * Returns all Routes and Prefixes present in the persistence layer as a [[RoutesResourcePayload]].
    *
-   * @param routesResourceDto
-   *
-   * @return                      Routes and Prefixes creation results
+   * @return                            Routes and Prefixes
    */
-  def saveRoutes(routesResourceDto: RoutesResourceDto): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
+  def findAll(): Task[RoutesResourcePayload]
 
   /**
-   * Returns all Routes and Prefixes present in the persistence layer as a [[RoutesResourceDto]].
+   * Saves all Routes and Prefixes delivered with the [[RoutesResourcePayload]]. The method discards all duplicates
+   * and saves in the persistence layer only those that have been not present before.
    *
-   * @return                      Routes and Prefixes creation results
+   * @param routesResourcePayload
+   * @return                            Routes and Prefixes creation results
    */
-  def findAll(): Task[RoutesResourceDto]
+  def save(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
+
+  /**
+   * Removes all requested [[entity.Mapper]] and group [[entity.Prefix]].
+   * Mappers distinction is made based on routes and the HTTP methods.
+   * Prefixes distinction is made based on group names.
+   *
+   * @param routesRemovePayload
+   * @return                             Routes and Prefixes deletion results
+   */
+  def delete(routesRemovePayload: RoutesRemovePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
 }

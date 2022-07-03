@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.mappers.Prefix
+import com.github.pandafolks.panda.routes.entity.Prefix
 import com.github.pandafolks.panda.utils.PersistenceError
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
@@ -23,9 +23,19 @@ trait PrefixesDao {
   /**
    * Returns all [[Prefix]] present in the persistence layer.
    *
+   *
    * @param prefixOperator    [[Prefix]] DB entry point
    *
    * @return                  Observable of [[Prefix]]
    */
   def findAll(prefixOperator: CollectionOperator[Prefix]): Observable[Prefix]
+
+  /**
+   * Removes [[Prefix]] associated with requested group name.
+   *
+   * @param groupName
+   * @param prefixOperator    [[Prefix]] DB entry point
+   * @return                  Either group name if deleted successfully or PersistenceError if the error during deletion occurred
+   */
+  def delete(groupName: String)(prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]]
 }

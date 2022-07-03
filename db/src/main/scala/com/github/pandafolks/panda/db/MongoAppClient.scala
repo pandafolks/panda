@@ -7,9 +7,9 @@ import com.github.pandafolks.panda.nodestracker.Node
 import com.github.pandafolks.panda.nodestracker.Node.NODES_COLLECTION_NAME
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME
-import com.github.pandafolks.panda.routes.mappers.Mapper.MAPPERS_COLLECTION_NAME
-import com.github.pandafolks.panda.routes.mappers.Prefix.PREFIXES_COLLECTION_NAME
-import com.github.pandafolks.panda.routes.mappers.{Mapper, Prefix}
+import com.github.pandafolks.panda.routes.entity.Mapper.MAPPERS_COLLECTION_NAME
+import com.github.pandafolks.panda.routes.entity.Prefix.PREFIXES_COLLECTION_NAME
+import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
 import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
