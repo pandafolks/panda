@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 import com.github.pandafolks.panda.routes.dto.MapperRecordDto
-import com.github.pandafolks.panda.routes.mappers.Mapper
+import com.github.pandafolks.panda.routes.mappers.{Mapper, MappingContent}
 import com.github.pandafolks.panda.utils.{AlreadyExists, PersistenceError, UnsuccessfulSaveOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
@@ -19,7 +19,7 @@ final class RoutesDaoImpl extends RoutesDao {
         Filters.eq("httpMethod", unifiedHttpMethod)
       ),
       Updates.combine(
-        Updates.setOnInsert("groupName", mapperRecordDto.groupName),
+        Updates.setOnInsert("mappingContent", MappingContent.of(mapperRecordDto.mapping)),
         Updates.setOnInsert("lastUpdateTimestamp", clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
