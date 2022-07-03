@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.routes.mappers
 import com.github.pandafolks.panda.routes.dto.Mapping
 
 
-final case class MappingContent(left: Option[String], right: Option[Map[String, MappingContent]])
+final case class MappingContent(left: Option[String], right: Option[Map[String, MappingContent]]) // mongo cannot handle `Either`s
 
 object MappingContent {
   def of(mapping: Mapping): MappingContent = {

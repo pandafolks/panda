@@ -11,7 +11,7 @@ trait ParticipantEventService {
    *
    * @param participantModificationDto      Data transfer object with multiple configurable fields.
    *                                        The required ones are: host, port and groupName
-   * @return                                Either empty if saved successfully or PersistenceError if the error during saving occurred
+   * @return                                Either identifier if saved successfully or PersistenceError if the error during saving occurred
    */
   def createParticipant(participantModificationDto: ParticipantModificationDto): Task[Either[PersistenceError, String]]
 
@@ -19,7 +19,7 @@ trait ParticipantEventService {
    * Modifies participant configurable properties. Participant recognition is based on identifiers.
    *
    * @param participantModificationDto      Data transfer object with multiple configurable fields.
-   * @return                                Either empty if saved successfully or PersistenceError if the error during saving occurred
+   * @return                                Either identifier if saved successfully or PersistenceError if the error during saving occurred
    */
   def modifyParticipant(participantModificationDto: ParticipantModificationDto): Task[Either[PersistenceError, String]]
 
@@ -27,7 +27,7 @@ trait ParticipantEventService {
    * Removes a participant with a specified identifier if exists.
    *
    * @param participantIdentifier           A unique across all groups identifier
-   * @return                                Either empty if removed successfully or PersistenceError if the error during removing occurred
+   * @return                                Either identifier if removed successfully or PersistenceError if the error during removing occurred
    */
   def removeParticipant(participantIdentifier: String): Task[Either[PersistenceError, String]]
 

@@ -1,7 +1,9 @@
 package com.github.pandafolks.panda.routes
 
+import com.github.pandafolks.panda.routes.RoutesRouting.RoutesAndPrefixesModificationResult
 import com.github.pandafolks.panda.routes.dto.{MapperRecordDto, Mapping, RoutesResourceDto}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
+import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
 import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
 import io.circe._
 import io.circe.generic.auto._
@@ -19,9 +21,20 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
     case req@POST -> Root / API_NAME / API_VERSION_1 / "routes" as _ =>
       for {
         dto <- req.req.as[RoutesResourceDto]
-        res <- routesService.saveRoutes(dto)
-        _ <- Task.now(res)
-        response <- Ok()
+        saveResults <- routesService.saveRoutes(dto)
+        routesSuccessfullySaved = parseSuccessfulResults(saveResults._1)
+        groupPrefixesSuccessfullySaved = parseSuccessfulResults(saveResults._2)
+
+        response <- Ok(
+          RoutesAndPrefixesModificationResult(
+            message = s"Created successfully ${routesSuccessfullySaved.size} routes out of ${saveResults._1.size} requested " +
+              s"and ${groupPrefixesSuccessfullySaved.size} prefixes out of ${saveResults._2.size} requested",
+            successfulRoutes = routesSuccessfullySaved,
+            successfulGroupPrefixes = groupPrefixesSuccessfullySaved,
+            routesErrors = parseErrors(saveResults._1),
+            groupPrefixesErrors = parseErrors(saveResults._2)
+          )
+        )
       } yield response
   }
 
@@ -38,5 +51,18 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
 
   implicit val decodeIntOrString: Decoder[Mapping] =
     Decoder[String].map(v => Mapping(Left(v))).or(Decoder[Map[String, Mapping]].map(v => Mapping(Right(v))))
+
+  implicit val routesAndPrefixesModificationResultEncoder: EntityEncoder[Task, RoutesAndPrefixesModificationResult] = jsonEncoderOf[Task, RoutesAndPrefixesModificationResult]
+
+}
+
+object RoutesRouting {
+
+  final case class RoutesAndPrefixesModificationResult(message: String,
+                                                       successfulRoutes: List[String],
+                                                       successfulGroupPrefixes: List[String],
+                                                       routesErrors: List[String],
+                                                       groupPrefixesErrors: List[String]
+                                                      )
 
 }

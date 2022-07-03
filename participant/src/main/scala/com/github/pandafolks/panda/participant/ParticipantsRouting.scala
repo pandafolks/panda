@@ -6,13 +6,13 @@ import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
-import com.github.pandafolks.panda.utils.PersistenceError
+import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
 import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
 import io.circe.generic.auto._
 import monix.eval.Task
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder, QueryParamDecoder, Response}
+import org.http4s._
 
 
 final class ParticipantsRouting(private val participantEventService: ParticipantEventService,
@@ -83,18 +83,6 @@ final class ParticipantsRouting(private val participantEventService: Participant
       case _ => Task.eval(Response.notFound)
     }
 
-  private def parseSuccessfulResults(input: Seq[Either[PersistenceError, String]]): List[String] =
-    input.filter(_.isRight)
-      .map(_.getOrElse(""))
-      .filter(_.nonEmpty)
-      .toList
-
-  private def parseErrors(input: Seq[Either[PersistenceError, String]]): List[String] =
-    input.filter(_.isLeft)
-      .map(_.left.map(_.getMessage).left.getOrElse(""))
-      .filter(_.nonEmpty)
-      .toList
-
   override def getRoutesWithAuth: AuthedRoutes[User, Task] = routes
 
   implicit val participantCreationDtoDecoder: EntityDecoder[Task, ParticipantModificationDto] = jsonOf[Task, ParticipantModificationDto]
@@ -151,5 +139,4 @@ object ManagementRouting {
   final case class ParticipantsModificationResult(message: String,
                                                   successfulParticipantIdentifiers: List[String],
                                                   errors: List[String])
-
 }

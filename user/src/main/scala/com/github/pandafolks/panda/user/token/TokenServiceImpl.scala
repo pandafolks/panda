@@ -20,10 +20,10 @@ import scala.util.{Random, Try}
 final class TokenServiceImpl(private val config: TokensConfig)(private val c: Resource[Task,
   (CollectionOperator[User], CollectionOperator[Token])]) extends TokenService {
 
-  private val readmeText : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
+  private val rawKey : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
     .getOrElse(Random.alphanumeric.take(20).mkString(""))
 
-  private final val key = PrivateKey(Codec.toUTF8(readmeText))
+  private final val key = PrivateKey(Codec.toUTF8(rawKey))
 
   @VisibleForTesting private final val crypto = CryptoBits(key)
 
@@ -48,7 +48,7 @@ final class TokenServiceImpl(private val config: TokensConfig)(private val c: Re
         for {
           tempId <- Task.now(UUID.randomUUID().toString)
           creationTimeStamp = clock.instant().toEpochMilli
-          _ <- tokenOperator.single.insertOne(Token(tempId, user._id, creationTimeStamp))
+          _ <- tokenOperator.single.insertOne(Token(tempId, user.id, creationTimeStamp))
           signedToken <- Task.eval(crypto.signToken(tempId, creationTimeStamp.toString))
         } yield signedToken
     }

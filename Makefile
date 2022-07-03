@@ -1,6 +1,6 @@
 MONGO_COMPOSE=docker-compose -f ./exampleExternalDependencies/mongo/docker-compose.yml
 MONGO_CONTAINER_NAME=mongo_container
-AUXILIARY_SERVICES_COMPOSE=docker-compose -f ./auxiliaryServices/docker-compose.yml
+AUXILIARY_SERVICES_COMPOSE=docker-compose -f ./exampleExternalDependencies/auxiliaryServices/docker-compose.yml
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -12,7 +12,7 @@ help:
 	@echo "  aux-services-stop 	to stop auxiliary services"
 
 # MongoDB
-mongo-run:
+mongo-run:AUXILIARY_SERVICES_COMPOSE
 	$(MONGO_COMPOSE) up
 
 mongo-stop:
@@ -28,7 +28,7 @@ mongo-shell:
 
 # Auxiliary services
 aux-services-run:
-	bash ./auxiliaryServices/registerInsidePanda.sh && \
+	bash ./exampleExternalDependencies/auxiliaryServices/registerInsidePanda.sh && \
 	$(AUXILIARY_SERVICES_COMPOSE) up
 
 aux-services-stop:

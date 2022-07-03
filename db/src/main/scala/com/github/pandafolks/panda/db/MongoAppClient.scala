@@ -92,6 +92,10 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
             IndexModel(
               Indexes.ascending("username"),
               IndexOptions().background(false).unique(true)
+            ),
+            IndexModel(
+              Indexes.ascending("id"),
+              IndexOptions().background(false).unique(true)
             )
           )
         )

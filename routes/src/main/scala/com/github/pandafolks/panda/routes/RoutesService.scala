@@ -6,6 +6,13 @@ import monix.eval.Task
 
 trait RoutesService {
 
-  // todo mszmal: add docs
-  def saveRoutes(routesResourceDto: RoutesResourceDto): Task[List[Either[PersistenceError, String]]]
+  /**
+   * Saves all Routes and Prefixes delivered with the [[RoutesResourceDto]]. The method discards all duplicates
+   * and saves in the persistence layer only those that have been not present before.
+   *
+   * @param routesResourceDto
+   *
+   * @return                      Routes and Prefixes creation results
+   */
+  def saveRoutes(routesResourceDto: RoutesResourceDto): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
 }
