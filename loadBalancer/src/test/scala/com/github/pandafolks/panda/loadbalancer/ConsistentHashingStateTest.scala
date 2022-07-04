@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.loadbalancer
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
+import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.Scheduler.global
 import org.scalatest.PrivateMethodTester
@@ -251,6 +252,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   it should "clear empty groups" in {
     val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
     val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val underTestMethod = PrivateMethod[Task[Unit]](Symbol("clearEmptyGroups"))
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -267,13 +269,21 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
-    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
-      _ =>
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty should be(true)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty should be(true)
-        Await.result(underTest.clearEmptyGroups().runToFuture, 5.seconds)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(0)
+    val f = futureWithList.map(_ => (
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size(),
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty,
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty
+    )).map(res => {
+      Await.result(underTest.invokePrivate(underTestMethod()).runToFuture, 5.seconds)
+      res
+    })
+
+    whenReady(f, Timeout.apply(Span.apply(10, Seconds))) {
+      res =>
+        res._1 should be(2)
+        res._2 should be(true)
+        res._3 should be(true)
     }
+    underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(0)
   }
 }
