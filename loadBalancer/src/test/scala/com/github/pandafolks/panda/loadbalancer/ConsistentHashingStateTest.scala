@@ -16,8 +16,7 @@ import org.scalatest.time.{Seconds, Span}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.TreeMap
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Future}
 import scala.jdk.CollectionConverters._
 import scala.util.Random
 
@@ -273,10 +272,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
       underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size(),
       underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty,
       underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty
-    )).map(res => {
-      Await.result(underTest.invokePrivate(underTestMethod()).runToFuture, 5.seconds)
-      res
-    })
+    )).flatMap(res => underTest.invokePrivate(underTestMethod()).runToFuture.map(_ => res))
 
     whenReady(f, Timeout.apply(Span.apply(10, Seconds))) {
       res =>
