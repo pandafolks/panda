@@ -77,5 +77,7 @@ object RoutesTreeImpl {
     }
 
     rc(mainParts, root)
+
+    // todo mszmal: maybe its better to remove prefix property from `groupInfo` and have separate hashmap that will be used by all trees
   }
 }

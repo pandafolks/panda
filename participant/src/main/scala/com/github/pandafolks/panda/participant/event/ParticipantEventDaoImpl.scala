@@ -48,6 +48,11 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
 
   override def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean] = c.use {
     case (participantEventOperator,  _) =>
-      participantEventOperator.source.find(Filters.gt("eventId", BsonInt64(eventId))).nonEmptyL
+    participantEventOperator.source.aggregate(
+      List(
+        Aggregates.filter(Filters.gt("eventId", BsonInt64(eventId))),
+        Aggregates.limit(1)
+      ), classOf[ParticipantEvent]
+    ).nonEmptyL
   }
 }

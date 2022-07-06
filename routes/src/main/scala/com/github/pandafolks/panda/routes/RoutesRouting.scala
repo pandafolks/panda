@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.RoutesRouting.{ROUTES_NAME, RoutesAndPrefixesModificationResultPayload}
+import com.github.pandafolks.panda.routes.RoutesRouting.{MAPPERS_NAME, PREFIXES_NAME, ROUTES_NAME, RoutesAndPrefixesModificationResultPayload}
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
 import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
@@ -16,7 +16,14 @@ import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder}
 final class RoutesRouting(private val routesService: RoutesService) extends Http4sDsl[Task] with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
-    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME as _ => Ok(routesService.findAll())
+    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME :? OptionalGroupFilterQueryParamMatcher(maybeGroup) as _ =>
+      Ok(maybeGroup.map(group => routesService.findForGroup(group))
+        .getOrElse(routesService.findAll())
+      )
+
+    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / MAPPERS_NAME as _ => Ok(routesService.findAllMappers())
+
+    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / PREFIXES_NAME as _ => Ok(routesService.findAllPrefixes())
 
     case req@POST -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME as _ =>
       for {
@@ -67,19 +74,25 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
   implicit val mapperRecordPayloadDecoder: EntityDecoder[Task, MapperRecordPayload] = jsonOf[Task, MapperRecordPayload]
   implicit val mapperRecordPayloadEncoder: EntityEncoder[Task, MapperRecordPayload] = jsonEncoderOf[Task, MapperRecordPayload]
 
-  implicit val mappingPayloadEncoder: Encoder[MappingPayload] = Encoder.instance(_.value.fold(_.asJson, _.asJson))
+  implicit val mappersMapEncoder: EntityEncoder[Task, Map[String, MapperRecordPayload]] = jsonEncoderOf[Task, Map[String, MapperRecordPayload]]
+  implicit val prefixesMapEncoder: EntityEncoder[Task, Map[String, String]] = jsonEncoderOf[Task, Map[String, String]]
 
+  implicit val mappingPayloadEncoder: Encoder[MappingPayload] = Encoder.instance(_.value.fold(_.asJson, _.asJson))
   implicit val mappingPayloadDecoder: Decoder[MappingPayload] =
     Decoder[String].map(v => MappingPayload(Left(v))).or(Decoder[Map[String, MappingPayload]].map(v => MappingPayload(Right(v))))
 
   implicit val routesAndPrefixesModificationResultPayloadEncoder: EntityEncoder[Task, RoutesAndPrefixesModificationResultPayload] = jsonEncoderOf[Task, RoutesAndPrefixesModificationResultPayload]
-
   implicit val routesRemovePayloadDecoder: EntityDecoder[Task, RoutesRemovePayload] = jsonOf[Task, RoutesRemovePayload]
+
+  object OptionalGroupFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("group")
+
 }
 
 object RoutesRouting {
 
   final val ROUTES_NAME = "routes"
+  final val MAPPERS_NAME = "mappers"
+  final val PREFIXES_NAME = "prefixes"
 
   final case class RoutesAndPrefixesModificationResultPayload(message: String,
                                                               successfulRoutes: List[String],

@@ -18,13 +18,11 @@ object MappingContent {
       }
 
     rc(mapping)
-    // todo mszmal: add tests
   }
 
   def toMappingPayload(mappingContent: MappingContent): MappingPayload = {
     def rc(mappingContent: MappingContent): MappingPayload =
       MappingPayload(
-        // 😍
         mappingContent.left.map(Left(_))
           .orElse(mappingContent.right.map(v => Right(v.iterator
             .foldLeft(Map.empty[String, MappingPayload])((prev, item) => prev + (item._1 -> rc(item._2))))))

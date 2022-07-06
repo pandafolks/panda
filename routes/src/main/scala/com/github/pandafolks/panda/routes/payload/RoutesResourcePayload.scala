@@ -13,7 +13,7 @@ final case class MappingPayload(value: Either[String, Map[String, MappingPayload
 //  "mappers":{
 //  "/cars/rent":{
 //  "mapping": {
-//  "property1" : {"/some/path": "planes"},
+//  "property1" : {"/some/path": "/planes/somepath1/param123"},
 //  "property2": "some2/path"
 //},
 //  "method":"delete"

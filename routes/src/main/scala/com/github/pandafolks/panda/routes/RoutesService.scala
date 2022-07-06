@@ -1,24 +1,47 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.payload.{RoutesRemovePayload, RoutesResourcePayload}
+import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
 import monix.eval.Task
 
 trait RoutesService {
 
   /**
-   * Returns all Routes and Prefixes present in the persistence layer as a [[RoutesResourcePayload]].
+   * Returns all [[entity.Mapper]] and [[entity.Prefix]] present in the persistence layer as a [[RoutesResourcePayload]].
    *
-   * @return                            Routes and Prefixes
+   * @return                            Mappers and Prefixes
    */
   def findAll(): Task[RoutesResourcePayload]
 
   /**
-   * Saves all Routes and Prefixes delivered with the [[RoutesResourcePayload]]. The method discards all duplicates
-   * and saves in the persistence layer only those that have been not present before.
+   * Returns all [[entity.Mapper]] present in the persistence layer as a map with keys being Routes.
+   *
+   * @return                            Mappers
+   */
+  def findAllMappers(): Task[Map[String, MapperRecordPayload]]
+
+  /**
+   * Returns all [[entity.Prefix]] present in the persistence layer as a map with keys being group names.
+   *
+   * @return                            Prefixes
+   */
+  def findAllPrefixes(): Task[Map[String, String]]
+
+  /**
+   * Returns all [[entity.Mapper]] and [[entity.Prefix]] present in the persistence layer linked to the specified
+   * group name as a [[RoutesResourcePayload]].
+   *
+   * @param groupName
+   * @return                            Mappers and Prefixes
+   */
+  def findForGroup(groupName: String): Task[RoutesResourcePayload]
+
+  /**
+   * Saves all [[entity.Mapper]] and [[entity.Prefix]] delivered with the [[RoutesResourcePayload]].
+   * The method discards all duplicates and saves in the persistence layer only those that have been not present before.
    *
    * @param routesResourcePayload
-   * @return                            Routes and Prefixes creation results
+   * @return                            Mappers and Prefixes creation results
    */
   def save(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
 
@@ -28,7 +51,7 @@ trait RoutesService {
    * Prefixes distinction is made based on group names.
    *
    * @param routesRemovePayload
-   * @return                             Routes and Prefixes deletion results
+   * @return                             Mappers and Prefixes deletion results
    */
   def delete(routesRemovePayload: RoutesRemovePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
 }
