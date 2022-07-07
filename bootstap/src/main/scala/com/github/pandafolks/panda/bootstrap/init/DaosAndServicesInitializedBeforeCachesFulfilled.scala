@@ -34,7 +34,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
 
   private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixesDao: PrefixesDao = new PrefixesDaoImpl()
-  private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixesDao)(dbAppClient.getMappersAndPrefixesConnection)
+  private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixesDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
 
   def getUserService: UserService = userService
 

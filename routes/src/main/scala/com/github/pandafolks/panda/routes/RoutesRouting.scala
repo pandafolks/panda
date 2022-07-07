@@ -17,7 +17,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
 
   private val routes = AuthedRoutes.of[User, Task] {
     case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME :? OptionalGroupFilterQueryParamMatcher(maybeGroup) as _ =>
-      Ok(maybeGroup.map(group => routesService.findForGroup(group))
+      Ok(maybeGroup.map(group => routesService.findByGroup(group))
         .getOrElse(routesService.findAll())
       )
 

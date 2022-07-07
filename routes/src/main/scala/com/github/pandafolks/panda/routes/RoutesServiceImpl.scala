@@ -4,11 +4,19 @@ import cats.effect.Resource
 import com.github.pandafolks.panda.routes.entity.{Mapper, MappingContent, Prefix}
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
+import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 
+import scala.concurrent.duration.DurationInt
+
 final class RoutesServiceImpl(private val mapperDao: MapperDao, private val prefixesDao: PrefixesDao)(
-  private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])]) extends RoutesService {
+  private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])])(
+  private val cacheTtlInMillis: Int) extends RoutesService {
+
+  private val cacheByGroup: CustomCache[String, RoutesResourcePayload] = new CustomCacheImpl[String, RoutesResourcePayload](
+    groupName => findByGroupInternal(groupName)
+  )(maximumSize = 100L, ttl = cacheTtlInMillis.millisecond)
 
   override def findAll(): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
@@ -36,8 +44,10 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
       .map(mapper => (mapper.route, mapper.httpMethod, MappingContent.toMappingPayload(mapper.mappingContent)))
       .foldLeftL(Map.empty[String, MapperRecordPayload])((prevState, p) => prevState + (p._1 -> MapperRecordPayload(p._3, Some(p._2))))
 
+  override def findByGroup(groupName: String): Task[RoutesResourcePayload] =
+    cacheByGroup.get(groupName)
 
-  override def findForGroup(groupName: String): Task[RoutesResourcePayload] = c.use {
+  private def findByGroupInternal(groupName: String): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
       Task.parMap2(
         findAllMappers(mapperOperator).map(mappers => searchMappers(mappers, groupName)),

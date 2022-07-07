@@ -34,7 +34,7 @@ trait RoutesService {
    * @param groupName
    * @return                            Mappers and Prefixes
    */
-  def findForGroup(groupName: String): Task[RoutesResourcePayload]
+  def findByGroup(groupName: String): Task[RoutesResourcePayload]
 
   /**
    * Saves all [[entity.Mapper]] and [[entity.Prefix]] delivered with the [[RoutesResourcePayload]].
