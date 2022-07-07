@@ -21,6 +21,19 @@ trait PrefixesDao {
   def savePrefix(groupName: String, prefix: String)(prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]]
 
   /**
+   * Saves in the persistence layer the [[Prefix]] with the requested group name and prefix
+   * if the one for the specified group name does not exist.
+   * If exists the update is performed. The Prefix recognition is made based on the group name.
+   *
+   * @param groupName
+   * @param prefix
+   * @param prefixOperator    [[Prefix]] DB entry point
+   *
+   * @return                  Either group name if saved successfully or PersistenceError if the error during saving occurred
+   */
+  def saveOrUpdatePrefix(groupName: String, prefix: String)(prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]]
+
+  /**
    * Returns all [[Prefix]] present in the persistence layer.
    *
    *

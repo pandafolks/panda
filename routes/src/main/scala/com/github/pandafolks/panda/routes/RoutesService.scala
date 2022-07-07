@@ -46,6 +46,16 @@ trait RoutesService {
   def save(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
 
   /**
+   * Saves all [[entity.Mapper]] and [[entity.Prefix]] delivered with the [[RoutesResourcePayload]].
+   * The method saves new entries and updates those already present.
+   * Mapper recognition is made based on the route, Prefix recognition is made based on the group name.
+   *
+   * @param routesResourcePayload
+   * @return                            Mappers and Prefixes creation results
+   */
+  def saveWithOverrides(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])]
+
+  /**
    * Removes all requested [[entity.Mapper]] and group [[entity.Prefix]].
    * Mappers distinction is made based on routes and the HTTP methods.
    * Prefixes distinction is made based on group names.

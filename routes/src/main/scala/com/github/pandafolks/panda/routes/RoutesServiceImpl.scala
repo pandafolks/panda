@@ -93,6 +93,19 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
         )
     }
 
+  override def saveWithOverrides(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])] =
+    c.use {
+      case (mapperOperator, prefixesOperator) =>
+        Task.parZip2(
+          Task.parTraverse(routesResourcePayload.mappers.getOrElse(Map.empty).toList) { entry =>
+            mapperDao.saveOrUpdateMapper(entry._1, entry._2)(mapperOperator)
+          },
+          Task.parTraverse(routesResourcePayload.prefixes.getOrElse(Map.empty).toList) { entry =>
+            prefixesDao.saveOrUpdatePrefix(entry._1, entry._2)(prefixesOperator)
+          }
+        )
+    }
+
   override def delete(routesRemovePayload: RoutesRemovePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])] =
     c.use {
       case (mapperOperator, prefixesOperator) =>

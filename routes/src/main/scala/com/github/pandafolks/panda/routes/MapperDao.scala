@@ -21,6 +21,18 @@ trait MapperDao {
   def saveMapper(route: String, mapperRecordDto: MapperRecordPayload)(mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]]
 
   /**
+   * Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]]
+   * if the one for specified route does not exist. If exists the update operation is performed.
+   * Mapper recognition is made based on the route.
+   *
+   * @param route
+   * @param mapperRecordDto
+   * @param mapperOperator    [[Mapper]] DB entry point
+   * @return                  Either route if saved successfully or PersistenceError if the error during saving occurred
+   */
+  def saveOrUpdateMapper(route: String, mapperRecordDto: MapperRecordPayload)(mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]]
+
+  /**
    * Returns all [[Mapper]] present in the persistence layer.
    *
    * @param mapperOperator    [[Mapper]] DB entry point

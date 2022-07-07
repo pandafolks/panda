@@ -1,4 +1,5 @@
 package com.github.pandafolks.panda.routes
+
 import com.github.pandafolks.panda.routes.entity.Prefix
 import com.github.pandafolks.panda.routes.entity.Prefix.{GROUP_NAME_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, VALUE_PROPERTY_NAME}
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulDeleteOperation, UnsuccessfulSaveOperation}
@@ -24,6 +25,18 @@ final class PrefixesDaoImpl extends PrefixesDao {
       if (updateRes.matchedCount == 0) Right(groupName)
       else Left(AlreadyExists(s"Group \'$groupName\' has already defined prefix"))
     }
+      .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
+
+  override def saveOrUpdatePrefix(groupName: String, prefix: String)(
+    prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]] =
+    prefixOperator.single.updateOne(
+      Filters.eq(GROUP_NAME_PROPERTY_NAME, groupName),
+      Updates.combine(
+        Updates.set(VALUE_PROPERTY_NAME, prefix),
+        Updates.set(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
+      ),
+      updateOptions = UpdateOptions().upsert(true)
+    ).map(_ => Right(groupName))
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
 
   override def findAll(prefixOperator: CollectionOperator[Prefix]): Observable[Prefix] = prefixOperator.source.findAll

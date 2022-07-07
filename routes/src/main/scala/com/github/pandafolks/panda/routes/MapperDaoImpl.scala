@@ -31,6 +31,20 @@ final class MapperDaoImpl extends MapperDao {
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
   }
 
+  override def saveOrUpdateMapper(route: String, mapperRecordDto: MapperRecordPayload)(
+    mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]] = {
+    val unifiedHttpMethod = HttpMethod.unify(mapperRecordDto.method)
+    mapperOperator.single.updateOne(
+      getUniqueMapperFilter(route, unifiedHttpMethod),
+      Updates.combine(
+        Updates.set(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingPayload(mapperRecordDto.mapping)),
+        Updates.set(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
+      ),
+      updateOptions = UpdateOptions().upsert(true)
+    ).map(_ => Right(route))
+      .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulSaveOperation(t.getMessage))) }
+  }
+
   override def findAll(mapperOperator: CollectionOperator[Mapper]): Observable[Mapper] = mapperOperator.source.findAll
 
   override def delete(route: String, method: Option[String])(mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]] = {

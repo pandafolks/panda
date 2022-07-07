@@ -1,8 +1,9 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.RoutesRouting.{MAPPERS_NAME, PREFIXES_NAME, ROUTES_NAME, RoutesAndPrefixesModificationResultPayload}
+import com.github.pandafolks.panda.routes.RoutesRouting.{MAPPERS_NAME, OVERRIDE_KEY_WORD, PREFIXES_NAME, ROUTES_NAME, RoutesAndPrefixesModificationResultPayload}
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
+import com.github.pandafolks.panda.utils.PersistenceError
 import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
 import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
 import io.circe._
@@ -29,19 +30,14 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
       for {
         payload <- req.req.as[RoutesResourcePayload]
         saveResults <- routesService.save(payload)
-        routesSuccessfullySaved = parseSuccessfulResults(saveResults._1)
-        groupPrefixesSuccessfullySaved = parseSuccessfulResults(saveResults._2)
+        response <- Ok(RoutesAndPrefixesModificationResultPayload.createSaveResponsePayload(saveResults))
+      } yield response
 
-        response <- Ok(
-          RoutesAndPrefixesModificationResultPayload(
-            message = s"Created successfully ${routesSuccessfullySaved.size} routes out of ${saveResults._1.size} requested " +
-              s"and ${groupPrefixesSuccessfullySaved.size} prefixes out of ${saveResults._2.size} requested",
-            successfulRoutes = routesSuccessfullySaved,
-            successfulGroupPrefixes = groupPrefixesSuccessfullySaved,
-            routesErrors = parseErrors(saveResults._1),
-            groupPrefixesErrors = parseErrors(saveResults._2)
-          )
-        )
+    case req@POST -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / OVERRIDE_KEY_WORD as _ =>
+      for {
+        payload <- req.req.as[RoutesResourcePayload]
+        saveResults <- routesService.saveWithOverrides(payload)
+        response <- Ok(RoutesAndPrefixesModificationResultPayload.createSaveResponsePayload(saveResults))
       } yield response
 
     case req@DELETE -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME as _ =>
@@ -93,6 +89,7 @@ object RoutesRouting {
   final val ROUTES_NAME = "routes"
   final val MAPPERS_NAME = "mappers"
   final val PREFIXES_NAME = "prefixes"
+  final val OVERRIDE_KEY_WORD = "override"
 
   final case class RoutesAndPrefixesModificationResultPayload(message: String,
                                                               successfulRoutes: List[String],
@@ -100,5 +97,21 @@ object RoutesRouting {
                                                               routesErrors: List[String],
                                                               groupPrefixesErrors: List[String]
                                                              )
+
+  object RoutesAndPrefixesModificationResultPayload {
+    def createSaveResponsePayload(saveResults: (List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])): RoutesAndPrefixesModificationResultPayload = {
+      val routesSuccessfullySaved = parseSuccessfulResults(saveResults._1)
+      val groupPrefixesSuccessfullySaved = parseSuccessfulResults(saveResults._2)
+
+      RoutesAndPrefixesModificationResultPayload(
+        message = s"Created successfully ${routesSuccessfullySaved.size} routes out of ${saveResults._1.size} requested " +
+          s"and ${groupPrefixesSuccessfullySaved.size} prefixes out of ${saveResults._2.size} requested",
+        successfulRoutes = routesSuccessfullySaved,
+        successfulGroupPrefixes = groupPrefixesSuccessfullySaved,
+        routesErrors = parseErrors(saveResults._1),
+        groupPrefixesErrors = parseErrors(saveResults._2)
+      )
+    }
+  }
 
 }
