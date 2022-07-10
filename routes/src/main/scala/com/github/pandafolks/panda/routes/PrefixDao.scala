@@ -6,7 +6,7 @@ import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.reactive.Observable
 
-trait PrefixesDao {
+trait PrefixDao {
 
   /**
    * Saves in the persistence layer the [[Prefix]] with the requested group name and prefix

@@ -8,7 +8,7 @@ import monix.eval.Task
 import monix.reactive.Observable
 import org.mongodb.scala.model.{Filters, UpdateOptions, Updates}
 
-final class PrefixesDaoImpl extends PrefixesDao {
+final class PrefixDaoImpl extends PrefixDao {
 
   private final val clock = java.time.Clock.systemUTC
 

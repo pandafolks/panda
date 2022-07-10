@@ -10,13 +10,13 @@ import monix.eval.Task
 
 import scala.concurrent.duration.DurationInt
 
-final class RoutesServiceImpl(private val mapperDao: MapperDao, private val prefixesDao: PrefixesDao)(
+final class RoutesServiceImpl(private val mapperDao: MapperDao, private val prefixDao: PrefixDao)(
   private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])])(
-  private val cacheTtlInMillis: Int) extends RoutesService {
+  private val cacheTtlInMillis: Int, private val cacheByGroupSize: Long = 100L) extends RoutesService {
 
   private val cacheByGroup: CustomCache[String, RoutesResourcePayload] = new CustomCacheImpl[String, RoutesResourcePayload](
     groupName => findByGroupInternal(groupName)
-  )(maximumSize = 100L, ttl = cacheTtlInMillis.millisecond)
+  )(maximumSize = cacheByGroupSize, ttl = cacheTtlInMillis.millisecond)
 
   override def findAll(): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
@@ -35,7 +35,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
   }
 
   private def findAllPrefixes(prefixesOperator: CollectionOperator[Prefix]): Task[Map[String, String]] =
-    prefixesDao.findAll(prefixesOperator)
+    prefixDao.findAll(prefixesOperator)
       .map(prefix => (prefix.groupName, prefix.value))
       .foldLeftL(Map.empty[String, String])((prevState, p) => prevState + p)
 
@@ -88,7 +88,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
             mapperDao.saveMapper(entry._1, entry._2)(mapperOperator)
           },
           Task.parTraverse(routesResourcePayload.prefixes.getOrElse(Map.empty).toList) { entry =>
-            prefixesDao.savePrefix(entry._1, entry._2)(prefixesOperator)
+            prefixDao.savePrefix(entry._1, entry._2)(prefixesOperator)
           }
         )
     }
@@ -101,7 +101,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
             mapperDao.saveOrUpdateMapper(entry._1, entry._2)(mapperOperator)
           },
           Task.parTraverse(routesResourcePayload.prefixes.getOrElse(Map.empty).toList) { entry =>
-            prefixesDao.saveOrUpdatePrefix(entry._1, entry._2)(prefixesOperator)
+            prefixDao.saveOrUpdatePrefix(entry._1, entry._2)(prefixesOperator)
           }
         )
     }
@@ -114,7 +114,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
             mapperDao.delete(item.route, item.method)(mapperOperator)
           },
           Task.parTraverse(routesRemovePayload.prefixes.getOrElse(List.empty)) { item =>
-            prefixesDao.delete(item)(prefixesOperator)
+            prefixDao.delete(item)(prefixesOperator)
           }
         )
     }
