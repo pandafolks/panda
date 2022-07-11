@@ -53,7 +53,7 @@ At this moment panda requires:
 
 ### Service examples used for manual testing
 As Panda is an API gateway, it is useful to have some services it can communicate to.
-Inside `auxiliaryServices` directory you may find `docker-compose.yml` file which runs some simple services.
+Inside `exampleExternalDependencies/auxiliaryServices` directory you may find `docker-compose.yml` file which runs some simple services.
 You could register them inside Panda by running `registerInsidePanda.sh` script. 
 
 ### Managing dependencies

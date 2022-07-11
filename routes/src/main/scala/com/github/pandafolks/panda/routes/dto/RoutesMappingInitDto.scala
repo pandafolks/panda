@@ -14,10 +14,12 @@ final case class RoutesMappingInitDto(
   def get(httpMethod: HttpMethod): Map[String, String] = httpMethod match {
     case _: HttpMethod.Get.type => getMappers
     case _: HttpMethod.Post.type  => postMappers
+
+    case _ => getMappers
   }
 
   def withUnifiedPrefixes: RoutesMappingInitDto =
-    this.copy(prefixes = this.prefixes.view.mapValues(_.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse).toMap)
+    this.copy(prefixes = this.prefixes.view.mapValues(_.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse).toMap) // todo: mszmal add this during saving prefixes via rest - just as preprocessing
 }
 
 object RoutesMappingInitDto {

@@ -1,7 +1,6 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
-import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
+import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.ChangeListener
 import monix.eval.Task
@@ -54,10 +53,10 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
 
     val identifier1 = randomString("identifier1")
     val identifier2 = randomString("identifier2")
-    val participantEvent1 = ParticipantModificationDto(
+    val participantEvent1 = ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(false)
     )
-    val participantEvent2 = ParticipantModificationDto(
+    val participantEvent2 = ParticipantModificationPayload(
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
@@ -97,13 +96,13 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
     val identifier1 = randomString("identifier3")
     val identifier2 = randomString("identifier4")
     val identifier3 = randomString("identifier5")
-    val participantEvent1 = ParticipantModificationDto(
+    val participantEvent1 = ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(false)
     )
-    val participantEvent2 = ParticipantModificationDto(
+    val participantEvent2 = ParticipantModificationPayload(
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
-    val participantEvent3 = ParticipantModificationDto(
+    val participantEvent3 = ParticipantModificationPayload(
       host = Some("127.0.0.3"), port = Some(1003), groupName = Some("cars"), identifier = Some(identifier3), healthcheckRoute = Option.empty, working = Some(true)
     )
 
@@ -114,7 +113,7 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
       >> cache.invokePrivate(refreshCache())
       >> Task.now(clearInvocations(listener))
       >> Task.sequence(List(
-      participantEventService.modifyParticipant(ParticipantModificationDto(
+      participantEventService.modifyParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.1"), working = Some(false), identifier = Some(identifier2) // modification of seconds participant and turning it off
       )),
         participantEventService.createParticipant(participantEvent3), // creation of third participant (working)
@@ -153,10 +152,10 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
 
     val identifier1 = randomString("identifier6")
     val identifier2 = randomString("identifier7")
-    val participantEvent1 = ParticipantModificationDto(
+    val participantEvent1 = ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(true)
     )
-    val participantEvent2 = ParticipantModificationDto(
+    val participantEvent2 = ParticipantModificationPayload(
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 
@@ -205,10 +204,10 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
 
     val identifier1 = randomString("identifier8")
     val identifier2 = randomString("identifier9")
-    val participantEvent1 = ParticipantModificationDto(
+    val participantEvent1 = ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(true)
     )
-    val participantEvent2 = ParticipantModificationDto(
+    val participantEvent2 = ParticipantModificationPayload(
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("cars"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
     )
 

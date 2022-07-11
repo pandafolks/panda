@@ -3,8 +3,7 @@ package com.github.pandafolks.panda.participant.event
 import cats.data.EitherT
 import cats.effect.Resource
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
-import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
-import com.github.pandafolks.panda.participant.{HealthcheckInfo, Healthy, NotWorking, Participant, ParticipantHealth, Unhealthy}
+import com.github.pandafolks.panda.participant.{HealthcheckInfo, Healthy, NotWorking, Participant, ParticipantHealth, ParticipantModificationPayload, Unhealthy}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
@@ -20,11 +19,11 @@ final class ParticipantEventServiceImpl(
 
   private val identifierCannotBeBlankError: Task[Left[UnsuccessfulSaveOperation, Nothing]] = Task.evalOnce(Left(UnsuccessfulSaveOperation("Identifier cannot be blank")))
 
-  override def createParticipant(participantModificationDto: ParticipantModificationDto): Task[Either[PersistenceError, String]] = {
-    if (participantModificationDto.host.isEmpty || participantModificationDto.port.isEmpty || participantModificationDto.groupName.isEmpty)
+  override def createParticipant(participantModificationPayload: ParticipantModificationPayload): Task[Either[PersistenceError, String]] = {
+    if (participantModificationPayload.host.isEmpty || participantModificationPayload.port.isEmpty || participantModificationPayload.groupName.isEmpty)
       return Task.now(Left(UnsuccessfulSaveOperation("host, port and groupName have to be defined")))
 
-    val participantIdentifier = participantModificationDto.getIdentifier
+    val participantIdentifier = participantModificationPayload.getIdentifier
     if (participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank))
       return identifierCannotBeBlankError
 
@@ -37,15 +36,15 @@ final class ParticipantEventServiceImpl(
             case Right(true) => Task.now(Left(AlreadyExists("Participant with identifier \"" + participantIdentifier.get + "\" already exists")))
             case Right(false) => insertEvent(
               participantIdentifier.get,
-              ParticipantEventDataModification.of(participantModificationDto)
-                .copy(healthcheckRoute = participantModificationDto.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))),
+              ParticipantEventDataModification.of(participantModificationPayload)
+                .copy(healthcheckRoute = participantModificationPayload.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))),
               ParticipantEventType.Created()
             )(sequenceOperator, participantEventOperator)
             case Left(value) => Task.now(Left(value))
           }
 
           finalRes <-
-            if (initRes.isLeft || !participantModificationDto.working.getOrElse(true)) Task.now(initRes)
+            if (initRes.isLeft || !participantModificationPayload.working.getOrElse(true)) Task.now(initRes)
             else
               insertEvent(
                 participantIdentifier.get,
@@ -56,8 +55,8 @@ final class ParticipantEventServiceImpl(
     }
   }
 
-  override def modifyParticipant(participantModificationDto: ParticipantModificationDto): Task[Either[PersistenceError, String]] = {
-    val participantIdentifier = participantModificationDto.getIdentifier
+  override def modifyParticipant(participantModificationPayload: ParticipantModificationPayload): Task[Either[PersistenceError, String]] = {
+    val participantIdentifier = participantModificationPayload.getIdentifier
     if (participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank))
       return identifierCannotBeBlankError
 
@@ -70,18 +69,18 @@ final class ParticipantEventServiceImpl(
             case Right(false) => Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier.get + "\" does not exist")))
             case Right(true) => insertEvent(
               participantIdentifier.get,
-              ParticipantEventDataModification.of(participantModificationDto),
+              ParticipantEventDataModification.of(participantModificationPayload),
               ParticipantEventType.ModifiedData()
             )(sequenceOperator, participantEventOperator)
             case Left(value) => Task.now(Left(value))
           }
 
           finalRes <-
-            if (initRes.isLeft || participantModificationDto.working.isEmpty) Task.now(initRes)
+            if (initRes.isLeft || participantModificationPayload.working.isEmpty) Task.now(initRes)
             else insertEvent(
               participantIdentifier.get,
               ParticipantEventDataModification.empty,
-              if (participantModificationDto.working.get) ParticipantEventType.TurnedOn() else ParticipantEventType.TurnedOff()
+              if (participantModificationPayload.working.get) ParticipantEventType.TurnedOn() else ParticipantEventType.TurnedOff()
             )(sequenceOperator, participantEventOperator)
         } yield finalRes
     }

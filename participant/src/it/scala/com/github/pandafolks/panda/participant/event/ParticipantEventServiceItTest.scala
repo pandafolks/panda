@@ -1,8 +1,7 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.Participant
+import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload}
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
-import com.github.pandafolks.panda.participant.dto.ParticipantModificationDto
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
 import monix.execution.Scheduler
@@ -29,7 +28,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   "ParticipantEventService#createParticipant" should "insert Created event and assign default identifier" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.1", 1001, "cars")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1001), groupName = Some("cars"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -51,7 +50,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "insert Created event, use specified by user identifier and insert TurnedOn event (working attribute set to true)" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(true)
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -70,7 +69,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "insert Created event, insert TurnedOn event (working attribute not set) and apply custom healthcheck path" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -90,7 +89,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "fail if there are no required attributes" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -107,10 +106,10 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "fail if there is already a participant with requested identifier" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(_ =>
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.0.0.1"), port = Some(131213), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check2"), working = Option.empty
       ))
     ).runToFuture
@@ -125,12 +124,12 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     "Removed event emitted after last Created event occurrence" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(131313), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Some(false)
     )).flatMap(_ =>
       participantEventService.removeParticipant(identifier)
     ).flatMap(_ =>
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.0.0.1"), port = Some(141414), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Some(false)
       ))
     ).flatMap(res =>
@@ -153,7 +152,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   "ParticipantEventService#modifyParticipant" should "fail if there is participant with requested identifier" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.modifyParticipant(ParticipantModificationDto(
+    val f = participantEventService.modifyParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Option.empty, groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Some("/api/check"), working = Option.empty
     )).flatMap(res =>
       participantEventsAndSequencesConnection.use(p =>
@@ -170,11 +169,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "insert ModifiedData event and be able to recognize participant based on default identifier" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.2", 1002, "ships")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.2"), port = Some(1002), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
-        participantEventService.modifyParticipant(ParticipantModificationDto(
+        participantEventService.modifyParticipant(ParticipantModificationPayload(
           host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(defaultIdentifier), healthcheckRoute = Some("SomePath/"), working = Option.empty
         ))
       )
@@ -197,11 +196,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "insert ModifiedData event and TurnedOn event because there was a 'working' attribute set to true" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
-        participantEventService.modifyParticipant(ParticipantModificationDto(
+        participantEventService.modifyParticipant(ParticipantModificationPayload(
           host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(true)
         ))
       )
@@ -229,11 +228,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "insert ModifiedData event and TurnedOff event because there was a 'working' attribute set to false" in {
     val identifier = randomString("identifier")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.1"), port = Some(1002), groupName = Some("planes"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
-        participantEventService.modifyParticipant(ParticipantModificationDto(
+        participantEventService.modifyParticipant(ParticipantModificationPayload(
           host = Some("127.0.0.2"), port = Some(1003), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Option.empty, working = Some(false)
         ))
       )
@@ -267,11 +266,11 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   it should "not insert any event if the identifier is not specified explicitly and there is a try to modify host/port/groupName" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.0.0.4", 1006, "ships")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.0.0.4"), port = Some(1006), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Option.empty, working = Some(false)
     ))
       .flatMap(_ =>
-        participantEventService.modifyParticipant(ParticipantModificationDto(
+        participantEventService.modifyParticipant(ParticipantModificationPayload(
           host = Some("127.0.0.9"), port = Some(1234), groupName = Some("ships2"), identifier = Option.empty, healthcheckRoute = Some("SomePath2/"), working = Option.empty
         ))
       )
@@ -297,7 +296,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   "ParticipantEventService#removeParticipant" should "insert Removed event if the participant with requested identifier exists - not matter what happened before" in {
     val defaultIdentifier = Participant.createDefaultIdentifier("127.1.1.4", 1026, "ships")
 
-    val f = participantEventService.createParticipant(ParticipantModificationDto(
+    val f = participantEventService.createParticipant(ParticipantModificationPayload(
       host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Option.empty, healthcheckRoute = Some("api/hb"), working = Some(false)
     ))
       .flatMap(_ => participantEventService.removeParticipant(defaultIdentifier))
@@ -339,7 +338,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("markParticipantAsHealthy")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventService.markParticipantAsHealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
@@ -359,7 +358,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val anotherIdentifier = randomString("SomeRandomIdentifier")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventService.markParticipantAsHealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
@@ -377,7 +376,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("markParticipantAsUnhealthy")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(false)))
         >> participantEventService.markParticipantAsUnhealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
@@ -397,7 +396,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val anotherIdentifier = randomString("SomeRandomIdentifier")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(anotherIdentifier), healthcheckRoute = Some("api/hb"), working = Some(false)))
         >> participantEventService.markParticipantAsUnhealthy(identifier)
         .flatMap(res => participantEventsAndSequencesConnection.use(p =>
@@ -415,7 +414,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("checkIfThereAreNewerEvents")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventsAndSequencesConnection.use(p => p._1.source.findAll.toListL).map(_.sortBy(_.eventId)).map(_.last.eventId)
         .flatMap(lastSeenEventId => participantEventService.markParticipantAsUnhealthy(identifier).map(_ => lastSeenEventId))
@@ -431,7 +430,7 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
     val identifier = randomString("checkIfThereAreNewerEvents")
 
     val f = (
-      participantEventService.createParticipant(ParticipantModificationDto(
+      participantEventService.createParticipant(ParticipantModificationPayload(
         host = Some("127.1.1.4"), port = Some(1026), groupName = Some("ships"), identifier = Some(identifier), healthcheckRoute = Some("api/hb"), working = Some(true)))
         >> participantEventsAndSequencesConnection.use(p => p._1.source.findAll.toListL).map(_.sortBy(_.eventId)).map(_.last.eventId)
         .flatMap(lastSeenEventId => participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.getValue))

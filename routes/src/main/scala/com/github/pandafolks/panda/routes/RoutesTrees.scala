@@ -8,6 +8,7 @@ final case class RoutesTrees(get: RoutesTree, post: RoutesTree) {
     method match {
       case Method.GET => get
       case Method.POST => post
+      case _ => ??? //todI: mszmal finish -> this should return optional???
     }
 }
 

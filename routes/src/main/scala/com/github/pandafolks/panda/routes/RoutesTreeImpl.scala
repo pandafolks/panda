@@ -9,14 +9,25 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
   override def getRoot: Node = root.copy()
 
-  override def specifyGroup(path: Path): Option[GroupInfo] = {
-    def rc(curr: Node, segments: List[Uri.Path.Segment]): Option[GroupInfo] = {
-      if (segments.isEmpty) curr.groupInfo
+  override def specifyGroup(path: Path): Option[(GroupInfo, Map[String, String])] = {
+    // Searching priority:
+    //  - Fixed
+    //  - Wildcard
+    //  - Pocket
+    def rc(curr: Node, segments: List[Uri.Path.Segment]): Option[(GroupInfo, Map[String, String])] = {
+      if (segments.isEmpty) curr.groupInfo.map((_, Map.empty[String, String]))
       else curr.children.find(node => node.value match {
         case Fixed(expression) if expression == segments.head.encoded => true
         case _: Fixed => false
-        case Wildcard => true
-      }).flatMap(rc(_, segments.tail))
+        case _: Wildcard => true
+      })
+        .flatMap(foundNode => rc(foundNode, segments.tail)
+          .map(res => foundNode.value match {
+            case Wildcard(expression) => (res._1, res._2 + (expression -> segments.head.encoded))
+            case _ => res
+          })
+        )
+        .orElse(curr.groupInfo.filter(_.isPocket).map((_, Map.empty[String, String])))
     }
 
     rc(root, path.segments.toList)
@@ -31,7 +42,7 @@ object RoutesTreeImpl {
   def construct(data: RoutesMappingInitDto, httpMethod: HttpMethod = HttpMethod.Get): RoutesTree =
     new RoutesTreeImpl(
       data.get(httpMethod).iterator
-        .foldLeft(Node(RoutesTree.Wildcard, List.empty))((root, entry) =>
+        .foldLeft(Node(RoutesTree.Wildcard(), List.empty))((root, entry) =>
           insert(
             root = root,
             path = entry._1,
@@ -45,24 +56,28 @@ object RoutesTreeImpl {
 
   private def insert(root: Node, path: String, info: GroupInfo): Node = {
 
-    def rc(parts: List[RoutesTree.Value], currentNode: Node): Node = {
-      if (parts.isEmpty) currentNode.copy(groupInfo = Some(info))
-      else {
-        val affectedNode = currentNode.children.find(_.value == parts.head).getOrElse(Node(parts.head, List.empty))
-        currentNode.copy(
-          children = (rc(parts.tail, affectedNode) :: currentNode.children.filterNot(_.value == parts.head)).sorted
-        )
+    def rc(parts: List[RoutesTree.SegmentType], currentNode: Node): Node =
+      parts.headOption match {
+        case None => currentNode.copy(groupInfo = Some(info))
+        case Some(RoutesTree.Pocket) => currentNode.copy(groupInfo = Some(info.copy(isPocket = true)))
+        case Some(head: RoutesTree.Value) =>
+          val affectedNode = currentNode.children.find(_.value == head).getOrElse(Node(head, List.empty))
+          currentNode.copy(
+            children = (rc(parts.tail, affectedNode) :: currentNode.children.filterNot(_.value == head)).sorted
+          )
       }
-    }
 
-    def splitIntoParts(path: String)(mapFunc: String => RoutesTree.Value): List[RoutesTree.Value] =
+    def splitIntoParts(path: String)(mapFunc: String => RoutesTree.SegmentType): List[RoutesTree.SegmentType] =
       path.split("/").filterNot(_ == "").map(mapFunc).toList
 
-    val mainParts: List[RoutesTree.Value] = splitIntoParts(path) {
-      case entry if entry.startsWith("{{") && entry.endsWith("}}") => RoutesTree.Wildcard
+    val mainParts: List[RoutesTree.SegmentType] = splitIntoParts(path) {
+      case "**" => RoutesTree.Pocket
+      case s"{{$entry}}" => RoutesTree.Wildcard(entry)
       case entry => RoutesTree.Fixed(entry)
     }
 
     rc(mainParts, root)
+
+    // todo mszmal: maybe its better to remove prefix property from `groupInfo` and have separate hashmap that will be used by all trees
   }
 }

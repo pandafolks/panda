@@ -16,6 +16,7 @@ final class BaseApiGatewayImpl(
   override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
     Task.eval(routesTrees.get(request.method))
       .map(_.specifyGroup(requestedPath))
+      .map(_.map(_._1)) // <- todo mszmal: temporary
       .flatMap {
         case None =>
           logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path")
