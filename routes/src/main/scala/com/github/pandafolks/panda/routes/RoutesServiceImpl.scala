@@ -12,7 +12,7 @@ import scala.concurrent.duration.DurationInt
 
 final class RoutesServiceImpl(private val mapperDao: MapperDao, private val prefixDao: PrefixDao)(
   private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])])(
-  private val cacheTtlInMillis: Int, private val cacheByGroupSize: Long = 100L) extends RoutesService {
+                               private val cacheTtlInMillis: Int, private val cacheByGroupSize: Long = 100L) extends RoutesService {
 
   private val cacheByGroup: CustomCache[String, RoutesResourcePayload] = new CustomCacheImpl[String, RoutesResourcePayload](
     groupName => findByGroupInternal(groupName)
@@ -57,10 +57,13 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
   }
 
   private def searchMappers(data: Map[String, MapperRecordPayload], groupName: String): Map[String, MapperRecordPayload] = {
-    def escape(route: String): String = route.split("/").filter(_.nonEmpty).map {
-      case s"{{$_}}" => "{{}}"
-      case v => v
-    }.mkString("")
+    def escape(route: String): String = route.split("/")
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map {
+        case s"{{$_}}" => "{{}}"
+        case v => v
+      }.mkString("/")
 
     val direct = data.filter(entry => entry._2.mapping.value match {
       case Left(gn) if gn == groupName => true

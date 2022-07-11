@@ -5,20 +5,3 @@ final case class RoutesRemovePayload(
                                       prefixes: Option[List[String]] = Option.empty)
 
 final case class MapperRemovePayload(route: String, method: Option[String] = Option.empty)
-
-
-//{
-//  "mappers": [
-//{
-//  "route": "/cars/rent",
-//  "method": "delete"
-//},
-//{
-//  "route": "/cars/{{id}}/buy5",
-//  "method": "get"
-//}
-//  ],
-//  "prefixes": [
-//  "cars23"
-//  ]
-//}

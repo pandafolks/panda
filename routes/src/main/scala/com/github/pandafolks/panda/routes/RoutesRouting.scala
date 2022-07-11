@@ -44,19 +44,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
       for {
         payload <- req.req.as[RoutesRemovePayload]
         deletionResults <- routesService.delete(payload)
-        routesSuccessfullyRemoved = parseSuccessfulResults(deletionResults._1)
-        groupPrefixesSuccessfullyRemoved = parseSuccessfulResults(deletionResults._2)
-
-        response <- Ok(
-          RoutesAndPrefixesModificationResultPayload(
-            message = s"Removed successfully ${routesSuccessfullyRemoved.size} routes out of ${deletionResults._1.size} requested " +
-              s"and ${groupPrefixesSuccessfullyRemoved.size} prefixes out of ${deletionResults._2.size} requested",
-            successfulRoutes = routesSuccessfullyRemoved,
-            successfulGroupPrefixes = groupPrefixesSuccessfullyRemoved,
-            routesErrors = parseErrors(deletionResults._1),
-            groupPrefixesErrors = parseErrors(deletionResults._2)
-          )
-        )
+        response <- Ok(RoutesAndPrefixesModificationResultPayload.createDeleteResponsePayload(deletionResults))
       } yield response
 
   }
@@ -110,6 +98,20 @@ object RoutesRouting {
         successfulGroupPrefixes = groupPrefixesSuccessfullySaved,
         routesErrors = parseErrors(saveResults._1),
         groupPrefixesErrors = parseErrors(saveResults._2)
+      )
+    }
+
+    def createDeleteResponsePayload(deletionResults: (List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])): RoutesAndPrefixesModificationResultPayload = {
+      val routesSuccessfullyRemoved = parseSuccessfulResults(deletionResults._1)
+      val groupPrefixesSuccessfullyRemoved = parseSuccessfulResults(deletionResults._2)
+
+      RoutesAndPrefixesModificationResultPayload(
+        message = s"Removed successfully ${routesSuccessfullyRemoved.size} routes out of ${deletionResults._1.size} requested " +
+          s"and ${groupPrefixesSuccessfullyRemoved.size} prefixes out of ${deletionResults._2.size} requested",
+        successfulRoutes = routesSuccessfullyRemoved,
+        successfulGroupPrefixes = groupPrefixesSuccessfullyRemoved,
+        routesErrors = parseErrors(deletionResults._1),
+        groupPrefixesErrors = parseErrors(deletionResults._2)
       )
     }
   }

@@ -10,7 +10,7 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait RoutesFixture {
-  private val dbName = "test"
+  protected val dbName = randomString("test")
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
     DockerImageName.parse("mongo").withTag("4.0.10")
   )
@@ -27,8 +27,8 @@ trait RoutesFixture {
   protected val mappersColName: String = randomString(Mapper.MAPPERS_COLLECTION_NAME)
   protected val prefixesColName: String = randomString(Prefix.PREFIXES_COLLECTION_NAME)
 
-  private val mappersCol: CollectionCodecRef[Mapper] = Mapper.getCollection(mappersColName)
-  private val prefixesCol: CollectionCodecRef[Prefix] = Prefix.getCollection(prefixesColName)
+  private val mappersCol: CollectionCodecRef[Mapper] = Mapper.getCollection(dbName, mappersColName)
+  private val prefixesCol: CollectionCodecRef[Prefix] = Prefix.getCollection(dbName, prefixesColName)
 
   protected val mappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
