@@ -17,7 +17,7 @@ final class PrefixDaoImpl extends PrefixDao {
     prefixOperator.single.updateOne(
       Filters.eq(GROUP_NAME_PROPERTY_NAME, groupName),
       Updates.combine(
-        Updates.setOnInsert(VALUE_PROPERTY_NAME, prefix),
+        Updates.setOnInsert(VALUE_PROPERTY_NAME, unifyPrefix(prefix)),
         Updates.setOnInsert(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
@@ -32,7 +32,7 @@ final class PrefixDaoImpl extends PrefixDao {
     prefixOperator.single.updateOne(
       Filters.eq(GROUP_NAME_PROPERTY_NAME, groupName),
       Updates.combine(
-        Updates.set(VALUE_PROPERTY_NAME, prefix),
+        Updates.set(VALUE_PROPERTY_NAME, unifyPrefix(prefix)),
         Updates.set(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
@@ -47,5 +47,7 @@ final class PrefixDaoImpl extends PrefixDao {
         if (deleteRes.deleteCount > 0) Right(groupName) else Left(NotExists(s"There is no prefix associated with the group \'$groupName\'"))
       }
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
+
+  private def unifyPrefix(prefix: String): String = prefix.dropWhile(_ == '/').reverse.dropWhile(_ == '/').reverse
 
 }

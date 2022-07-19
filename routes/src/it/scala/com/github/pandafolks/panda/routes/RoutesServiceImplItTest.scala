@@ -46,8 +46,8 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
       )
     ))),
     prefixes = Some(Map.from(List(
-      ("group1", "api/v1"),
-      ("group2", "api/v2")
+      ("group1", "/api/v1"),
+      ("group2", "api/v2/")
     )))
   )
 
@@ -72,7 +72,7 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
     ))),
     prefixes = Some(Map.from(List(
       ("group1", "api/v1111"), // duplicate
-      ("group3", "api/v3")
+      ("group3", "/api/v3/")
     )))
   )
 
