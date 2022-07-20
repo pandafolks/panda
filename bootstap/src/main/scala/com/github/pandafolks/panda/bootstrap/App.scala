@@ -12,15 +12,12 @@ import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
 import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
-import com.github.pandafolks.panda.routes.dto.RoutesMappingInitDto
-import com.github.pandafolks.panda.routes.{RoutesRouting, RoutesTrees}
+import com.github.pandafolks.panda.routes.{RoutesRouting, RoutesTreesHandler}
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
 import monix.execution.Scheduler.global
 import org.http4s.server.{AuthMiddleware, Server}
-
-import scala.io.Source
 
 object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
@@ -35,10 +32,7 @@ object App extends MonixServerApp {
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
-      routesMappingConfiguration <- Resource.eval(Task.evalOnce(
-        ujson.read(Source.fromResource(appConfiguration.gateway.mappingFile).mkString)))
-      routesMappingInitializationEntries = RoutesMappingInitDto.of(routesMappingConfiguration)
-      routesTrees = RoutesTrees.construct(routesMappingInitializationEntries)
+      routesTrees = RoutesTreesHandler.apply()
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
 

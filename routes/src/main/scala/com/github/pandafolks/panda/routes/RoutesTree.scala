@@ -6,7 +6,7 @@ import org.http4s.Uri.Path
 trait RoutesTree {
   def getRoot: Node
 
-  def specifyGroup(path: Path): Option[(GroupInfo, Map[String, String])]
+  def specifyGroup(path: Path): Option[(RouteInfo, Map[String, String])]
 }
 
 object RoutesTree {
@@ -20,7 +20,7 @@ object RoutesTree {
   final case class Fixed(expression: String) extends Value
   final case class Wildcard(expression: String = "") extends Value
 
-  final case class Node(value: Value, children: List[Node], groupInfo: Option[GroupInfo] = Option.empty)
+  final case class Node(value: Value, children: List[Node], routeInfo: Option[RouteInfo] = Option.empty)
 
   implicit val orderingByValueType: Ordering[Node] = Ordering.by {
     _.value match {
