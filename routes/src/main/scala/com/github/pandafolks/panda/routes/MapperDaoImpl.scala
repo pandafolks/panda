@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.entity.Mapper.{HTTP_METHOD_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, MAPPING_CONTENT_PROPERTY_NAME, ROUTE_PROPERTY_NAME, STANDALONE_PROPERTY_NAME}
+import com.github.pandafolks.panda.routes.entity.Mapper.{HTTP_METHOD_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, MAPPING_CONTENT_PROPERTY_NAME, ROUTE_PROPERTY_NAME, IS_STANDALONE_PROPERTY_NAME}
 import com.github.pandafolks.panda.routes.entity.{Mapper, MappingContent}
 import com.github.pandafolks.panda.routes.payload.MapperRecordPayload
 import com.github.pandafolks.panda.utils.EscapeUtils.unifyFromSlashes
@@ -23,7 +23,7 @@ final class MapperDaoImpl extends MapperDao {
       getUniqueMapperFilter(unifiedRoute, unifiedHttpMethod),
       Updates.combine(
         Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingPayload(mapperRecordDto.mapping)),
-        Updates.setOnInsert(STANDALONE_PROPERTY_NAME, mapperRecordDto.standalone.getOrElse(true)),
+        Updates.setOnInsert(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandalone.getOrElse(true)),
         Updates.setOnInsert(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
@@ -42,7 +42,7 @@ final class MapperDaoImpl extends MapperDao {
       getUniqueMapperFilter(unifiedRoute, unifiedHttpMethod),
       Updates.combine(
         Updates.set(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingPayload(mapperRecordDto.mapping)),
-        Updates.set(STANDALONE_PROPERTY_NAME, mapperRecordDto.standalone.getOrElse(true)),
+        Updates.set(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandalone.getOrElse(true)),
         Updates.set(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)

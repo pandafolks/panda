@@ -6,7 +6,7 @@ import org.http4s.Uri.Path
 trait RoutesTree {
   def getRoot: Node
 
-  def specifyGroup(path: Path): Option[(RouteInfo, Map[String, String])]
+  def specifyGroup(path: Path, standaloneOnly: Boolean = false): Option[(RouteInfo, Map[String, String])]
 }
 
 object RoutesTree {

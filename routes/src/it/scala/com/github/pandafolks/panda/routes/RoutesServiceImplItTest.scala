@@ -43,7 +43,7 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
         MapperRecordPayload(MappingPayload(Left("group1")))
       ),
       ("groupRoute/**",
-        MapperRecordPayload(MappingPayload(Left("group2/")), standalone = Some(false)) // group name should not be escaped
+        MapperRecordPayload(MappingPayload(Left("group2/")), isStandalone = Some(false)) // group name should not be escaped
       )
     )),
     prefixes = Some(Map.from(List(
@@ -62,7 +62,7 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
           )), Some("delete"))
       ),
       ("/groupRoute/**",
-        MapperRecordPayload(MappingPayload(Left("group22")), standalone = Some(true)) // duplicate (same route and same http method)
+        MapperRecordPayload(MappingPayload(Left("group22")), isStandalone = Some(true)) // duplicate (same route and same http method)
       ),
       ("/another/route/{{some_id}}/",
         MapperRecordPayload(MappingPayload(Left("group11"))) // duplicate (same route and same http method)

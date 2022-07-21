@@ -11,15 +11,15 @@ trait StandaloneFilter {
 object StandaloneFilter {
 
   case object StandaloneOnly extends StandaloneFilter {
-    override def filter(mapper: Mapper): Boolean = mapper.standalone
+    override def filter(mapper: Mapper): Boolean = mapper.isStandalone
 
-    override def filter(mapper: MapperRecordPayload): Boolean = mapper.standalone.getOrElse(true)
+    override def filter(mapper: MapperRecordPayload): Boolean = mapper.isStandalone.getOrElse(true)
   }
 
   case object NonStandaloneOnly extends StandaloneFilter {
-    override def filter(mapper: Mapper): Boolean = !mapper.standalone
+    override def filter(mapper: Mapper): Boolean = !mapper.isStandalone
 
-    override def filter(mapper: MapperRecordPayload): Boolean = !mapper.standalone.getOrElse(true)
+    override def filter(mapper: MapperRecordPayload): Boolean = !mapper.isStandalone.getOrElse(true)
   }
 
   case object All extends StandaloneFilter {

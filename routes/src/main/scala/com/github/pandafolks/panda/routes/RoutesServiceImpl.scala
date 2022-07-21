@@ -53,7 +53,7 @@ final class RoutesServiceImpl(
         (prevState, entry) => (entry._1.route, MapperRecordPayload(
           mapping = entry._2,
           method = Some(entry._1.httpMethod.getName),
-          standalone = Some(entry._1.standalone)
+          isStandalone = Some(entry._1.isStandalone)
         )) :: prevState
       )
 

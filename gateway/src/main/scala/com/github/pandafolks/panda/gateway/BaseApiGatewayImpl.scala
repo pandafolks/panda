@@ -23,7 +23,7 @@ final class BaseApiGatewayImpl(
           Response.notFoundFor(request)
         case Some(routeInfo) => loadBalancer.route(
           request = request,
-          requestedPath = routeInfo.prefix.addSegments(requestedPath.segments),
+          requestedPath = Path.unsafeFromString("prefix/").addSegments(requestedPath.segments), // prefix is hardcoded it would be taken from map that holds all prefixes
           group = Group(routeInfo.mappingContent.left.get) // temp solution
         )
       }

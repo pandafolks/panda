@@ -8,7 +8,7 @@ final case class RoutesResourcePayload(
 final case class MapperRecordPayload(
                                       mapping: MappingPayload,
                                       method: Option[String] = Option.empty,
-                                      standalone: Option[Boolean] = Option.empty
+                                      isStandalone: Option[Boolean] = Option.empty
                                     )
 
 final case class MappingPayload(value: Either[String, Map[String, MappingPayload]])

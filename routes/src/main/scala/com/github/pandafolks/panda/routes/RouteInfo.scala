@@ -1,7 +1,12 @@
 package com.github.pandafolks.panda.routes
 
 import com.github.pandafolks.panda.routes.entity.MappingContent
-import org.http4s.Uri.Path
 
-final case class RouteInfo(mappingContent: MappingContent, prefix: Path, isPocket: Boolean = false)
-//todo mszmal: idea -> there should be no group, but Either[Group, MappingContent] ???
+final case class RouteInfo(
+                            mappingContent: MappingContent,
+                            isPocket: Boolean = false,
+                            isStandalone: Boolean = true
+                          )
+
+// todo mszmal: add standalone
+// first search needs to be done through standalones only. If there is an api composition we will go through all.

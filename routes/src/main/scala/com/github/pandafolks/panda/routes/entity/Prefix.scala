@@ -4,7 +4,11 @@ import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
-final case class Prefix(groupName: String, value: String, lastUpdateTimestamp: Long)
+final case class Prefix(
+                         groupName: String,
+                         value: String,
+                         lastUpdateTimestamp: Long
+                       )
 
 object Prefix {
   final val PREFIXES_COLLECTION_NAME = "prefixes"
