@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.routes
 
+import com.github.pandafolks.panda.routes.entity.Mapper
 import org.http4s.Method
 
 final case class RoutesTreesHandler(
@@ -20,5 +21,13 @@ final case class RoutesTreesHandler(
 }
 
 object RoutesTreesHandler {
-  def apply(): RoutesTreesHandler = new RoutesTreesHandler(null, null, null, null, null)
+  def construct(data: Map[HttpMethod, List[Mapper]]): RoutesTreesHandler = {
+    new RoutesTreesHandler(
+      RoutesTreeImpl.construct(data.getOrElse(HttpMethod.Get(), List.empty)),
+      RoutesTreeImpl.construct(data.getOrElse(HttpMethod.Post(), List.empty)),
+      RoutesTreeImpl.construct(data.getOrElse(HttpMethod.Put(), List.empty)),
+      RoutesTreeImpl.construct(data.getOrElse(HttpMethod.Patch(), List.empty)),
+      RoutesTreeImpl.construct(data.getOrElse(HttpMethod.Delete(), List.empty)),
+    )
+  }
 }

@@ -32,7 +32,7 @@ object App extends MonixServerApp {
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
-      routesTrees = RoutesTreesHandler.apply()
+      routesTrees = RoutesTreesHandler.construct(Map.empty) // dumb - delete
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
 
