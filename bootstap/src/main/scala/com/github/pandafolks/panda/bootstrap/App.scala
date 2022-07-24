@@ -12,7 +12,7 @@ import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
 import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
-import com.github.pandafolks.panda.routes.{RoutesRouting, RoutesTreesHandler}
+import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
@@ -30,9 +30,8 @@ object App extends MonixServerApp {
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
         cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
+      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService)
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
-
-      routesTrees = RoutesTreesHandler.construct(Map.empty) // dumb - delete
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
 
@@ -41,7 +40,7 @@ object App extends MonixServerApp {
         participantsCache = participantsCache,
         appConfiguration.gateway.loadBalancerRetries
       )
-      apiGateway = new BaseApiGatewayImpl(loadBalancer, routesTrees)
+      apiGateway = new BaseApiGatewayImpl(loadBalancer, treesService)
 
       _ = new DistributedHealthCheckServiceImpl(
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,

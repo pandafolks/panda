@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 
-import RoutesTree.{Fixed, Node, Wildcard}
+import RoutesTree.{Fixed, Node, RouteInfo, Wildcard}
 import com.github.pandafolks.panda.routes.entity.Mapper
 import org.http4s.Uri
 import org.http4s.Uri.Path
@@ -9,7 +9,7 @@ final class RoutesTreeImpl(private val root: Node) extends RoutesTree {
 
   override def getRoot: Node = root.copy()
 
-  override def specifyGroup(path: Path, standaloneOnly: Boolean = false): Option[(RouteInfo, Map[String, String])] = {
+  override def find(path: Path, standaloneOnly: Boolean = false): Option[(RouteInfo, Map[String, String])] = {
     // Searching priority:
     //  - Fixed
     //  - Wildcard
@@ -44,7 +44,7 @@ object RoutesTreeImpl {
           insert(
             root = root,
             path = entry.route,
-            routeInfo = RouteInfo(
+            routeInfo = RoutesTree.RouteInfo(
               entry.mappingContent,
               isStandalone = entry.isStandalone
             )
@@ -52,7 +52,7 @@ object RoutesTreeImpl {
         )
     )
 
-  private def insert(root: Node, path: String, routeInfo: RouteInfo): Node = {
+  private def insert(root: Node, path: String, routeInfo: RoutesTree.RouteInfo): Node = {
 
     def rc(parts: List[RoutesTree.SegmentType], currentNode: Node): Node =
       parts.headOption match {

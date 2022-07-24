@@ -42,18 +42,16 @@ final class RoutesServiceImpl(
 
   private def findAllPrefixesInternal(prefixesOperator: CollectionOperator[Prefix]): Task[Map[String, String]] =
     prefixDao.findAll(prefixesOperator)
-      .map(prefix => (prefix.groupName, prefix.value))
-      .foldLeftL(Map.empty[String, String])((prevState, p) => prevState + p)
+      .foldLeftL(Map.empty[String, String])((prevState, prefix) => prevState + (prefix.groupName -> prefix.value))
 
   private def findAllMappersInternal(mapperOperator: CollectionOperator[Mapper], standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[List[(String, MapperRecordPayload)]] =
     mapperDao.findAll(mapperOperator)
       .filter(standaloneFilter.filter)
-      .map(mapper => (mapper, MappingContent.toMappingPayload(mapper.mappingContent)))
       .foldLeftL(List.empty[(String, MapperRecordPayload)])(
-        (prevState, entry) => (entry._1.route, MapperRecordPayload(
-          mapping = entry._2,
-          method = Some(entry._1.httpMethod.getName),
-          isStandalone = Some(entry._1.isStandalone)
+        (prevState, entry) => (entry.route, MapperRecordPayload(
+          mapping = MappingContent.toMappingPayload(entry.mappingContent),
+          method = Some(entry.httpMethod.getName),
+          isStandalone = Some(entry.isStandalone)
         )) :: prevState
       )
 

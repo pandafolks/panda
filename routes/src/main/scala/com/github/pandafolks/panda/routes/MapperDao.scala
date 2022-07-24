@@ -49,4 +49,13 @@ trait MapperDao {
    * @return                  Either route if deleted successfully or PersistenceError if the error during deletion occurred
    */
   def delete(route: String, method: Option[String])(mapperOperator: CollectionOperator[Mapper]): Task[Either[PersistenceError, String]]
+
+  /**
+   * Checks whether there is at least one [[Mapper]] with the lastUpdateTimestamp strictly higher than provided value
+   *
+   * @param timeStamp
+   * @param mapperOperator    [[Mapper]] DB entry point
+   * @return                  True if there are mapper with higher lastUpdateTimestamp, false otherwise
+   */
+  def checkIfThereAreNewerMappings(timeStamp: Long)(mapperOperator: CollectionOperator[Mapper]): Task[Boolean]
 }

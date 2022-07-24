@@ -47,7 +47,7 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
       )
     )),
     prefixes = Some(Map.from(List(
-      ("group1", "/api/v1"),
+      ("group1 ", "/api/v1"),
       ("group2", "api/v2/")
     )))
   )
@@ -321,7 +321,7 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
       )),
       prefixes = Some(List(
         "group1", // valid
-        "group3", // valid
+        "  group3 ", // valid (it should be trimmed)
         "group1313" // not exist
       ))
     ))

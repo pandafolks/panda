@@ -4,10 +4,11 @@ import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
-import com.github.pandafolks.panda.routes.{PrefixDao, PrefixDaoImpl, MapperDao, MapperDaoImpl, RoutesService, RoutesServiceImpl}
+import com.github.pandafolks.panda.routes.{MapperDao, MapperDaoImpl, PrefixDao, PrefixDaoImpl, RoutesService, RoutesServiceImpl, TreesService, TreesServiceImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import com.pandafolks.mattszm.panda.sequence.SequenceDao
+import monix.eval.Task
 
 /**
  * These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
@@ -35,6 +36,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixDao: PrefixDao = new PrefixDaoImpl()
   private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
+  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
 
   def getUserService: UserService = userService
 
@@ -45,5 +47,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   def getUnsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = unsuccessfulHealthCheckDao
 
   def getRoutesService: RoutesService = routesService
+
+  def getTreesService: Task[TreesService] = treesService
 
 }

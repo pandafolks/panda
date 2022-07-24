@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.routes
 
-import com.github.pandafolks.panda.routes.entity.Mapper.{HTTP_METHOD_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, MAPPING_CONTENT_PROPERTY_NAME, ROUTE_PROPERTY_NAME, IS_STANDALONE_PROPERTY_NAME}
+import com.github.pandafolks.panda.routes.entity.Mapper.{HTTP_METHOD_PROPERTY_NAME, IS_STANDALONE_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, MAPPING_CONTENT_PROPERTY_NAME, ROUTE_PROPERTY_NAME}
 import com.github.pandafolks.panda.routes.entity.{Mapper, MappingContent}
 import com.github.pandafolks.panda.routes.payload.MapperRecordPayload
 import com.github.pandafolks.panda.utils.EscapeUtils.unifyFromSlashes
@@ -9,7 +9,7 @@ import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.reactive.Observable
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.{Filters, UpdateOptions, Updates}
+import org.mongodb.scala.model.{Aggregates, Filters, UpdateOptions, Updates}
 
 final class MapperDaoImpl extends MapperDao {
 
@@ -61,6 +61,14 @@ final class MapperDaoImpl extends MapperDao {
       }
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
   }
+
+  override def checkIfThereAreNewerMappings(timeStamp: Long)(mapperOperator: CollectionOperator[Mapper]): Task[Boolean] =
+    mapperOperator.source.aggregate(
+      List(
+        Aggregates.filter(Filters.gt(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, timeStamp)),
+        Aggregates.limit(1)
+      ), classOf[Mapper]
+    ).nonEmptyL
 
   private def getUniqueMapperFilter(route: String, method: HttpMethod): Bson =
     Filters.and(
