@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.routes
 
+import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
 import monix.eval.Task
@@ -11,14 +12,14 @@ trait RoutesService {
    *
    * @return                            Mappers and Prefixes
    */
-  def findAll(): Task[RoutesResourcePayload]
+  def findAll(standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[RoutesResourcePayload]
 
   /**
    * Returns all [[entity.Mapper]] present in the persistence layer as a map with keys being Routes.
    *
    * @return                            Mappers
    */
-  def findAllMappers(): Task[Map[String, MapperRecordPayload]]
+  def findAllMappers(standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[List[(String, MapperRecordPayload)]]
 
   /**
    * Returns all [[entity.Prefix]] present in the persistence layer as a map with keys being group names.
@@ -34,7 +35,7 @@ trait RoutesService {
    * @param groupName
    * @return                            Mappers and Prefixes
    */
-  def findByGroup(groupName: String): Task[RoutesResourcePayload]
+  def findByGroup(groupName: String, standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[RoutesResourcePayload]
 
   /**
    * Saves all [[entity.Mapper]] and [[entity.Prefix]] delivered with the [[RoutesResourcePayload]].

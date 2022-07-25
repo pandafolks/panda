@@ -6,7 +6,6 @@ import monix.eval.Task
 import org.http4s.client.Client
 
 final case class GatewayConfig(
-                                mappingFile: String,
                                 loadBalancerAlgorithm: LoadBalanceAlgorithm,
                                 loadBalancerRetries: Option[Int]
                               )

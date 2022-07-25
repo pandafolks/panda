@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.routes
 
 import com.github.pandafolks.panda.routes.RoutesRouting.{MAPPERS_NAME, OVERRIDE_KEY_WORD, PREFIXES_NAME, ROUTES_NAME, RoutesAndPrefixesModificationResultPayload}
+import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
 import com.github.pandafolks.panda.utils.PersistenceError
@@ -12,17 +13,23 @@ import io.circe.syntax._
 import monix.eval.Task
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder}
+import org.http4s.{AuthedRoutes, EntityDecoder, EntityEncoder, QueryParamDecoder}
 
 final class RoutesRouting(private val routesService: RoutesService) extends Http4sDsl[Task] with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
-    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME :? OptionalGroupFilterQueryParamMatcher(maybeGroup) as _ =>
-      Ok(maybeGroup.map(group => routesService.findByGroup(group))
-        .getOrElse(routesService.findAll())
+    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME
+      :? OptionalGroupFilterQueryParamMatcher(maybeGroup)
+      :? OptionalStandaloneFilterQueryParamMatcher(maybeStandalone)
+      as _ =>
+      Ok(maybeGroup
+        .map(group => routesService.findByGroup(group, StandaloneFilter.getFromOptional(maybeStandalone)))
+        .getOrElse(routesService.findAll(StandaloneFilter.getFromOptional(maybeStandalone)))
       )
 
-    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / MAPPERS_NAME as _ => Ok(routesService.findAllMappers())
+    case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / MAPPERS_NAME
+      :? OptionalStandaloneFilterQueryParamMatcher(maybeStandalone)
+      as _ => Ok(routesService.findAllMappers(StandaloneFilter.getFromOptional(maybeStandalone)))
 
     case _@GET -> Root / API_NAME / API_VERSION_1 / ROUTES_NAME / PREFIXES_NAME as _ => Ok(routesService.findAllPrefixes())
 
@@ -58,7 +65,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
   implicit val mapperRecordPayloadDecoder: EntityDecoder[Task, MapperRecordPayload] = jsonOf[Task, MapperRecordPayload]
   implicit val mapperRecordPayloadEncoder: EntityEncoder[Task, MapperRecordPayload] = jsonEncoderOf[Task, MapperRecordPayload]
 
-  implicit val mappersMapEncoder: EntityEncoder[Task, Map[String, MapperRecordPayload]] = jsonEncoderOf[Task, Map[String, MapperRecordPayload]]
+  implicit val mappersListEncoder: EntityEncoder[Task, List[(String, MapperRecordPayload)]] = jsonEncoderOf[Task, List[(String, MapperRecordPayload)]]
   implicit val prefixesMapEncoder: EntityEncoder[Task, Map[String, String]] = jsonEncoderOf[Task, Map[String, String]]
 
   implicit val mappingPayloadEncoder: Encoder[MappingPayload] = Encoder.instance(_.value.fold(_.asJson, _.asJson))
@@ -69,6 +76,13 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
   implicit val routesRemovePayloadDecoder: EntityDecoder[Task, RoutesRemovePayload] = jsonOf[Task, RoutesRemovePayload]
 
   object OptionalGroupFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("group")
+
+  implicit val filterStandaloneParamDecoder: QueryParamDecoder[StandaloneFilter] = QueryParamDecoder[Boolean].map {
+    case true => StandaloneFilter.StandaloneOnly
+    case false => StandaloneFilter.NonStandaloneOnly
+  }
+
+  object OptionalStandaloneFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[StandaloneFilter]("standalone")
 
 }
 

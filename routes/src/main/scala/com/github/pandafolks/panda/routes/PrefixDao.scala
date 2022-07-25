@@ -51,4 +51,14 @@ trait PrefixDao {
    * @return                  Either group name if deleted successfully or PersistenceError if the error during deletion occurred
    */
   def delete(groupName: String)(prefixOperator: CollectionOperator[Prefix]): Task[Either[PersistenceError, String]]
+
+  /**
+   * Checks whether there is at least one [[Prefix]] with the lastUpdateTimestamp strictly higher than provided value
+   *
+   * @param timeStamp
+   * @param mapperOperator    [[Prefix]] DB entry point
+   * @return                  True if there are prefix with higher lastUpdateTimestamp, false otherwise
+   */
+  def checkIfThereAreNewerPrefixes(timeStamp: Long)(prefixOperator: CollectionOperator[Prefix]): Task[Boolean]
+
 }

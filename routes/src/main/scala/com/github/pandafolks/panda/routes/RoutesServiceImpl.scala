@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.routes
 
 import cats.effect.Resource
 import com.github.pandafolks.panda.routes.entity.{Mapper, MappingContent, Prefix}
+import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
 import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
@@ -10,54 +11,68 @@ import monix.eval.Task
 
 import scala.concurrent.duration.DurationInt
 
-final class RoutesServiceImpl(private val mapperDao: MapperDao, private val prefixDao: PrefixDao)(
-  private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])])(
-                               private val cacheTtlInMillis: Int, private val cacheByGroupSize: Long = 100L) extends RoutesService {
+final class RoutesServiceImpl(
+                               private val mapperDao: MapperDao,
+                               private val prefixDao: PrefixDao,
+                             )(
+                               private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])])(
+                               private val cacheTtlInMillis: Int,
+                               private val cacheByGroupSize: Long = 100L
+                             ) extends RoutesService {
 
   private val cacheByGroup: CustomCache[String, RoutesResourcePayload] = new CustomCacheImpl[String, RoutesResourcePayload](
     groupName => findByGroupInternal(groupName)
   )(maximumSize = cacheByGroupSize, ttl = cacheTtlInMillis.millisecond)
 
-  override def findAll(): Task[RoutesResourcePayload] = c.use {
+  override def findAll(standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
       Task.parMap2(
-        findAllMappers(mapperOperator),
-        findAllPrefixes(prefixesOperator)
+        findAllMappersInternal(mapperOperator, standaloneFilter),
+        findAllPrefixesInternal(prefixesOperator)
       )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
   }
 
-  override def findAllMappers(): Task[Map[String, MapperRecordPayload]] = c.use {
-    case (mapperOperator, _) => findAllMappers(mapperOperator)
+  override def findAllMappers(standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[List[(String, MapperRecordPayload)]] = c.use {
+    case (mapperOperator, _) => findAllMappersInternal(mapperOperator, standaloneFilter)
   }
 
   override def findAllPrefixes(): Task[Map[String, String]] = c.use {
-    case (_, prefixesOperator) => findAllPrefixes(prefixesOperator)
+    case (_, prefixesOperator) => findAllPrefixesInternal(prefixesOperator)
   }
 
-  private def findAllPrefixes(prefixesOperator: CollectionOperator[Prefix]): Task[Map[String, String]] =
+  private def findAllPrefixesInternal(prefixesOperator: CollectionOperator[Prefix]): Task[Map[String, String]] =
     prefixDao.findAll(prefixesOperator)
-      .map(prefix => (prefix.groupName, prefix.value))
-      .foldLeftL(Map.empty[String, String])((prevState, p) => prevState + p)
+      .foldLeftL(Map.empty[String, String])((prevState, prefix) => prevState + (prefix.groupName -> prefix.value))
 
-  private def findAllMappers(mapperOperator: CollectionOperator[Mapper]): Task[Map[String, MapperRecordPayload]] =
+  private def findAllMappersInternal(mapperOperator: CollectionOperator[Mapper], standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[List[(String, MapperRecordPayload)]] =
     mapperDao.findAll(mapperOperator)
-      .map(mapper => (mapper.route, mapper.httpMethod, MappingContent.toMappingPayload(mapper.mappingContent)))
-      .foldLeftL(Map.empty[String, MapperRecordPayload])((prevState, p) => prevState + (p._1 -> MapperRecordPayload(p._3, Some(p._2))))
+      .filter(standaloneFilter.filter)
+      .foldLeftL(List.empty[(String, MapperRecordPayload)])(
+        (prevState, entry) => (entry.route, MapperRecordPayload(
+          mapping = MappingContent.toMappingPayload(entry.mappingContent),
+          method = Some(entry.httpMethod.getName),
+          isStandalone = Some(entry.isStandalone)
+        )) :: prevState
+      )
 
-  override def findByGroup(groupName: String): Task[RoutesResourcePayload] =
-    cacheByGroup.get(groupName)
+  override def findByGroup(groupName: String, standaloneFilter: StandaloneFilter = StandaloneFilter.All): Task[RoutesResourcePayload] =
+    cacheByGroup.get(groupName).map(payload => RoutesResourcePayload(
+      mappers = payload.mappers.map(_.filter(entry => standaloneFilter.filter(entry._2))),
+      prefixes = payload.prefixes
+    ))
 
   private def findByGroupInternal(groupName: String): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
       Task.parMap2(
-        findAllMappers(mapperOperator).map(mappers => searchMappers(mappers, groupName)),
-        findAllPrefixes(prefixesOperator)
+        findAllMappersInternal(mapperOperator).map(mappers => searchMappers(mappers, groupName)),
+        findAllPrefixesInternal(prefixesOperator)
           .map(_.get(groupName).map(prefix => Map.from(List((groupName, prefix)))).getOrElse(Map.empty))
       )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
   }
 
-  private def searchMappers(data: Map[String, MapperRecordPayload], groupName: String): Map[String, MapperRecordPayload] = {
-    def escape(route: String): String = route.split("/")
+  private def searchMappers(data: List[(String, MapperRecordPayload)], groupName: String): List[(String, MapperRecordPayload)] = {
+    def escape(route: String): String = route
+      .split("/")
       .map(_.trim)
       .filter(_.nonEmpty)
       .map {
@@ -69,16 +84,16 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
       case Left(gn) if gn == groupName => true
       case _ => false
     })
-    val escapedDirectRoutes = direct.keySet.map(escape)
+    val escapedDirectRoutes = direct.map(mapping => (escape(mapping._1), mapping._2.method)).toSet // cuz two routes with different methods can point to different groups
 
-    def rcSearch(mappingPayload: MappingPayload): Boolean =
+    def rcSearch(mappingPayload: MappingPayload, method: Option[String]): Boolean =
       mappingPayload.value match {
-        case Left(gn) if escapedDirectRoutes.contains(escape(gn)) => true // regex would fit here better (probably)
+        case Left(gn) if escapedDirectRoutes.contains((escape(gn), method)) => true // regex would fit here better (probably)
         case Left(_) => false
-        case Right(mappingPayload) => mappingPayload.map(entry => rcSearch(entry._2)).exists(_ == true)
+        case Right(mappingPayload) => mappingPayload.map(entry => rcSearch(entry._2, method)).exists(_ == true)
       }
 
-    val indirect = data.filter(entry => rcSearch(entry._2.mapping))
+    val indirect = data.filter(entry => rcSearch(entry._2.mapping, entry._2.method))
     direct.concat(indirect)
     // todo mszmal: come back here, once routing logic is ready (right now it might not work in the way it should at the end)
   }
@@ -87,7 +102,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
     c.use {
       case (mapperOperator, prefixesOperator) =>
         Task.parZip2(
-          Task.parTraverse(routesResourcePayload.mappers.getOrElse(Map.empty).toList) { entry =>
+          Task.parTraverse(routesResourcePayload.mappers.getOrElse(List.empty)) { entry =>
             mapperDao.saveMapper(entry._1, entry._2)(mapperOperator)
           },
           Task.parTraverse(routesResourcePayload.prefixes.getOrElse(Map.empty).toList) { entry =>
@@ -100,7 +115,7 @@ final class RoutesServiceImpl(private val mapperDao: MapperDao, private val pref
     c.use {
       case (mapperOperator, prefixesOperator) =>
         Task.parZip2(
-          Task.parTraverse(routesResourcePayload.mappers.getOrElse(Map.empty).toList) { entry =>
+          Task.parTraverse(routesResourcePayload.mappers.getOrElse(List.empty)) { entry =>
             mapperDao.saveOrUpdateMapper(entry._1, entry._2)(mapperOperator)
           },
           Task.parTraverse(routesResourcePayload.prefixes.getOrElse(Map.empty).toList) { entry =>

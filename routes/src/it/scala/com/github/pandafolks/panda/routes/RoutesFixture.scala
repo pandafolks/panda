@@ -10,7 +10,7 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait RoutesFixture {
-  protected val dbName = randomString("test")
+  protected val dbName: String = randomString("test")
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
     DockerImageName.parse("mongo").withTag("4.0.10")
   )
