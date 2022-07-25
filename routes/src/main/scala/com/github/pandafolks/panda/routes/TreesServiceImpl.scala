@@ -70,24 +70,18 @@ final class TreesServiceImpl private(
       _ <- data match {
         case (Some(mappers), Some(prefixes)) =>
           routesTreesHandler.set(RoutesTreesHandler.construct(mappers, prefixes)) >>
-            latestSeenMappingTimestamp.set(findLatestSeenMappingTimestamp(mappers)) >>
-            latestSeenPrefixTimestamp.set(findLatestSeenPrefixTimestamp(prefixes))
+            latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers)) >>
+            latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
         case (Some(mappers), None) =>
           routesTreesHandler.update(previousState => RoutesTreesHandler.withNewMappers(previousState, mappers)) >>
-            latestSeenMappingTimestamp.set(findLatestSeenMappingTimestamp(mappers))
+            latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers))
         case (None, Some(prefixes)) =>
           routesTreesHandler.update(previousState => RoutesTreesHandler.withNewPrefixes(previousState, prefixes)) >>
-            latestSeenPrefixTimestamp.set(findLatestSeenPrefixTimestamp(prefixes))
+            latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
         case (None, None) => Task.unit
       }
     } yield ()
   }
-
-  private def findLatestSeenMappingTimestamp(mappers: Map[HttpMethod, List[Mapper]]): Long =
-    mappers.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
-
-  private def findLatestSeenPrefixTimestamp(prefixes: Map[String, Prefix]): Long =
-    prefixes.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
 }
 
 object TreesServiceImpl {
@@ -103,9 +97,15 @@ object TreesServiceImpl {
           )
         )
         routesTreesHandler <- Ref.of[Task, RoutesTreesHandler](RoutesTreesHandler.construct(data._1, data._2))
-        latestSeenMappingTimestamp <- Ref.of[Task, Long](data._1.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L))
-        latestSeenPrefixTimestamp <- Ref.of[Task, Long](data._2.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L))
+        latestSeenMappingTimestamp <- Ref.of[Task, Long](findLatestSeenMappingTimestamp(data._1))
+        latestSeenPrefixTimestamp <- Ref.of[Task, Long](findLatestSeenPrefixTimestamp(data._2))
       } yield new TreesServiceImpl(mapperDao, prefixDao, treesHandlerRefreshIntervalInMillis)(
         routesTreesHandler, latestSeenMappingTimestamp, latestSeenPrefixTimestamp)(c)
     }
+
+  def findLatestSeenMappingTimestamp(mappers: Map[HttpMethod, List[Mapper]]): Long =
+    mappers.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
+
+  def findLatestSeenPrefixTimestamp(prefixes: Map[String, Prefix]): Long =
+    prefixes.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
 }
