@@ -24,13 +24,14 @@ final class BaseApiGatewayImpl(
             s"${this.getClass.getName} does not support composition routes.") // todo: this log should be saved inside the access logs.
           Response.notFoundFor(request)
         case Some((routeInfo, _)) =>
-          val relatedGroup = Group(routeInfo.mappingContent.left.get)
-          treesService.findPrefix(relatedGroup).flatMap(prefix =>
-            loadBalancer.route(
-              request = request,
-              requestedPath = prefix.addSegments(requestedPath.segments), // prefix is hardcoded it would be taken from map that holds all prefixes
-              group = relatedGroup
-            )
-          )
+          Task.now(Group(routeInfo.mappingContent.left.get)).flatMap { relatedGroup =>
+            treesService.findPrefix(relatedGroup).flatMap { prefix =>
+              loadBalancer.route(
+                request = request,
+                requestedPath = prefix.addSegments(requestedPath.segments),
+                group = relatedGroup
+              )
+            }
+          }
       }
 }

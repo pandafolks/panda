@@ -4,6 +4,7 @@ import cats.effect.Resource
 import cats.effect.concurrent.Ref
 import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
+import com.google.common.annotations.VisibleForTesting
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import org.http4s.Uri.Path
@@ -18,8 +19,8 @@ final class TreesServiceImpl private(
                                       private val treesHandlerRefreshIntervalInMillis: Int
                                     )(
                                       private val routesTreesHandler: Ref[Task, RoutesTreesHandler],
-                                      private val latestSeenMappingTimestamp: Ref[Task, Long],
-                                      private val latestSeenPrefixTimestamp: Ref[Task, Long]
+                                      @VisibleForTesting private val latestSeenMappingTimestamp: Ref[Task, Long],
+                                      @VisibleForTesting private val latestSeenPrefixTimestamp: Ref[Task, Long]
 
                                     )(
                                       private val c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])]
@@ -49,6 +50,7 @@ final class TreesServiceImpl private(
   override def findPrefix(group: Group): Task[Uri.Path] =
     routesTreesHandler.get.map(handler => Path.unsafeFromString(handler.getPrefix(group.name).getOrElse("")))
 
+  @VisibleForTesting
   private def reloadTreesIfNecessary(): Task[Unit] = c.use {
     case (mapperOperator, prefixOperator) => for {
       needsUpdate <- Task.parZip2(
@@ -68,22 +70,24 @@ final class TreesServiceImpl private(
       _ <- data match {
         case (Some(mappers), Some(prefixes)) =>
           routesTreesHandler.set(RoutesTreesHandler.construct(mappers, prefixes)) >>
-            latestSeenMappingTimestamp.set(
-              mappers.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)) >>
-            latestSeenPrefixTimestamp.set(
-              prefixes.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L))
+            latestSeenMappingTimestamp.set(findLatestSeenMappingTimestamp(mappers)) >>
+            latestSeenPrefixTimestamp.set(findLatestSeenPrefixTimestamp(prefixes))
         case (Some(mappers), None) =>
           routesTreesHandler.update(previousState => RoutesTreesHandler.withNewMappers(previousState, mappers)) >>
-            latestSeenMappingTimestamp.set(
-              mappers.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L))
+            latestSeenMappingTimestamp.set(findLatestSeenMappingTimestamp(mappers))
         case (None, Some(prefixes)) =>
           routesTreesHandler.update(previousState => RoutesTreesHandler.withNewPrefixes(previousState, prefixes)) >>
-            latestSeenPrefixTimestamp.set(
-              prefixes.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L))
+            latestSeenPrefixTimestamp.set(findLatestSeenPrefixTimestamp(prefixes))
         case (None, None) => Task.unit
       }
     } yield ()
   }
+
+  private def findLatestSeenMappingTimestamp(mappers: Map[HttpMethod, List[Mapper]]): Long =
+    mappers.values.flatten.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
+
+  private def findLatestSeenPrefixTimestamp(prefixes: Map[String, Prefix]): Long =
+    prefixes.values.maxByOption(_.lastUpdateTimestamp).map(_.lastUpdateTimestamp).getOrElse(0L)
 }
 
 object TreesServiceImpl {
