@@ -21,6 +21,8 @@ final case class RoutesTreesHandler(
       case _ => Option.empty
     }
 
+  def getPrefix(groupName: String): Option[String] = prefixes.get(groupName)
+
   val supportedMethods: List[Method] = List(Method.GET, Method.POST, Method.PUT, Method.PATCH, Method.DELETE)
 
 }

@@ -13,8 +13,8 @@ final class BaseApiGatewayImpl(
                               ) extends ApiGateway {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] = {
-    treesService.findStandalone(requestedPath, request.method)
+  override def ask(request: Request[Task], requestedPath: Path): Task[Response[Task]] =
+    treesService.findStandaloneRoute(requestedPath, request.method)
       .flatMap {
         case None =>
           logger.debug("\"" + requestedPath.renderString + "\"" + " was not recognized as a supported path.") // todo: this log should be saved inside the access logs.
@@ -24,11 +24,13 @@ final class BaseApiGatewayImpl(
             s"${this.getClass.getName} does not support composition routes.") // todo: this log should be saved inside the access logs.
           Response.notFoundFor(request)
         case Some((routeInfo, _)) =>
-          loadBalancer.route(
-            request = request,
-            requestedPath = Path.unsafeFromString("prefix/").addSegments(requestedPath.segments), // prefix is hardcoded it would be taken from map that holds all prefixes
-            group = Group(routeInfo.mappingContent.left.get)
+          val relatedGroup = Group(routeInfo.mappingContent.left.get)
+          treesService.findPrefix(relatedGroup).flatMap(prefix =>
+            loadBalancer.route(
+              request = request,
+              requestedPath = prefix.addSegments(requestedPath.segments), // prefix is hardcoded it would be taken from map that holds all prefixes
+              group = relatedGroup
+            )
           )
       }
-  }
 }

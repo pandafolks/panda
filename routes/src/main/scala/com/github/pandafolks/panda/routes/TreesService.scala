@@ -7,8 +7,10 @@ import monix.eval.Task
 
 trait TreesService {
 
-  def find(path: Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]]
+  def findRoute(path: Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]]
 
-  def findStandalone(path: Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]]
+  def findStandaloneRoute(path: Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]]
+
+  def findPrefix(group: Group): Task[Path]
 
 }

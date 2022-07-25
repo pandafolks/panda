@@ -6,6 +6,7 @@ import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
+import org.http4s.Uri.Path
 import org.http4s.{Method, Uri}
 import org.slf4j.LoggerFactory
 
@@ -39,11 +40,14 @@ final class TreesServiceImpl private(
     }
   }
 
-  override def find(path: Uri.Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]] =
+  override def findRoute(path: Uri.Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]] =
     routesTreesHandler.get.map(_.getTree(method).flatMap(_.find(path)))
 
-  override def findStandalone(path: Uri.Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]] =
+  override def findStandaloneRoute(path: Uri.Path, method: Method): Task[Option[(RouteInfo, Map[String, String])]] =
     routesTreesHandler.get.map(_.getTree(method).flatMap(_.find(path, standaloneOnly = true)))
+
+  override def findPrefix(group: Group): Task[Uri.Path] =
+    routesTreesHandler.get.map(handler => Path.unsafeFromString(handler.getPrefix(group.name).getOrElse("")))
 
   private def reloadTreesIfNecessary(): Task[Unit] = c.use {
     case (mapperOperator, prefixOperator) => for {

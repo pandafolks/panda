@@ -9,6 +9,7 @@ const jsonExample1 = JSON.parse(rawdata1);
 const jsonExample2 = JSON.parse(rawdata2);
 
 const app = express();
+app.use(express.json())
 app.use(cors())
 app.use(morgan('combined'))
 
@@ -16,7 +17,7 @@ const port = 3000;
 
 app.post('/api/v1/cars',(request, response) => {
     console.log(request.body);
-    response.end("yes")
+    response.end('/api/v1/cars')
 });
 
 app.get('/api/v1/cars', (req, res) => {
