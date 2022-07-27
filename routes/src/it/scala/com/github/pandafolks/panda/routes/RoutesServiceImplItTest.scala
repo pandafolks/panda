@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.routes
 import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MapperRemovePayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.NotExists
+import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues}
 import org.scalatest.concurrent.ScalaFutures
@@ -197,6 +198,100 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
     )))
   )
 
+  private val findByGroupPayload =  RoutesResourcePayload(
+    mappers = Some(List(
+      ("route/one",
+        MapperRecordPayload(MappingPayload(
+          Right(Map(
+            "property1" -> MappingPayload(Left("someEndpoint1")),
+            "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+            "property3" -> MappingPayload(Right(Map(
+              "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+              "property6" -> MappingPayload(Left("someEndpoint4")),
+              "property7" ->  MappingPayload(Left("someEndpoint1"))
+            )))
+          )
+          )), Some("POST"), Some(true))),
+      ("another/route/{{some_id}}",
+        MapperRecordPayload(MappingPayload(Left("group1")), Some("GET"), Some(true))
+      ),
+      ("another/route/{{some_id}}/complex",
+        MapperRecordPayload(MappingPayload(
+          Right(Map(
+            "property3" -> MappingPayload(Right(Map(
+              "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+            )))
+          )
+          )), Some("POST"), Some(true))),
+      ("another/route/{{some_id}}/complex",
+        MapperRecordPayload(MappingPayload(
+          Right(Map(
+            "property3" -> MappingPayload(Right(Map(
+              "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+            )))
+          )
+          )), Some("PATCH"), Some(true))),
+      ("groupRoute/**",
+        MapperRecordPayload(MappingPayload(Left("group2/")), Some("GET"), Some(false))
+      ),
+      ("route/two",
+        MapperRecordPayload(MappingPayload(
+          Right(Map(
+            "property1" -> MappingPayload(Left("someEndpoint1")),
+          )
+          )), Some("DELETE"), Some(true))
+      ),
+      ("someEndpoint1/",
+        MapperRecordPayload(MappingPayload(Left("group0101")), Some("DELETE"), Some(false))
+      ),
+      ("someEndpoint1/",
+        MapperRecordPayload(MappingPayload(Left("group0101")), Some("POST"), Some(false))
+      ),
+      ("another/route/{{some_id}}",
+        MapperRecordPayload(MappingPayload(Left("group1")), Some("PUT"), Some(false))
+      ),
+      ("someEndpoint2/",
+        MapperRecordPayload(MappingPayload(Left("group11114")), Some("POST"), Some(false))
+      ),
+      ("someEndpoint2/",
+        MapperRecordPayload(MappingPayload(Left("group11115")), Some("DELETE"), Some(false))
+      ),
+      ("someEndpoint4/",
+        MapperRecordPayload(MappingPayload(Left("group11116")), Some("PATCH"), Some(false))
+      ),
+      ("/someEndpoint3/",
+        MapperRecordPayload(MappingPayload(
+          Right(Map(
+            "property1" -> MappingPayload(Left("someEndpointNESTED")),
+            "property2" -> MappingPayload(Left("someEndpointNESTEDThatDoesNotExist")),
+            "property3" -> MappingPayload(Right(Map(
+              "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))), // circular - it's not valid, but search should still work
+              "property6" -> MappingPayload(Left("someEndpointNESTED2"))
+            )))
+          )
+          )), Some("POST"), Some(true))
+      ),
+      ("someEndpointNESTED",
+        MapperRecordPayload(MappingPayload(Left("groupNested")), Some("POST"), Some(false))
+      ),
+      ("someEndpointNESTED",
+        MapperRecordPayload(MappingPayload(Left("groupNested1")), Some("DELETE"), Some(false))
+      ),
+      ("someEndpointNESTED2",
+        MapperRecordPayload(MappingPayload(Left("groupNested2")), Some("POST"), Some(true))
+      ),
+      ("someEndpointNESTED2",
+        MapperRecordPayload(MappingPayload(Left("groupNested2")), Some("GET"), Some(true))
+      ),
+    )),
+    prefixes = Some(Map.from(List(
+      ("group1", "api/v1"),
+      ("group2/", "api/v2"),
+      ("group3", "api/v3"),
+      ("groupNested", "api/v4/")
+    )))
+  )
+
   "RoutesServiceImpl#findAll" should "return all entries (mappers and prefixes) saved with RoutesServiceImpl#save" in {
     val f = (routesService.save(payload1)
       >> routesService.save(payload2)
@@ -361,11 +456,290 @@ class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matc
             )), Some("DELETE"), Some(true))
         ),
       )
-      findAllRes.prefixes should be (Some(Map.from(List(
+      findAllRes.prefixes should be(Some(Map.from(List(
         ("group2", "api/v2"),
       ))))
     }
   }
 
-  //todo mszmal: Add tests for #findByGroup once the method is stable.
+  "RoutesServiceImpl#findByGroup" should "find all related mappers and a prefix if exists" in {
+    val f = (
+      routesService.save(findByGroupPayload) >>
+        Task.sequence(List(
+          routesService.findByGroup(groupName = "group1").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("another/route/{{some_id}}",
+                MapperRecordPayload(MappingPayload(Left("group1")), Some("GET"), Some(true))
+              ),
+              ("another/route/{{some_id}}",
+                MapperRecordPayload(MappingPayload(Left("group1")), Some("PUT"), Some(false))
+              )
+            )),
+            prefixes = Some(Map.from(List(
+              ("group1", "api/v1"),
+            )))
+          ))),
+
+          routesService.findByGroup(groupName = "group2/").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("groupRoute/**",
+                MapperRecordPayload(MappingPayload(Left("group2/")), Some("GET"), Some(false))
+              ),
+            )),
+            prefixes = Some(Map.from(List(
+              ("group2/", "api/v2"),
+            )))
+          ))),
+
+          routesService.findByGroup(groupName = "group0101").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpoint1",
+                MapperRecordPayload(MappingPayload(Left("group0101")), Some("DELETE"), Some(false))
+              ),
+              ("someEndpoint1",
+                MapperRecordPayload(MappingPayload(Left("group0101")), Some("POST"), Some(false))
+              ),
+              ("route/two",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                  )
+                  )), Some("DELETE"), Some(true))
+              ),
+              ("route/one",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                    "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                      "property6" -> MappingPayload(Left("someEndpoint4")),
+                      "property7" ->  MappingPayload(Left("someEndpoint1"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "group11114").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpoint2",
+                MapperRecordPayload(MappingPayload(Left("group11114")), Some("POST"), Some(false))
+              ),
+              ("route/one",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                    "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                      "property6" -> MappingPayload(Left("someEndpoint4")),
+                      "property7" ->  MappingPayload(Left("someEndpoint1"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "group11115").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpoint2",
+                MapperRecordPayload(MappingPayload(Left("group11115")), Some("DELETE"), Some(false))
+              ),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "group11116").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpoint4",
+                MapperRecordPayload(MappingPayload(Left("group11116")), Some("PATCH"), Some(false))
+              ),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "groupNested").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpointNESTED",
+                MapperRecordPayload(MappingPayload(Left("groupNested")), Some("POST"), Some(false))
+              ),
+              ("someEndpoint3",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpointNESTED")),
+                    "property2" -> MappingPayload(Left("someEndpointNESTEDThatDoesNotExist")),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))), // circular - it's not valid, but search should still work
+                      "property6" -> MappingPayload(Left("someEndpointNESTED2"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))
+              ),
+              ("another/route/{{some_id}}/complex",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+              ("route/one",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                    "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                      "property6" -> MappingPayload(Left("someEndpoint4")),
+                      "property7" ->  MappingPayload(Left("someEndpoint1"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+            )),
+            prefixes = Some(Map.from(List(
+              ("groupNested", "api/v4")
+            )))
+          ))),
+
+          routesService.findByGroup(groupName = "groupNested1").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpointNESTED",
+                MapperRecordPayload(MappingPayload(Left("groupNested1")), Some("DELETE"), Some(false))
+              ),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "groupNested2").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpointNESTED2",
+                MapperRecordPayload(MappingPayload(Left("groupNested2")), Some("POST"), Some(true))
+              ),
+              ("someEndpoint3",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpointNESTED")),
+                    "property2" -> MappingPayload(Left("someEndpointNESTEDThatDoesNotExist")),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))), // circular - it's not valid, but search should still work
+                      "property6" -> MappingPayload(Left("someEndpointNESTED2"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))
+              ),
+              ("another/route/{{some_id}}/complex",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+              ("route/one",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                    "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                      "property6" -> MappingPayload(Left("someEndpoint4")),
+                      "property7" ->  MappingPayload(Left("someEndpoint1"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+              ("someEndpointNESTED2",
+                MapperRecordPayload(MappingPayload(Left("groupNested2")), Some("GET"), Some(true))
+              ),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "group3").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List.empty),
+            prefixes = Some(Map("group3" -> "api/v3"))
+          ))),
+
+          routesService.findByGroup(groupName = "notExists").map(res => (res, RoutesResourcePayload(
+            mappers = Some(List.empty),
+            prefixes = Some(Map.empty)
+          ))),
+        ))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res.foreach(r => {
+        r._1.mappers.get should contain theSameElementsAs r._2.mappers.get
+        r._1.prefixes should be(r._2.prefixes)
+      }
+      )
+    }
+    succeed
+  }
+
+  it should "find all related mappers and a prefix if exists (standalone filter use cases)" in {
+    val f = (
+      routesService.save(findByGroupPayload) >>
+        Task.sequence(List(
+          routesService.findByGroup(groupName = "group1", standaloneFilter = StandaloneFilter.StandaloneOnly).map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("another/route/{{some_id}}",
+                MapperRecordPayload(MappingPayload(Left("group1")), Some("GET"), Some(true))
+              ),
+            )),
+            prefixes = Some(Map.from(List(
+              ("group1", "api/v1"),
+            )))
+          ))),
+
+          routesService.findByGroup(groupName = "group2/", standaloneFilter = StandaloneFilter.StandaloneOnly).map(res => (res, RoutesResourcePayload(
+            mappers = Some(List.empty),
+            prefixes = Some(Map.from(List(
+              ("group2/", "api/v2"),
+            )))
+          ))),
+
+          routesService.findByGroup(groupName = "group0101", standaloneFilter = StandaloneFilter.NonStandaloneOnly).map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("someEndpoint1",
+                MapperRecordPayload(MappingPayload(Left("group0101")), Some("DELETE"), Some(false))
+              ),
+              ("someEndpoint1",
+                MapperRecordPayload(MappingPayload(Left("group0101")), Some("POST"), Some(false))
+              )
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+
+          routesService.findByGroup(groupName = "group11114", standaloneFilter = StandaloneFilter.StandaloneOnly).map(res => (res, RoutesResourcePayload(
+            mappers = Some(List(
+              ("route/one",
+                MapperRecordPayload(MappingPayload(
+                  Right(Map(
+                    "property1" -> MappingPayload(Left("someEndpoint1")),
+                    "property2" -> MappingPayload(Right(Map("property22" -> MappingPayload(Left("someEndpoint2"))))),
+                    "property3" -> MappingPayload(Right(Map(
+                      "property4" -> MappingPayload(Right(Map("property5" -> MappingPayload(Left("someEndpoint3"))))),
+                      "property6" -> MappingPayload(Left("someEndpoint4")),
+                      "property7" ->  MappingPayload(Left("someEndpoint1"))
+                    )))
+                  )
+                  )), Some("POST"), Some(true))),
+            )),
+            prefixes = Some(Map.empty)
+          ))),
+        ))
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res.foreach(r => {
+        r._1.mappers.get should contain theSameElementsAs r._2.mappers.get
+        r._1.prefixes should be(r._2.prefixes)
+      }
+      )
+    }
+    succeed
+  }
 }
