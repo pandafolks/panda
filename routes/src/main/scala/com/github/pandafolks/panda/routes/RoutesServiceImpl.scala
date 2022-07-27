@@ -9,6 +9,7 @@ import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.DurationInt
 
 final class RoutesServiceImpl(
@@ -64,21 +65,24 @@ final class RoutesServiceImpl(
   private def findByGroupInternal(groupName: String): Task[RoutesResourcePayload] = c.use {
     case (mapperOperator, prefixesOperator) =>
       Task.parMap2(
-        findAllMappersInternal(mapperOperator).map(mappers => searchMappers(mappers, groupName)),
+        findAllMappersInternal(mapperOperator).map(mappers => searchMappers2point0(mappers, groupName)),
         findAllPrefixesInternal(prefixesOperator)
           .map(_.get(groupName).map(prefix => Map.from(List((groupName, prefix)))).getOrElse(Map.empty))
       )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
   }
 
+  @Deprecated //Cannot handle composition routes with depth bigger than 1
+  @nowarn
   private def searchMappers(data: List[(String, MapperRecordPayload)], groupName: String): List[(String, MapperRecordPayload)] = {
-    def escape(route: String): String = route
-      .split("/")
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .map {
-        case s"{{$_}}" => "{{}}"
-        case v => v
-      }.mkString("/")
+    def escape(route: String): String =
+      route
+        .split("/")
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map {
+          case s"{{$_}}" => "{{}}"
+          case v => v
+        }.mkString("/")
 
     val direct = data.filter(entry => entry._2.mapping.value match {
       case Left(gn) if gn == groupName => true
@@ -95,7 +99,70 @@ final class RoutesServiceImpl(
 
     val indirect = data.filter(entry => rcSearch(entry._2.mapping, entry._2.method))
     direct.concat(indirect)
-    // todo mszmal: come back here, once routing logic is ready (right now it might not work in the way it should at the end)
+  }
+
+  private def searchMappers2point0(data: List[(String, MapperRecordPayload)], groupName: String): List[(String, MapperRecordPayload)] = {
+    def escape(route: String): String =
+      route
+        .split("/")
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map {
+          case s"{{$_}}" => "{{}}"
+          case v => v
+        }.mkString("/")
+
+    def returnAllEscapedRoutesForMappingPayload(mappingPayload: MappingPayload): List[String] = mappingPayload.value match {
+      case Left(route) => List(escape(route))
+      case Right(map) => map.foldLeft(List.empty[String])((prevState, el) =>
+        prevState ::: returnAllEscapedRoutesForMappingPayload(el._2))
+    }
+
+    val dataSetToSearchThrough: Map[Boolean, List[(String, MapperRecordPayload)]] = data
+      .filter(entry => entry._2.mapping.value match { // at this point we want to find both all direct and composition mappers
+        case Left(gn) if gn == groupName => true
+        case Left(_) => false
+        case Right(_) => true
+      })
+      .groupBy(_._2.mapping.value.isLeft) // true - direct with group match, false - all composition
+
+    val direct: List[(String, MapperRecordPayload)] = dataSetToSearchThrough.getOrElse(true, List.empty)
+    val compositionMappers: List[(String, MapperRecordPayload)] = dataSetToSearchThrough.getOrElse(false, List.empty)
+
+    val mapByNestedRoutesWithRelatedMethod: Map[(String, Option[String]), Set[String]] = compositionMappers.map(entry =>
+      ((escape(entry._1), entry._2.method), returnAllEscapedRoutesForMappingPayload(entry._2.mapping)))
+      .foldLeft(Map.empty[(String, Option[String]), Set[String]])((prevState, entry) =>
+        entry._2.foldLeft(prevState)((prevSubState, escapedRouteForMappingPayload) =>
+          prevSubState + ((escapedRouteForMappingPayload, entry._1._2) ->
+            (prevSubState.getOrElse((escapedRouteForMappingPayload, entry._1._2), Set.empty) + entry._1._1)))
+      )
+
+    def whileFunc(needsToBeChecked: List[(String, Option[String])],
+                  groupedCompositionRoutes: Map[(String, Option[String]), (String, MapperRecordPayload)],
+                  indirect: List[(String, MapperRecordPayload)] = List.empty): List[(String, MapperRecordPayload)] =
+      if (needsToBeChecked.nonEmpty) {
+        Function.tupled(whileFunc _) {
+          // the first is nextLevel, the second indirect
+          needsToBeChecked.foldLeft((List.empty[(String, Option[String])], groupedCompositionRoutes, indirect))((prevState, needsToBeCheckedSingle) => {
+            mapByNestedRoutesWithRelatedMethod.get(needsToBeCheckedSingle) match {
+              case Some(setWithRoutes) =>
+                setWithRoutes.foldLeft(prevState)((prevStateNested, route) => {
+                  val lookingFor = (route, needsToBeCheckedSingle._2)
+                  val newIndirect = groupedCompositionRoutes.get(lookingFor).map(_ :: prevStateNested._3).getOrElse(prevStateNested._3)
+                  val nextLevel = if (groupedCompositionRoutes.contains(lookingFor)) lookingFor :: prevStateNested._1 else prevStateNested._1
+                  (nextLevel, groupedCompositionRoutes - lookingFor, newIndirect) // groupedCompositionRoutes - lookingFor => crucial in order to be able to process circular dependencies
+                })
+              case None => prevState
+            }
+          })
+        }
+      } else indirect
+
+    direct.concat(whileFunc(
+      direct.map(entry => (escape(entry._1), entry._2.method)), // cuz two routes with different methods can point to different groups
+      compositionMappers.foldLeft(Map.empty[(String, Option[String]), (String, MapperRecordPayload)])(
+        (prevState, entry) => prevState + ((escape(entry._1), entry._2.method) -> entry))
+    ))
   }
 
   override def save(routesResourcePayload: RoutesResourcePayload): Task[(List[Either[PersistenceError, String]], List[Either[PersistenceError, String]])] =
