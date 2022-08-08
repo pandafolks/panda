@@ -1,10 +1,11 @@
 package com.github.pandafolks.panda.db
 
 final case class DbConfig(
-                           contactPoints: List[ContactPoint],
-                           mode: String,
-                           username: String,
-                           password: String,
+                           contactPoints: Option[List[ContactPoint]],
+                           connectionString: Option[String],
+                           mode: Option[String],
+                           username: Option[String],
+                           password: Option[String],
                            dbName: String,
                          )
 

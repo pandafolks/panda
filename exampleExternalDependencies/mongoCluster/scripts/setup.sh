@@ -33,7 +33,7 @@ mongo <<EOF
    admin = db.getSiblingDB("admin");
    admin.createUser(
      {
-	user: "admin",
+	      user: "admin",
         pwd: "password",
         roles: [ { role: "root", db: "admin" } ]
      });
