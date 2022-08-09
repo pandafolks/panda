@@ -29,22 +29,11 @@ import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
 final class MongoAppClient(config: DbConfig) extends DbAppClient {
-  private val baseSettings = MongoClientSettings.builder()
-    .readPreference(ReadPreference.nearest())
-    .writeConcern(WriteConcern.MAJORITY)
-    .readConcern(ReadConcern.MAJORITY)
-    .retryReads(true)
-    .retryWrites(true)
-    .applyToServerSettings(builder => {
-      builder
-        .heartbeatFrequency(2000, TimeUnit.MILLISECONDS) // 2 seconds
-      ()
-    })
 
-  private val settings: MongoClientSettings = (
+  private val baseSettings =
     if (config.connectionString.isDefined)
-      baseSettings.applyConnectionString(new ConnectionString(config.connectionString.get))
-    else baseSettings
+      MongoClientSettings.builder().applyConnectionString(new ConnectionString(config.connectionString.get))
+    else MongoClientSettings.builder()
       .credential(MongoCredential.createCredential(config.username.get, config.dbName, config.password.get.toCharArray))
       .applyToClusterSettings(builder => {
         builder
@@ -56,7 +45,18 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           })
         ()
       })
-    ).build()
+
+  private val settings: MongoClientSettings = baseSettings
+    .readPreference(ReadPreference.nearest())
+    .writeConcern(WriteConcern.MAJORITY)
+    .readConcern(ReadConcern.MAJORITY)
+    .retryReads(true)
+    .retryWrites(true)
+    .applyToServerSettings(builder => {
+      builder
+        .heartbeatFrequency(2000, TimeUnit.MILLISECONDS) // 2 seconds
+      ()
+    }).build()
 
 
   private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(config.dbName)
