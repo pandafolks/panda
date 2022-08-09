@@ -50,9 +50,10 @@ mongo -u admin -p 'password' <<EOF
 	      user: "pandaUser",
         pwd: "pandaPassword",
         roles: [ { role: "readWrite", db: "panda" } ]
-     });
-     db.getSiblingDB("panda").auth("pandaUser", "pandaPassword");
-     rs.status();
+     }
+   );
+   db.getSiblingDB("panda").auth("pandaUser", "pandaPassword");
+   rs.status();
 EOF
 
 #docker exec mongo-0.mongo /scripts/setup.sh
