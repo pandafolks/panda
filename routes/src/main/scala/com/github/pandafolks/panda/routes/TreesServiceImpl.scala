@@ -62,9 +62,9 @@ final class TreesServiceImpl private(
           mapperDao.findAll(mapperOperator).toListL.map(_.groupBy(_.httpMethod)).map(Some(_))
         else Task.now(Option.empty),
         if (needsUpdate._2)
-          prefixDao.findAll(prefixOperator).toListL.map(
-            _.foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
-          ).map(Some(_))
+          prefixDao.findAll(prefixOperator)
+            .foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
+            .firstOptionL
         else Task.now(Option.empty)
       )
       _ <- data match {
@@ -92,9 +92,9 @@ object TreesServiceImpl {
       case (mapperOperator, prefixOperator) => for {
         data <- Task.parZip2(
           mapperDao.findAll(mapperOperator).toListL.map(_.groupBy(_.httpMethod)),
-          prefixDao.findAll(prefixOperator).toListL.map(
-            _.foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
-          )
+          prefixDao.findAll(prefixOperator)
+            .foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
+            .firstL
         )
         routesTreesHandler <- Ref.of[Task, RoutesTreesHandler](RoutesTreesHandler.construct(data._1, data._2))
         latestSeenMappingTimestamp <- Ref.of[Task, Long](findLatestSeenMappingTimestamp(data._1))

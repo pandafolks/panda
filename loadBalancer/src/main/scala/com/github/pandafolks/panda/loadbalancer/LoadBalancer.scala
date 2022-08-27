@@ -44,5 +44,5 @@ object LoadBalancer {
       "Could not reach any of the instances belonging to the group " + "\"" + group.name + "\"")
 
   def noAvailableInstanceLog(requestedPath: Path, logger: Logger): Unit =
-    logger.info("There is no available instance for the requested path: \"" + requestedPath.renderString + "\"")
+    logger.info("[path: \"" + requestedPath.renderString + "\"]: There is no available instance for the requested path")
 }

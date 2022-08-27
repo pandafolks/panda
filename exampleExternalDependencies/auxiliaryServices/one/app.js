@@ -21,6 +21,8 @@ app.post('/api/v1/cars',(request, response) => {
 });
 
 app.get('/api/v1/cars', (req, res) => {
+    const waitTill = new Date(new Date().getTime() + 6 * 1000); // sleeping 6 seconds - simulating long running request
+    while(waitTill > new Date()){}
     res.send(jsonExample1);
 })
 
