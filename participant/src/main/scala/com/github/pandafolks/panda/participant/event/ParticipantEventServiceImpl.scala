@@ -109,8 +109,8 @@ final class ParticipantEventServiceImpl(
   }
 
   override def constructAllParticipants(): Task[(List[Participant], Long)] = {
-    val dumbParticipant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
-    val lastSeenEventId = AtomicLong(-1)
+    val dumbParticipant: Participant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
+    val lastSeenEventId: AtomicLong = AtomicLong(-1)
 
     c.use {
       case (participantEventOperator, _) =>

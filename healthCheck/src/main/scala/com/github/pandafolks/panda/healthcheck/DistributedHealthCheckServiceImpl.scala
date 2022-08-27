@@ -34,6 +34,8 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
+  private val HOST_NAME: String = "Host"
+
   private sealed trait EmittedEventType
 
   private object EmittedEventType {
@@ -168,7 +170,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
           )),
           path = Path.unsafeFromString(participant.healthcheckInfo.path)
         )
-      ).withHeaders(Header.Raw(CIString("host"), participant.host))
+      ).withHeaders(Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString)) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
     ).use(Task.eval(_))
       .map(_.status.isSuccess)
       .onErrorRecoverWith { _ => Task.now(false) }
