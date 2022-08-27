@@ -2,15 +2,15 @@ import sbt._
 
 object Dependencies {
   private val sstBundleMonixHttp4sBlaze = "com.avast" %% "sst-bundle-monix-http4s-blaze" % Versions.sst
+  private val sstHttp4sClientBlaze = "com.avast" %% "sst-http4s-client-blaze" % Versions.sst
   private val logbackClassic = "ch.qos.logback" % "logback-classic" % Versions.logback
   private val scalaTest = "org.scalatest" %% "scalatest" % Versions.scalaTest
   private val mockito = "org.scalatestplus" %% "mockito-4-5" % Versions.mockito
-  private val sstHttp4sClientBlazePureConfig = "com.avast" %% "sst-http4s-client-blaze-pureconfig" % Versions.sst
   private val testContainers = "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.testContainers
   private val testMongoContainer = "com.dimafeng" %% "testcontainers-scala-mongodb" % Versions.testContainers
   private val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % Versions.collectionContrib
   private val tsec = "io.github.jmcardon" %% "tsec-http4s" % Versions.tsec
-  private val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.12" // pay attention - needs to be in alignment with the version present in sstBundleMonixHttp4sBlaze
+  private val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.14" // pay attention - needs to be in alignment with the version present in sstBundleMonixHttp4sBlaze
   private val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   private val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   private val tsecPassword = "io.github.jmcardon" %% "tsec-password" % Versions.tsec
@@ -27,7 +27,7 @@ object Dependencies {
   val silencerLib = "com.github.ghik" % "silencer-lib" % Versions.silencer cross CrossVersion.full
 
   private object Versions {
-    val sst = "0.15.7" // http4s - 0.22.12
+    val sst = "0.16.3" // http4s - 0.22.14
     val silencer = "1.7.8"
     val testContainers = "0.40.6"
     val circe = "0.14.1"
@@ -53,8 +53,8 @@ object Dependencies {
 
   private val CommonDependencies = Seq(
     sstBundleMonixHttp4sBlaze,
+    sstHttp4sClientBlaze,
     logbackClassic,
-    sstHttp4sClientBlazePureConfig,
     collectionContrib,
     http4sCirce,
     circeGeneric,

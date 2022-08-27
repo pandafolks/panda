@@ -26,11 +26,13 @@ object App extends MonixServerApp {
 
       dbAppClient = new MongoAppClient(appConfiguration.db)
       daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
+
       participantsCache <- Resource.eval(ParticipantsCacheImpl(
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
         cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
-      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService)
+      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService) // treesService is some kind of cache/
+
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
       httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
@@ -66,6 +68,7 @@ object App extends MonixServerApp {
       )
 
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound
+
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
         allRoutes,
