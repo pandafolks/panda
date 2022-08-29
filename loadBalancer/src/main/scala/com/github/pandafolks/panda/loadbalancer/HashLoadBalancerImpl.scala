@@ -39,10 +39,12 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
           ).onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }
       }
 
-    rc(Math.abs(MurmurHash3.stringHash(
-      request.remote.map(_.host.toUriString).getOrElse(random.nextInt(Integer.MAX_VALUE).toString)
+    rc(request.remote
+      .map(_.host.toUriString)
+      .map(h => Math.abs(MurmurHash3.stringHash(h)))
+      .getOrElse(random.nextInt(Integer.MAX_VALUE))
       // If the connectionInfo is not accessible the value should be random in order to spread requests evenly instead of
       // fixed value which will route all requests to single instance.
-    )))
+    )
   }
 }
