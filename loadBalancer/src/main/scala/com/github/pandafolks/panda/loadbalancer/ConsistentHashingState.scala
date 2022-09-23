@@ -5,7 +5,7 @@ import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.QueueBasedChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.TreeMap
@@ -20,7 +20,7 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
   @VisibleForTesting
   private val usedIdentifiersWithPositions: ConcurrentHashMap[Participant, List[Int]] = new ConcurrentHashMap // Participants are equal only if all their properties are equal
   private val random = new Random(System.currentTimeMillis())
-  private val logger = LoggerFactory.getLogger(getClass.getName)
+  private val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
     import monix.execution.Scheduler.{global => scheduler}

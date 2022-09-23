@@ -4,8 +4,8 @@ import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.DefaultPublisher
 import com.github.pandafolks.panda.utils.listener.ChangeListener
+import com.github.pandafolks.panda.utils.publisher.DefaultPublisher
 import monix.eval.Task
 import monix.execution.atomic.AtomicLong
 import org.slf4j.LoggerFactory
