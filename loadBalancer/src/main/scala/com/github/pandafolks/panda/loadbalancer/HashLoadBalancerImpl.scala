@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.loadbalancer
 import com.github.pandafolks.panda.participant.ParticipantsCache
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Uri}
 import org.slf4j.LoggerFactory

@@ -10,7 +10,7 @@ import scala.concurrent.duration.DurationInt
 final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
   private val fullConsistencyMaxDelayInMillis: Int) extends NodeTrackerService {
 
-  import monix.execution.Scheduler.{global => scheduler}
+  import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 

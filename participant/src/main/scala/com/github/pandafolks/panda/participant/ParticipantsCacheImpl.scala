@@ -26,7 +26,7 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import monix.execution.Scheduler.{global => scheduler}
+    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
     if (cacheRefreshIntervalInMillis > 0) {
       // Initial cache load is made by ParticipantsCacheImpl#apply

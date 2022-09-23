@@ -50,7 +50,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
   private val eventsEmittedSinceLastCacheRefresh: ConcurrentHashMap[String, EmittedEventType] = new ConcurrentHashMap
 
   locally {
-    import monix.execution.Scheduler.{global => scheduler}
+    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
     participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 

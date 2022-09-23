@@ -16,7 +16,7 @@ import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
 import monix.eval.Task
-import monix.execution.Scheduler.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import org.http4s.server.{AuthMiddleware, Server}
 
 object App extends MonixServerApp {
@@ -33,7 +33,7 @@ object App extends MonixServerApp {
       treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService)
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
-      httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, global)
+      httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, CoreScheduler.scheduler)
 
       loadBalancer = appConfiguration.gateway.loadBalancerAlgorithm.create(
         client = httpGatewayClient,
@@ -69,7 +69,7 @@ object App extends MonixServerApp {
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
         allRoutes,
-        global
+        CoreScheduler.scheduler
       )
     } yield server
 }

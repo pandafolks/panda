@@ -23,7 +23,8 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
   private val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import monix.execution.Scheduler.{global => scheduler}
+    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
+
     scheduler.scheduleAtFixedRate(clearEmptyGroupsIntervalInHours.hours, clearEmptyGroupsIntervalInHours.hours) {
       clearEmptyGroups()
         .onErrorRecover { e: Throwable => logger.error(s"Cannot clear ${getClass.getName} empty groups.", e) }

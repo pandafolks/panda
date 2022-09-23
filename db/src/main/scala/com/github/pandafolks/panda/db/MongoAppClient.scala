@@ -20,7 +20,7 @@ import com.mongodb.connection.ClusterConnectionMode
 import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
 

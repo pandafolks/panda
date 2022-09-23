@@ -5,7 +5,7 @@ import monix.eval.Task
 import monix.execution.{BufferCapacity, Cancelable}
 import monix.execution.ChannelType.MPMC
 import monix.reactive.Observable
-import monix.execution.Scheduler.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.slf4j.LoggerFactory
 
 import scala.annotation.unused
@@ -20,20 +20,20 @@ abstract class QueueBasedChangeListener[T] extends ChangeListener[T] {
   @unused("Working as a background job")
   private val addQueuePollLoop: Cancelable = Observable
     .repeatEvalF(addQueue.poll)
-    .observeOn(global)
+    .observeOn(scheduler)
     .mapEval(notifyAboutAddInternal)
     .doOnComplete(Task.eval(logger.warn("addQueuePollLoop has been completed")))
     .doOnError(e => Task(logger.warn("addQueuePollLoop stopped abnormally", e)))
-    .subscribe()(global)
+    .subscribe()(scheduler)
 
   @unused("Working as a background job")
   private val removeQueuePollLoop: Cancelable = Observable
     .repeatEvalF(removeQueue.poll)
-    .observeOn(global)
+    .observeOn(scheduler)
     .mapEval(notifyAboutRemoveInternal)
     .doOnComplete(Task.eval(logger.warn("removeQueuePollLoop has been completed")))
     .doOnError(e => Task(logger.warn("removeQueuePollLoop stopped abnormally", e)))
-    .subscribe()(global)
+    .subscribe()(scheduler)
 
   def notifyAboutAddInternal(item: T): Task[Unit]
 

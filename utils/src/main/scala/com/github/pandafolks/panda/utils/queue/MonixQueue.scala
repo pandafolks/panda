@@ -2,7 +2,7 @@ package com.github.pandafolks.panda.utils.queue
 
 import monix.eval.Task
 import monix.execution.{AsyncQueue, BufferCapacity, ChannelType}
-import monix.execution.Scheduler.Implicits.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
 final class MonixQueue[T] private(queue: AsyncQueue[T]) {
   def poll: Task[T] = Task.deferFuture(queue.poll())

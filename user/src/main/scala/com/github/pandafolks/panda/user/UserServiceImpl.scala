@@ -7,7 +7,7 @@ import com.github.pandafolks.panda.user.token.Token
 import com.github.pandafolks.panda.utils.{AlreadyExists, PandaStartupException, PersistenceError, UndefinedPersistenceError}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.slf4j.LoggerFactory
 import tsec.passwordhashers.jca.BCrypt
 

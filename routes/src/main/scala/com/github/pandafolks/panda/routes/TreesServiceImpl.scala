@@ -28,7 +28,7 @@ final class TreesServiceImpl private(
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import monix.execution.Scheduler.{global => scheduler}
+    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
     if (treesHandlerRefreshIntervalInMillis > 0) {
       // Initial cache load is made by TreesServiceImpl#apply
