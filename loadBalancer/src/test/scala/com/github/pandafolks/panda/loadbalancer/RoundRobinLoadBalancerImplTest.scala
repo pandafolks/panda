@@ -5,7 +5,7 @@ import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.execution.Scheduler.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import org.http4s.dsl.io.Path
 import org.http4s.{Response, Status}
 import org.mockito.Mockito.mock
@@ -19,7 +19,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
-  implicit final val scheduler: Scheduler = global
+  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 

@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.loadbalancer
 import com.comcast.ip4s.SocketAddress
 import com.github.pandafolks.panda.participant.{Healthy, Participant, ParticipantsCache}
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 import org.http4s.Request.Keys
 import org.http4s.dsl.io.Path

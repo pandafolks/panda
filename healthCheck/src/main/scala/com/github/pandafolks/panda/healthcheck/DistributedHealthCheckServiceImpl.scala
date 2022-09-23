@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.healthcheck
 import com.github.pandafolks.panda.nodestracker.NodeTrackerService
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 import monix.execution.schedulers.CanBlock
@@ -50,7 +50,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
   private val eventsEmittedSinceLastCacheRefresh: ConcurrentHashMap[String, EmittedEventType] = new ConcurrentHashMap
 
   locally {
-    import monix.execution.Scheduler.{global => scheduler}
+    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
     participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 

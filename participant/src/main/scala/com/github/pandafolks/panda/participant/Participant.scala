@@ -19,6 +19,8 @@ final case class Participant(
   def isWorking: Boolean = status == Working
 
   def isHealthy: Boolean = health == Healthy
+
+  def isWorkingAndHealthy: Boolean = isWorking && isHealthy
 }
 
 object Participant {

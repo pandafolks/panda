@@ -1,4 +1,4 @@
-package com.github.pandafolks.panda.utils
+package com.github.pandafolks.panda.utils.listener
 
 import monix.eval.Task
 

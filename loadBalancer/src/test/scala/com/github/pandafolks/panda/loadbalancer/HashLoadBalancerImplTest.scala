@@ -5,7 +5,7 @@ import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.execution.Scheduler.global
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import org.http4s.Status
 import org.http4s.dsl.io.Path
 import org.mockito.Mockito.mock
@@ -16,20 +16,22 @@ import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.time.{Seconds, Span}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
-  implicit final val scheduler: Scheduler = global
+  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 
   private def createRandomLBWithSingleGroup(containAvailable: Boolean = true, containUnavailable: Boolean = false): LoadBalancer = {
-    new HashLoadBalancerImpl(
+    val lb = new HashLoadBalancerImpl(
       new ClientStub(),
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable, containUnavailable),
       new ConsistentHashingState()
     )
+    Await.result(Future{Thread.sleep(2000)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
+    lb
   }
 
   "RandomLoadBalancerImpl#route" should "route to the available server" in {
@@ -85,6 +87,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       participantsCache,
       new ConsistentHashingState()
     )
+    Await.result(Future{Thread.sleep(2500)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
 
     loadBalancer.route(
       LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
