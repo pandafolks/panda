@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant
 
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 
 trait ParticipantsCache {

@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.healthcheck
 import com.github.pandafolks.panda.nodestracker.NodeTrackerService
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 import monix.execution.schedulers.CanBlock

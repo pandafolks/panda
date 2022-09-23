@@ -2,7 +2,7 @@ package com.github.pandafolks.panda.participant.event
 
 import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 import monix.execution.{CancelableFuture, Scheduler}
 import org.mockito.ArgumentMatchers.{any, argThat}

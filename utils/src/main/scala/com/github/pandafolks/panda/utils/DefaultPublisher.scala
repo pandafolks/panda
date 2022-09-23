@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.utils
 
 import cats.effect.concurrent.Ref
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 
 final class DefaultPublisher[T] extends Publisher[T] {

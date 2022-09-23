@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.utils
 
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 
 trait Publisher[T] {

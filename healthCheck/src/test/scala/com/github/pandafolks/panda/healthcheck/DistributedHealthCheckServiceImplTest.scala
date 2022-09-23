@@ -4,7 +4,7 @@ import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerService}
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.Scheduler.global

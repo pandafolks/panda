@@ -2,19 +2,19 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.ChangeListener
+import com.github.pandafolks.panda.utils.listener.QueueBasedChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.immutable.{Iterable, TreeMap}
+import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100,
                                    private val clearEmptyGroupsIntervalInHours: Int = 12
-                                  ) extends ChangeListener[Participant] {
+                                  ) extends QueueBasedChangeListener[Participant] {
   @VisibleForTesting
   private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, Participant]] = new ConcurrentHashMap
   @VisibleForTesting
@@ -39,6 +39,8 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
     }
 
   def add(participant: Participant): Unit = {
+    logger.debug(s"Adding the participant [${participant.identifier}] to the state.")
+
     usedIdentifiersWithPositions.computeIfAbsent(participant, _ => { // safe if there is already a requested participant, there won't be duplicates
       var positions = List.empty[Int]
       usedPositionsGroupedByGroup.compute(participant.group, (_, v) => {
@@ -59,19 +61,20 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
     ()
   }
 
-  def remove(participant: Participant): Unit =
+  def remove(participant: Participant): Unit = {
+    logger.debug(s"Removing the participant [${participant.identifier}] from the state.")
+
     Option(usedIdentifiersWithPositions.remove(participant)) // safe if there is no participant
       .foreach(identifierPositions => usedPositionsGroupedByGroup.computeIfPresent(participant.group, (_, tree) => // if there is an entry, there has to be a tree (at least empty)
         identifierPositions.foldLeft(tree)((prevTree, identifierPosition) => prevTree - identifierPosition)
       ))
+  }
 
-  override def notifyAboutAdd(items: Iterable[Participant]): Task[Unit] =
-    Task.parTraverseUnordered(items)(item =>
-      if (item.isWorking && item.isHealthy) Task.eval(add(item)) else Task.eval(remove(item))
-    ).void // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
+  override def notifyAboutAddInternal(item: Participant): Task[Unit] =
+    if (item.isWorkingAndHealthy) Task.eval(add(item)) else Task.eval(remove(item))
+    // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
 
-  override def notifyAboutRemove(items: Iterable[Participant]): Task[Unit] =
-    Task.parTraverseUnordered(items)(item => Task.eval(remove(item))).void
+  override def notifyAboutRemoveInternal(item: Participant): Task[Unit] = Task.eval(remove(item))
 
   private def clearEmptyGroups(): Task[Unit] =
     Task.eval(usedPositionsGroupedByGroup.keySet().forEach(g => {

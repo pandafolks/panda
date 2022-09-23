@@ -4,7 +4,8 @@ import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.{ChangeListener, DefaultPublisher}
+import com.github.pandafolks.panda.utils.DefaultPublisher
+import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 import monix.execution.atomic.AtomicLong
 import org.slf4j.LoggerFactory
@@ -76,7 +77,7 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
         prevCacheStates <- Task.parZip3(
           byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
           workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
-          healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorking && t._2.isHealthy)))
+          healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorkingAndHealthy)))
         )
         _ <- Task.now(lastSeenEventId.transform(_.max(highestEventId)))
 
@@ -117,7 +118,7 @@ object ParticipantsCacheImpl {
       workingParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
-        MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorking && t._2.isHealthy))
+        MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorkingAndHealthy))
     } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshIntervalInMillis)(
       byGroup = participantsByGroupRef,
       workingByGroup = workingParticipantByGroupRef,
