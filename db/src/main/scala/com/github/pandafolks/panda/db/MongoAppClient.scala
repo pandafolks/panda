@@ -86,8 +86,8 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
 
   locally {
     //    creating indexes
-    val mongoClient: MongoClient = MongoClient(settings)
-    val database: MongoDatabase = mongoClient.getDatabase(config.dbName)
+    val tmpMongoClient: MongoClient = MongoClient(settings)
+    val database: MongoDatabase = tmpMongoClient.getDatabase(config.dbName)
 
     (
       Task.fromReactivePublisher(
@@ -183,6 +183,6 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
         )
       ).runSyncUnsafe(1.minutes)
 
-    mongoClient.close()
+    tmpMongoClient.close()
   }
 }
