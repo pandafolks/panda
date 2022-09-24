@@ -1,17 +1,21 @@
 package com.github.pandafolks.panda.httpClient
 
-import cats.effect.{ConcurrentEffect, Resource}
-import com.avast.sst.http4s.client.{Http4sBlazeClientConfig, Http4sBlazeClientModule}
+import cats.effect.{Blocker, Concurrent, ContextShift, Resource, Timer}
+import com.avast.sst.http4s.client.{Http4sEmberClientConfig, Http4sEmberClientModule}
+import fs2.io.tls.TLSContext
+import monix.eval.Task
 import org.http4s.client.Client
 
-import javax.net.ssl.SSLContext
-import scala.concurrent.ExecutionContext
-
 object HttpClient {
-  def create[F[_] : ConcurrentEffect](
-                                       config: Http4sBlazeClientConfig,
-                                       executionContext: ExecutionContext,
-                                       sslContext: Option[SSLContext] = None
-                                     ): Resource[F, Client[F]] =
-    Http4sBlazeClientModule.make[F](config = config, executionContext = executionContext, sslContext = sslContext)
+  private def create[F[_] : Concurrent : Timer : ContextShift](
+                                                                config: Http4sEmberClientConfig,
+                                                                blocker: Option[Blocker] = None,
+                                                                tlsContext: Option[TLSContext] = None
+                                                              ): Resource[F, Client[F]] =
+    Http4sEmberClientModule.make[F](config = config, blocker = blocker, tlsContext = tlsContext)
+
+  def createMonixBased(
+                        config: Http4sEmberClientConfig
+                      ): Resource[Task, Client[Task]] =
+    HttpClient.create[Task](config = config)
 }
