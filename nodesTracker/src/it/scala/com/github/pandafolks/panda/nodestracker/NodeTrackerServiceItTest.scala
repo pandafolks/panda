@@ -1,7 +1,6 @@
 package com.github.pandafolks.panda.nodestracker
 
 import monix.eval.Task
-import monix.execution.Scheduler
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterAll
@@ -14,7 +13,6 @@ import scala.concurrent.duration.DurationInt
 
 class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture with Matchers with ScalaFutures
   with BeforeAndAfterAll {
-  implicit val scheduler: Scheduler = Scheduler.io("node-tracker-service-it-test")
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

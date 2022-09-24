@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.participant.event
 
 import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload}
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
 import monix.execution.Scheduler
@@ -15,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 
 class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach {
-  implicit val scheduler: Scheduler = Scheduler.io("participant-event-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

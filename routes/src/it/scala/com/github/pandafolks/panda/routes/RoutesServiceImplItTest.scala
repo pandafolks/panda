@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.routes
 import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MapperRemovePayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.NotExists
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues}
@@ -15,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 
 class RoutesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach {
-  implicit val scheduler: Scheduler = Scheduler.io("routes-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

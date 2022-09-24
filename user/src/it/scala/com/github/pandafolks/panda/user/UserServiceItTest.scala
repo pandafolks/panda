@@ -7,12 +7,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import cats.implicits.toTraverseOps
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
 class UserServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
-  implicit val scheduler: Scheduler = Scheduler.io("user-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
