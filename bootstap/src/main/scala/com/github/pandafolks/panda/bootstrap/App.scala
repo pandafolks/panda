@@ -3,7 +3,6 @@ package com.github.pandafolks.panda.bootstrap
 import cats.effect.Resource
 import cats.implicits.toSemigroupKOps
 import com.avast.sst.bundle.MonixServerApp
-import com.avast.sst.http4s.client.Http4sBlazeClientModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
@@ -11,20 +10,21 @@ import com.github.pandafolks.panda.bootstrap.init.{DaosAndServicesInitializedAft
 import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
+import com.github.pandafolks.panda.httpClient.HttpClient
 import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, ParticipantsRouting}
 import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
-import monix.eval.Task
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
+import monix.eval.Task
 import org.http4s.server.{AuthMiddleware, Server}
 
 object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
-
       dbAppClient = new MongoAppClient(appConfiguration.db)
+
       daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
 
       participantsCache <- Resource.eval(ParticipantsCacheImpl(
@@ -35,7 +35,9 @@ object App extends MonixServerApp {
 
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
-      httpGatewayClient <- Http4sBlazeClientModule.make[Task](appConfiguration.gatewayClient, CoreScheduler.scheduler)
+      // Http clients
+      httpGatewayClient <- HttpClient.create[Task](appConfiguration.gatewayClient, CoreScheduler.scheduler)
+      httpInternalClient <- HttpClient.create[Task](appConfiguration.internalClient, CoreScheduler.scheduler)
 
       loadBalancer = appConfiguration.gateway.loadBalancerAlgorithm.create(
         client = httpGatewayClient,
@@ -49,9 +51,10 @@ object App extends MonixServerApp {
         participantsCache,
         daosAndServicesInitializedAfterCaches.getNodeTrackerService,
         daosAndServicesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
-        httpGatewayClient
+        httpInternalClient
       )(appConfiguration.healthCheckConfig)
 
+      // routing
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
       authRouting = new AuthRouting(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)
 
@@ -69,6 +72,7 @@ object App extends MonixServerApp {
 
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound
 
+      // main server
       server <- Http4sBlazeServerModule.make[Task](
         appConfiguration.appServer,
         allRoutes,

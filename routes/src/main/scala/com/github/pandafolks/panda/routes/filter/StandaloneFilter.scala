@@ -13,13 +13,13 @@ object StandaloneFilter {
   case object StandaloneOnly extends StandaloneFilter {
     override def filter(mapper: Mapper): Boolean = mapper.isStandalone
 
-    override def filter(mapper: MapperRecordPayload): Boolean = mapper.isStandalone.getOrElse(true)
+    override def filter(mapper: MapperRecordPayload): Boolean = mapper.isStandaloneOrDefault
   }
 
   case object NonStandaloneOnly extends StandaloneFilter {
     override def filter(mapper: Mapper): Boolean = !mapper.isStandalone
 
-    override def filter(mapper: MapperRecordPayload): Boolean = !mapper.isStandalone.getOrElse(true)
+    override def filter(mapper: MapperRecordPayload): Boolean = !mapper.isStandaloneOrDefault
   }
 
   case object All extends StandaloneFilter {

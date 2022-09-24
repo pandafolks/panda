@@ -26,9 +26,9 @@ object HttpMethod {
     override def getName: String = "DELETE"
   }
 
-  val values: List[HttpMethod] = List(Get(), Post(), Put(), Patch(), Delete())
+  final val values: List[HttpMethod] = List(Get(), Post(), Put(), Patch(), Delete())
 
-  val valuesByName: Map[String, HttpMethod] =
+  final val valuesByName: Map[String, HttpMethod] =
     values.foldLeft(Map.empty[String, HttpMethod])((prevState, header) => prevState + (header.getName.toUpperCase -> header))
 
   def getByName(name: String): HttpMethod = valuesByName.getOrElse(name.toUpperCase(), Get())

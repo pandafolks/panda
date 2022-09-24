@@ -16,6 +16,7 @@ import pureconfig.generic.auto._
 final case class AppConfiguration(
                                    appServer: Http4sBlazeServerConfig,
                                    gatewayClient: Http4sBlazeClientConfig,
+                                   internalClient: Http4sBlazeClientConfig,
                                    gateway: GatewayConfig,
                                    db: DbConfig,
                                    consistency: ConsistencyConfig,
