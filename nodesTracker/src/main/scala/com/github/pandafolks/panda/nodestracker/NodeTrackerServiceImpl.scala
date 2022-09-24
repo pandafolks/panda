@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.nodestracker
 
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.utils.PandaStartupException
 import monix.eval.Task
 import monix.execution.schedulers.CanBlock
@@ -7,8 +8,11 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.DurationInt
 
-final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
-  private val fullConsistencyMaxDelayInMillis: Int) extends NodeTrackerService {
+final class NodeTrackerServiceImpl(
+                                    private val nodeTrackerDao: NodeTrackerDao,
+                                    private val backgroundJobsRegistry: BackgroundJobsRegistry,
+                                  )(
+                                    private val fullConsistencyMaxDelayInMillis: Int) extends NodeTrackerService {
 
   import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
@@ -26,15 +30,14 @@ final class NodeTrackerServiceImpl(private val nodeTrackerDao: NodeTrackerDao)(
     }, id => id)
 
   locally {
-    scheduler.scheduleAtFixedRate(0.seconds, nodeTrackerRegistrationIntervalInMillis.millisecond) {
-      nodeTrackerDao.notify(nodeId)
+    backgroundJobsRegistry.addJobAtFixedRate(0.seconds, nodeTrackerRegistrationIntervalInMillis.millisecond)(
+      () => nodeTrackerDao.notify(nodeId)
         .map {
           case Right(_) => ()
           case Left(error) => logger.error(s"Cannot notify cluster about this instance being alive [id: $nodeId]. Reason: ${error.getMessage}"); ()
-        }
-        .runToFuture(scheduler)
-      ()
-    }
+        },
+      "NodeTrackerServiceNotify"
+    )
   }
 
   override def getNodeId: String = nodeId

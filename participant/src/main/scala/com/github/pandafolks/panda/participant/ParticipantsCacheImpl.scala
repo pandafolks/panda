@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.participant
 
 import cats.effect.concurrent.Ref
 import cats.implicits.toTraverseOps
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.ChangeListener
@@ -15,7 +16,8 @@ import scala.concurrent.duration.DurationInt
 
 final class ParticipantsCacheImpl private( // This constructor cannot be used directly
                                            private val participantEventService: ParticipantEventService,
-                                           private val cacheRefreshIntervalInMillis: Int
+                                           private val backgroundJobsRegistry: BackgroundJobsRegistry,
+                                           private val cacheRefreshIntervalInMillis: Int,
                                          )(
                                            // It is much more efficient to keep multiple cache instances instead of filtering on each cache call.
                                            private val byGroup: Ref[Task, MultiDict[Group, Participant]],
@@ -26,16 +28,12 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
-
     if (cacheRefreshIntervalInMillis > 0) {
       // Initial cache load is made by ParticipantsCacheImpl#apply
-      scheduler.scheduleAtFixedRate(cacheRefreshIntervalInMillis.millisecond, cacheRefreshIntervalInMillis.millisecond) {
-        refreshCache()
-          .onErrorRecover { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) }
-          .runToFuture(scheduler)
-        ()
-      }
+      backgroundJobsRegistry.addJobAtFixedRate(cacheRefreshIntervalInMillis.millisecond, cacheRefreshIntervalInMillis.millisecond)(
+        () => refreshCache().onErrorRecover { e: Throwable => logger.error(s"Cannot refresh ${getClass.getName} cache.", e) },
+        "ParticipantsCacheRefresh"
+      )
     }
   }
 
@@ -70,33 +68,35 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
 
   private def refreshCache(): Task[Unit] = {
     participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.get()).flatMap {
-      case true => for {
-        participantsWithHighestRetrievedEventId <- participantEventService.constructAllParticipants()
-        (participants, highestEventId) = participantsWithHighestRetrievedEventId
-        groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
-        prevCacheStates <- Task.parZip3(
-          byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
-          workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
-          healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorkingAndHealthy)))
-        )
-        _ <- Task.now(lastSeenEventId.transform(_.max(highestEventId)))
+      case true =>
+        logger.info("Detected new participants' events - refreshing the caches")
+        for {
+          participantsWithHighestRetrievedEventId <- participantEventService.constructAllParticipants()
+          (participants, highestEventId) = participantsWithHighestRetrievedEventId
+          groupsWithParticipants <- Task.eval(participants.map(p => (p.group, p)))
+          prevCacheStates <- Task.parZip3(
+            byGroup.getAndSet(MultiDict.from(groupsWithParticipants)),
+            workingByGroup.set(MultiDict.from(groupsWithParticipants.filter(_._2.isWorking))),
+            healthyByGroup.set(MultiDict.from(groupsWithParticipants.filter(t => t._2.isWorkingAndHealthy)))
+          )
+          _ <- Task.now(lastSeenEventId.transform(_.max(highestEventId)))
 
-        (prevByGroupCacheState, _, _) = prevCacheStates
-        _ <- Task.parZip2(
-          // Find all participants that were present inside the cache, but either no longer are or some of their
-          // properties changed and send an event to listeners about remove action.
-          Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
-            .flatMap(participantsNoMorePresentInCache =>
-              publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
-            ),
-          // Send an event about gotten participants. The listener should handle duplicates on its own.
-          // There is a place for optimization - we know that e.g. ConsistentHashingState discards all participants that
-          // are either not working or not healthy. Because of that, we could simply put here healthyByGroup values.
-          // If the participant was working/healthy and is not anymore, it will be in `participantsNoMorePresentInCache` anyway.
-          // However, let's leave it as it is in order to have more generic listeners and go back here once we reach the bottleneck.
-          publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
-        )
-      } yield ()
+          (prevByGroupCacheState, _, _) = prevCacheStates
+          _ <- Task.parZip2(
+            // Find all participants that were present inside the cache, but either no longer are or some of their
+            // properties changed and send an event to listeners about remove action.
+            Task.eval(prevByGroupCacheState.values.toSet.removedAll(participants))
+              .flatMap(participantsNoMorePresentInCache =>
+                publisher.getListeners.flatMap(_.map(_.notifyAboutRemove(participantsNoMorePresentInCache)).sequence)
+              ),
+            // Send an event about gotten participants. The listener should handle duplicates on its own.
+            // There is a place for optimization - we know that e.g. ConsistentHashingState discards all participants that
+            // are either not working or not healthy. Because of that, we could simply put here healthyByGroup values.
+            // If the participant was working/healthy and is not anymore, it will be in `participantsNoMorePresentInCache` anyway.
+            // However, let's leave it as it is in order to have more generic listeners and go back here once we reach the bottleneck.
+            publisher.getListeners.flatMap(_.map(_.notifyAboutAdd(participants)).sequence)
+          )
+        } yield ()
 
       case false => Task.unit
     }
@@ -106,6 +106,7 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
 object ParticipantsCacheImpl {
   def apply(
              participantEventService: ParticipantEventService,
+             backgroundJobsRegistry: BackgroundJobsRegistry,
              initParticipants: List[Participant] = List.empty,
              cacheRefreshIntervalInMillis: Int = -1 // By default, the background job is turned off and the cache is filled with initParticipants forever.
            ): Task[ParticipantsCacheImpl] =
@@ -119,7 +120,7 @@ object ParticipantsCacheImpl {
         MultiDict.from(groupsWithParticipants.filter(_._2.isWorking)))
       healthyParticipantByGroupRef <- Ref.of[Task, MultiDict[Group, Participant]](
         MultiDict.from(groupsWithParticipants).filter(t => t._2.isWorkingAndHealthy))
-    } yield new ParticipantsCacheImpl(participantEventService, cacheRefreshIntervalInMillis)(
+    } yield new ParticipantsCacheImpl(participantEventService, backgroundJobsRegistry, cacheRefreshIntervalInMillis)(
       byGroup = participantsByGroupRef,
       workingByGroup = workingParticipantByGroupRef,
       healthyByGroup = healthyParticipantByGroupRef,

@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.loadbalancer
 
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
@@ -28,7 +29,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
     val lb = new HashLoadBalancerImpl(
       new ClientStub(),
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable, containUnavailable),
-      new ConsistentHashingState()
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))()
     )
     Await.result(Future{Thread.sleep(2000)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
     lb
@@ -81,11 +82,11 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       Participant("218.214.92.75", 4002, Group("cars"))
     )
     val participantsCache: ParticipantsCache = Await.result(ParticipantsCacheImpl(
-      mockParticipantEventService, tempParticipants).runToFuture, 5.seconds)
+      mockParticipantEventService, new InMemoryBackgroundJobsRegistryImpl(scheduler), tempParticipants).runToFuture, 5.seconds)
     val loadBalancer: LoadBalancer = new HashLoadBalancerImpl(
       client,
       participantsCache,
-      new ConsistentHashingState()
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))()
     )
     Await.result(Future{Thread.sleep(2500)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
 

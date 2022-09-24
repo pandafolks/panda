@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.participant
 
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import monix.execution.Scheduler
@@ -20,6 +21,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   private def createCache(): ParticipantsCacheImpl =
     Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1"),
         Participant("59.145.84.52", 4001, Group("cars"), "id2"),
@@ -47,6 +49,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   "ParticipantsCacheImpl#getAllWorkingParticipants" should "return all working participants" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
         Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working),
@@ -64,6 +67,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   "ParticipantsCacheImpl#getAllHealthyParticipants" should "return all working participants" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
         Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
@@ -101,6 +105,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   "ParticipantsCacheImpl#getWorkingParticipantsAssociatedWithGroup" should "return appropriate working participants for the requested group" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
         Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), Working),
@@ -117,6 +122,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   it should "return empty vector if there are no working elements associated with the group" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking),
         Participant("59.145.84.52", 4001, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking),
@@ -130,6 +136,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   "ParticipantsCacheImpl#getHealthyParticipantsAssociatedWithGroup" should "return appropriate healthy (and working at the same time) participants for the requested group" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
         Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),
@@ -150,6 +157,7 @@ class ParticipantsCacheImplTest extends AsyncFlatSpec {
   it should "return empty vector if there are no healthy elements associated with the group" in {
     val cache = Await.result(ParticipantsCacheImpl(
       mockParticipantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List(
         Participant("59.145.84.51", 4001, Group("cars"), "id1", HealthcheckInfo("/heartbeat"), NotWorking, Unhealthy),
         Participant("59.145.84.51", 4002, Group("cars"), "id2", HealthcheckInfo("/heartbeat"), NotWorking, Healthy),

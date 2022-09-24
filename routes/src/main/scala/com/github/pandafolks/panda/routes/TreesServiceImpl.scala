@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.routes
 
 import cats.effect.Resource
 import cats.effect.concurrent.Ref
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
 import com.google.common.annotations.VisibleForTesting
@@ -16,6 +17,7 @@ import scala.concurrent.duration.DurationInt
 final class TreesServiceImpl private(
                                       private val mapperDao: MapperDao,
                                       private val prefixDao: PrefixDao,
+                                      private val backgroundJobsRegistry: BackgroundJobsRegistry,
                                       private val treesHandlerRefreshIntervalInMillis: Int
                                     )(
                                       private val routesTreesHandler: Ref[Task, RoutesTreesHandler],
@@ -28,16 +30,13 @@ final class TreesServiceImpl private(
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
-
     if (treesHandlerRefreshIntervalInMillis > 0) {
       // Initial cache load is made by TreesServiceImpl#apply
-      scheduler.scheduleAtFixedRate(treesHandlerRefreshIntervalInMillis.millisecond, treesHandlerRefreshIntervalInMillis.millisecond) {
-        reloadTreesIfNecessary()
-          .onErrorRecover { e: Throwable => logger.error(s"Cannot reload ${RoutesTreesHandler.getClass.getName}", e) }
-          .runToFuture(scheduler)
-        ()
-      }
+      backgroundJobsRegistry.addJobAtFixedRate(treesHandlerRefreshIntervalInMillis.millisecond, treesHandlerRefreshIntervalInMillis.millisecond)(
+        () => reloadTreesIfNecessary()
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot reload ${RoutesTreesHandler.getClass.getName}", e) },
+          "TreesServiceReloadTrees"
+        )
     }
   }
 
@@ -58,14 +57,16 @@ final class TreesServiceImpl private(
         latestSeenPrefixTimestamp.get.flatMap(t => prefixDao.checkIfThereAreNewerPrefixes(t)(prefixOperator))
       )
       data <- Task.parZip2(
-        if (needsUpdate._1)
+        if (needsUpdate._1) {
+          logger.info("Detected changes inside Mappers - refreshing the Mappers' caches")
           mapperDao.findAll(mapperOperator).toListL.map(_.groupBy(_.httpMethod)).map(Some(_))
-        else Task.now(Option.empty),
-        if (needsUpdate._2)
+        } else Task.now(Option.empty),
+        if (needsUpdate._2) {
+          logger.info("Detected changes inside Prefixes - refreshing the Prefixes' caches")
           prefixDao.findAll(prefixOperator)
             .foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
             .firstOptionL
-        else Task.now(Option.empty)
+        } else Task.now(Option.empty)
       )
       _ <- data match {
         case (Some(mappers), Some(prefixes)) =>
@@ -85,9 +86,15 @@ final class TreesServiceImpl private(
 }
 
 object TreesServiceImpl {
-  def apply(mapperDao: MapperDao, prefixDao: PrefixDao
-           )(c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])]
-           )(treesHandlerRefreshIntervalInMillis: Int): Task[TreesService] =
+  def apply(
+             mapperDao: MapperDao,
+             prefixDao: PrefixDao,
+             backgroundJobsRegistry: BackgroundJobsRegistry,
+           )(
+             c: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])]
+           )(
+             treesHandlerRefreshIntervalInMillis: Int
+           ): Task[TreesService] =
     c.use {
       case (mapperOperator, prefixOperator) => for {
         data <- Task.parZip2(
@@ -99,7 +106,7 @@ object TreesServiceImpl {
         routesTreesHandler <- Ref.of[Task, RoutesTreesHandler](RoutesTreesHandler.construct(data._1, data._2))
         latestSeenMappingTimestamp <- Ref.of[Task, Long](findLatestSeenMappingTimestamp(data._1))
         latestSeenPrefixTimestamp <- Ref.of[Task, Long](findLatestSeenPrefixTimestamp(data._2))
-      } yield new TreesServiceImpl(mapperDao, prefixDao, treesHandlerRefreshIntervalInMillis)(
+      } yield new TreesServiceImpl(mapperDao, prefixDao, backgroundJobsRegistry, treesHandlerRefreshIntervalInMillis)(
         routesTreesHandler, latestSeenMappingTimestamp, latestSeenPrefixTimestamp)(c)
     }
 

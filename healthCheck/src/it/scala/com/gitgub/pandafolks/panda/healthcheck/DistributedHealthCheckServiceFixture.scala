@@ -1,10 +1,12 @@
 package com.gitgub.pandafolks.panda.healthcheck
 
 import cats.effect.Resource
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.healthcheck.{DistributedHealthCheckServiceImpl, HealthCheckConfig, UnsuccessfulHealthCheck, UnsuccessfulHealthCheckDaoImpl}
 import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerDao, NodeTrackerDaoImpl, NodeTrackerService, NodeTrackerServiceImpl}
 import com.github.pandafolks.panda.participant.{ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEvent, ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
@@ -19,7 +21,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
-  implicit val scheduler: Scheduler = Scheduler.io("distributed-health-check-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
@@ -50,6 +52,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
 
   protected val participantsCache: ParticipantsCache = Await.result(ParticipantsCacheImpl(
     participantEventService = participantEventService,
+    new InMemoryBackgroundJobsRegistryImpl(scheduler),
     List.empty,
     -1 // background refresh job disabled
   ).runToFuture, 5.seconds)
@@ -59,7 +62,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
   private val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
-  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(1000)
+  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
 
   protected val unsuccessfulHealthCheckColName: String = randomString(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
   private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)
@@ -71,7 +74,8 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
     participantsCache,
     nodeTrackerService,
     unsuccessfulHealthCheckDao,
-    new ClientStub()
+    new ClientStub(),
+    new InMemoryBackgroundJobsRegistryImpl(scheduler)
   )(HealthCheckConfig(-1, 2)) // scheduler turned off
 
   protected val backgroundJobPrivateMethod: PrivateMethod[Task[Unit]] = PrivateMethod[Task[Unit]](Symbol("backgroundJob"))

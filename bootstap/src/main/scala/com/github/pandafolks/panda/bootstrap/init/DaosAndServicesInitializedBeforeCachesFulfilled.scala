@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.bootstrap.init
 
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
@@ -16,7 +17,8 @@ import monix.eval.Task
 final class DaosAndServicesInitializedBeforeCachesFulfilled(
                                                             private val dbAppClient: DbAppClient,
                                                             private val appConfiguration: AppConfiguration,
-                                                          ) extends DaosAndServicesInitialization {
+                                                            private val backgroundJobsRegistry: BackgroundJobsRegistry,
+                                                           ) extends DaosAndServicesInitialization {
 
   private val sequenceDao: SequenceDao = new SequenceDao()
 
@@ -36,7 +38,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixDao: PrefixDao = new PrefixDaoImpl()
   private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
-  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
+  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao, backgroundJobsRegistry)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
 
   def getUserService: UserService = userService
 

@@ -89,6 +89,8 @@ object Dependencies {
 
   val httpClientDependencies: Seq[ModuleID] = CommonDependencies
 
+  val backgroundJobsRegistryDependencies: Seq[ModuleID] = CommonDependencies
+
   val utilsDependencies: Seq[ModuleID] = Seq(
     scalaCacheCore,
     scalaCacheGuava,
