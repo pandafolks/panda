@@ -87,6 +87,8 @@ object Dependencies {
 
   val nodesTrackerDependencies: Seq[ModuleID] = CommonDependencies
 
+  val httpClientDependencies: Seq[ModuleID] = CommonDependencies
+
   val utilsDependencies: Seq[ModuleID] = Seq(
     scalaCacheCore,
     scalaCacheGuava,

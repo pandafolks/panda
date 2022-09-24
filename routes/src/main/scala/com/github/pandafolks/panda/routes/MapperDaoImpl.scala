@@ -23,7 +23,7 @@ final class MapperDaoImpl extends MapperDao {
       getUniqueMapperFilter(unifiedRoute, unifiedHttpMethod),
       Updates.combine(
         Updates.setOnInsert(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingPayload(mapperRecordDto.mapping)),
-        Updates.setOnInsert(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandalone.getOrElse(true)),
+        Updates.setOnInsert(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandaloneOrDefault),
         Updates.setOnInsert(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)
@@ -42,7 +42,7 @@ final class MapperDaoImpl extends MapperDao {
       getUniqueMapperFilter(unifiedRoute, unifiedHttpMethod),
       Updates.combine(
         Updates.set(MAPPING_CONTENT_PROPERTY_NAME, MappingContent.fromMappingPayload(mapperRecordDto.mapping)),
-        Updates.set(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandalone.getOrElse(true)),
+        Updates.set(IS_STANDALONE_PROPERTY_NAME, mapperRecordDto.isStandaloneOrDefault),
         Updates.set(LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis())
       ),
       updateOptions = UpdateOptions().upsert(true)

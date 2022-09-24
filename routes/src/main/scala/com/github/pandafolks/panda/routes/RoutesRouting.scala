@@ -58,7 +58,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
 
   override def getRoutesWithAuth: AuthedRoutes[User, Task] = routes
 
-
+  // Encoders and Decoders:
   implicit val routesResourcePayloadDecoder: EntityDecoder[Task, RoutesResourcePayload] = jsonOf[Task, RoutesResourcePayload]
   implicit val routesResourcePayloadEncoder: EntityEncoder[Task, RoutesResourcePayload] = jsonEncoderOf[Task, RoutesResourcePayload]
 
@@ -75,6 +75,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
   implicit val routesAndPrefixesModificationResultPayloadEncoder: EntityEncoder[Task, RoutesAndPrefixesModificationResultPayload] = jsonEncoderOf[Task, RoutesAndPrefixesModificationResultPayload]
   implicit val routesRemovePayloadDecoder: EntityDecoder[Task, RoutesRemovePayload] = jsonOf[Task, RoutesRemovePayload]
 
+  // Filters:
   object OptionalGroupFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("group")
 
   implicit val filterStandaloneParamDecoder: QueryParamDecoder[StandaloneFilter] = QueryParamDecoder[Boolean].map {
