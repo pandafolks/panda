@@ -1,8 +1,8 @@
 import sbt._
 
 object Dependencies {
-  private val sstBundleMonixHttp4sBlaze = "com.avast" %% "sst-bundle-monix-http4s-blaze" % Versions.sst
-  private val sstHttp4sClientBlaze = "com.avast" %% "sst-http4s-client-blaze" % Versions.sst
+  private val sstBundleMonixHttp4sEmber = "com.avast" %% "sst-bundle-monix-http4s-ember" % Versions.sst
+  private val sstHttp4sClientEmber = "com.avast" %% "sst-http4s-client-ember" % Versions.sst
   private val logbackClassic = "ch.qos.logback" % "logback-classic" % Versions.logback
   private val scalaTest = "org.scalatest" %% "scalatest" % Versions.scalaTest
   private val mockito = "org.scalatestplus" %% "mockito-4-5" % Versions.mockito
@@ -10,7 +10,7 @@ object Dependencies {
   private val testMongoContainer = "com.dimafeng" %% "testcontainers-scala-mongodb" % Versions.testContainers
   private val collectionContrib = "org.scala-lang.modules" %% "scala-collection-contrib" % Versions.collectionContrib
   private val tsec = "io.github.jmcardon" %% "tsec-http4s" % Versions.tsec
-  private val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.14" // pay attention - needs to be in alignment with the version present in sstBundleMonixHttp4sBlaze
+  private val http4sCirce = "org.http4s" %% "http4s-circe" % "0.22.14" // pay attention - needs to be in alignment with the version present in sstBundleMonixHttp4sEmber
   private val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   private val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   private val tsecPassword = "io.github.jmcardon" %% "tsec-password" % Versions.tsec
@@ -52,8 +52,8 @@ object Dependencies {
   )
 
   private val CommonDependencies = Seq(
-    sstBundleMonixHttp4sBlaze,
-    sstHttp4sClientBlaze,
+    sstBundleMonixHttp4sEmber,
+    sstHttp4sClientEmber,
     logbackClassic,
     collectionContrib,
     http4sCirce,

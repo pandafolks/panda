@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.bootstrap
 import cats.effect.Resource
 import cats.implicits.toSemigroupKOps
 import com.avast.sst.bundle.MonixServerApp
-import com.avast.sst.http4s.server.Http4sBlazeServerModule
+import com.avast.sst.http4s.server.Http4sEmberServerModule
 import com.avast.sst.pureconfig.PureConfigModule
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.bootstrap.init.{DaosAndServicesInitializedAfterCachesFulfilled, DaosAndServicesInitializedBeforeCachesFulfilled}
@@ -15,7 +15,6 @@ import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, Participa
 import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import org.http4s.server.{AuthMiddleware, Server}
 
@@ -36,8 +35,8 @@ object App extends MonixServerApp {
       daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
 
       // Http clients
-      httpGatewayClient <- HttpClient.create[Task](appConfiguration.gatewayClient, CoreScheduler.scheduler)
-      httpInternalClient <- HttpClient.create[Task](appConfiguration.internalClient, CoreScheduler.scheduler)
+      httpGatewayClient <- HttpClient.createMonixBased(appConfiguration.gatewayClient)
+      httpInternalClient <- HttpClient.createMonixBased(appConfiguration.internalClient)
 
       loadBalancer = appConfiguration.gateway.loadBalancerAlgorithm.create(
         client = httpGatewayClient,
@@ -73,10 +72,9 @@ object App extends MonixServerApp {
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound
 
       // main server
-      server <- Http4sBlazeServerModule.make[Task](
+      server <- Http4sEmberServerModule.make[Task](
         appConfiguration.appServer,
-        allRoutes,
-        CoreScheduler.scheduler
+        allRoutes
       )
     } yield server
 }
