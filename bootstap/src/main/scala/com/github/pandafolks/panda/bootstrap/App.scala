@@ -5,6 +5,7 @@ import cats.implicits.toSemigroupKOps
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.http4s.server.Http4sEmberServerModule
 import com.avast.sst.pureconfig.PureConfigModule
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.bootstrap.init.{DaosAndServicesInitializedAfterCachesFulfilled, DaosAndServicesInitializedBeforeCachesFulfilled}
 import com.github.pandafolks.panda.db.MongoAppClient
@@ -15,6 +16,7 @@ import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, Participa
 import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import org.http4s.server.{AuthMiddleware, Server}
 
@@ -23,16 +25,18 @@ object App extends MonixServerApp {
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
       dbAppClient = new MongoAppClient(appConfiguration.db)
+      backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(CoreScheduler.scheduler)
 
-      daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
+      daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration, backgroundJobsRegistry)
 
       participantsCache <- Resource.eval(ParticipantsCacheImpl(
         daosAndServicesInitializedBeforeCaches.getParticipantEventService,
+        backgroundJobsRegistry,
         cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
-      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService) // treesService is some kind of cache/
+      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService) // treesService is some kind of cache.
 
-      daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration)
+      daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration, backgroundJobsRegistry)
 
       // Http clients
       httpGatewayClient <- HttpClient.createMonixBased(appConfiguration.gatewayClient)
@@ -41,7 +45,8 @@ object App extends MonixServerApp {
       loadBalancer = appConfiguration.gateway.loadBalancerAlgorithm.create(
         client = httpGatewayClient,
         participantsCache = participantsCache,
-        appConfiguration.gateway.loadBalancerRetries
+        appConfiguration.gateway.loadBalancerRetries,
+        backgroundJobsRegistry = Some(backgroundJobsRegistry)
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, treesService)
 
@@ -50,7 +55,8 @@ object App extends MonixServerApp {
         participantsCache,
         daosAndServicesInitializedAfterCaches.getNodeTrackerService,
         daosAndServicesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
-        httpInternalClient
+        httpInternalClient,
+        backgroundJobsRegistry
       )(appConfiguration.healthCheckConfig)
 
       // routing

@@ -1,14 +1,19 @@
 package com.github.pandafolks.panda.nodestracker
 
 import cats.effect.Resource
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
+import monix.execution.Scheduler
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait NodeTrackerFixture {
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
     DockerImageName.parse("mongo").withTag("4.0.10")
@@ -28,7 +33,7 @@ trait NodeTrackerFixture {
   protected val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
 
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
-  protected val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao)(1000)
+  protected val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }

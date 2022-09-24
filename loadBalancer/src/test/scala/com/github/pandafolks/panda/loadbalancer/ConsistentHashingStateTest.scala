@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.loadbalancer
 
 import cats.implicits.toTraverseOps
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
@@ -24,7 +25,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   implicit final val scheduler: Scheduler = CoreScheduler.scheduler
 
   "get" should "always return appropriate identifier" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
 
     val r = new Random(42)
     val group1 = Group("cars")
@@ -78,7 +79,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   }
 
   it should "return None if there is no requested group / the group is empty" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -102,7 +103,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   }
 
   "add" should "not lose any data during concurrent invocations (one group case)" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 600)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 600)
     val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
@@ -124,7 +125,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   }
 
     it should "not lose any data during concurrent invocations (multiple groups case)" in {
-      val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+      val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
       val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
       val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
@@ -154,7 +155,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
 
       "remove" should "delete only requested identifier" in {
-        val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+        val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
         val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
         val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
@@ -177,7 +178,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
       }
 
   it should "delete only requested identifiers (all identifiers from single group)" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
     val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
@@ -209,7 +210,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   }
 
   it should "delete only requested identifiers (multiple groups)" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
     val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val usedIdentifiersWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedIdentifiersWithPositions"))
 
@@ -249,7 +250,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   }
 
   it should "clear empty groups" in {
-    val underTest = new ConsistentHashingState(positionsPerIdentifier = 500)
+    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerIdentifier = 500)
     val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val underTestMethod = PrivateMethod[Task[Unit]](Symbol("clearEmptyGroups"))
 

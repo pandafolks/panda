@@ -1,11 +1,12 @@
 package com.github.pandafolks.panda.loadbalancer
 
-import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
+import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import org.http4s.dsl.io.Path
 import org.http4s.{Response, Status}
 import org.mockito.Mockito.mock
@@ -66,7 +67,7 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
       Participant("218.214.92.75", 4002, Group("cars"))
     )
     val participantsCache: ParticipantsCache = Await.result(
-      ParticipantsCacheImpl(mockParticipantEventService, tempParticipants).runToFuture, 5.seconds)
+      ParticipantsCacheImpl(mockParticipantEventService, new InMemoryBackgroundJobsRegistryImpl(scheduler), tempParticipants).runToFuture, 5.seconds)
     val loadBalancer: LoadBalancer = new RoundRobinLoadBalancerImpl(client, participantsCache)
 
     loadBalancer.route(

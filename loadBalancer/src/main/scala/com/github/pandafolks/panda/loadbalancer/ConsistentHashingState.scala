@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.loadbalancer
 
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.QueueBasedChangeListener
@@ -12,8 +13,11 @@ import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100,
-                                   private val clearEmptyGroupsIntervalInHours: Int = 12
+final class ConsistentHashingState(
+                                    private val backgroundJobsRegistry: BackgroundJobsRegistry,
+                                  )(
+                                    private val positionsPerIdentifier: Int = 100,
+                                    private val clearEmptyGroupsIntervalInHours: Int = 12
                                   ) extends QueueBasedChangeListener[Participant] {
   @VisibleForTesting
   private val usedPositionsGroupedByGroup: ConcurrentHashMap[Group, TreeMap[Int, Participant]] = new ConcurrentHashMap
@@ -23,14 +27,11 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
   private val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   locally {
-    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
-
-    scheduler.scheduleAtFixedRate(clearEmptyGroupsIntervalInHours.hours, clearEmptyGroupsIntervalInHours.hours) {
-      clearEmptyGroups()
-        .onErrorRecover { e: Throwable => logger.error(s"Cannot clear ${getClass.getName} empty groups.", e) }
-        .runToFuture(scheduler)
-      ()
-    }
+    backgroundJobsRegistry.addJobAtFixedRate(clearEmptyGroupsIntervalInHours.hours, clearEmptyGroupsIntervalInHours.hours)(
+      () => clearEmptyGroups()
+        .onErrorRecover { e: Throwable => logger.error(s"Cannot clear ${getClass.getName} empty groups.", e) },
+      "ConsistentHashingStateClearEmptyGroups"
+    )
   }
 
   def get(group: Group, requestedPosition: Int): Option[Participant] =
@@ -73,7 +74,7 @@ final class ConsistentHashingState(private val positionsPerIdentifier: Int = 100
 
   override def notifyAboutAddInternal(item: Participant): Task[Unit] =
     if (item.isWorkingAndHealthy) Task.eval(add(item)) else Task.eval(remove(item))
-    // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
+  // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
 
   override def notifyAboutRemoveInternal(item: Participant): Task[Unit] = Task.eval(remove(item))
 

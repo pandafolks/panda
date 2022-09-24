@@ -1,8 +1,10 @@
 package com.github.pandafolks.panda.participant.event
 
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.ChangeListener
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.{CancelableFuture, Scheduler}
 import org.mockito.ArgumentMatchers.{any, argThat}
@@ -19,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach with PrivateMethodTester {
 
-  implicit val scheduler: Scheduler = Scheduler.io("participant-cache-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
@@ -32,6 +34,7 @@ class ParticipantsCacheImplItTest extends AsyncFlatSpec with ParticipantEventFix
   private def createParticipantsCacheWithMockedListener(): (ParticipantsCache, ChangeListener[Participant]) = {
     val cache = Await.result(ParticipantsCacheImpl(
       participantEventService = participantEventService,
+      new InMemoryBackgroundJobsRegistryImpl(scheduler),
       List.empty,
       -1 // background refresh job disabled
     ).runToFuture, 5.seconds)

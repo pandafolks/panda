@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.user.token
 
 import com.github.pandafolks.panda.user.{User, UserTokenFixture, tagUUIDAsUserId}
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.reactormonk.CryptoBits
@@ -15,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 
 class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with PrivateMethodTester {
-  implicit val scheduler: Scheduler = Scheduler.io("user-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

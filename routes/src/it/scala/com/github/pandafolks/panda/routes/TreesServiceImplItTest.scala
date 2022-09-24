@@ -1,9 +1,11 @@
 package com.github.pandafolks.panda.routes
 
 import cats.effect.concurrent.Ref
+import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.MappingContent
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesResourcePayload}
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.execution.Scheduler
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, PrivateMethodTester}
 import org.scalatest.concurrent.ScalaFutures
@@ -19,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 
 class TreesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Matchers with ScalaFutures
   with EitherValues with BeforeAndAfterAll with BeforeAndAfterEach with PrivateMethodTester {
-  implicit val scheduler: Scheduler = Scheduler.io("trees-service-it-test")
+  implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
@@ -31,7 +33,7 @@ class TreesServiceImplItTest extends AsyncFlatSpec with RoutesFixture with Match
   }.runToFuture, 5.seconds)
 
   private def createTreesServiceImpl(): Task[TreesService] =
-    TreesServiceImpl(mapperDao = mapperDao, prefixDao = prefixDao)(mappersAndPrefixesConnection)(0) //background job turned off
+    TreesServiceImpl(mapperDao = mapperDao, prefixDao = prefixDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(mappersAndPrefixesConnection)(0) //background job turned off
 
   private val payload1 = RoutesResourcePayload(
     mappers = Some(List(

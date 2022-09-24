@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.healthcheck
 
+import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.nodestracker.NodeTrackerService
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
@@ -29,6 +30,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
                                               private val nodeTrackerService: NodeTrackerService,
                                               private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
                                               private val client: Client[Task],
+                                              private val backgroundJobsRegistry: BackgroundJobsRegistry,
                                              )(private val healthCheckConfig: HealthCheckConfig)
   extends HealthCheckService with ChangeListener[Participant] {
 
@@ -55,12 +57,11 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
     participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 
     if (healthCheckConfig.callsInterval > 0 && healthCheckConfig.numberOfFailuresNeededToReact > 0) {
-      scheduler.scheduleAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds) {
-        backgroundJob()
-          .onErrorRecover { e: Throwable => logger.error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e) }
-          .runToFuture(scheduler)
-        ()
-      }
+      backgroundJobsRegistry.addJobAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds)(
+        () => backgroundJob()
+          .onErrorRecover { e: Throwable => logger.error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e) },
+        "DistributedHealthCheck"
+      )
     }
   }
 
