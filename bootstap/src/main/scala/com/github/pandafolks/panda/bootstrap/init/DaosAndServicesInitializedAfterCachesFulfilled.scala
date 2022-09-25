@@ -28,7 +28,7 @@ final class DaosAndServicesInitializedAfterCachesFulfilled(
       dbName = dbAppClient.getDbName
     )(
       fullConsistencyMaxDelayInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
-    )
+    )()
 
   }
 

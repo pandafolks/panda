@@ -3,9 +3,10 @@ package com.gitgub.pandafolks.panda.healthcheck
 import cats.effect.Resource
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.healthcheck.{DistributedHealthCheckServiceImpl, HealthCheckConfig, UnsuccessfulHealthCheck, UnsuccessfulHealthCheckDaoImpl}
-import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerDao, NodeTrackerDaoImpl, NodeTrackerService, NodeTrackerServiceImpl}
+import com.github.pandafolks.panda.nodestracker
+import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerService}
+import com.github.pandafolks.panda.participant.event._
 import com.github.pandafolks.panda.participant.{ParticipantsCache, ParticipantsCacheImpl}
-import com.github.pandafolks.panda.participant.event.{ParticipantEvent, ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
@@ -59,10 +60,16 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   protected val refreshCachePrivateMethod: PrivateMethod[Task[Unit]] = PrivateMethod[Task[Unit]](Symbol("refreshCache"))
 
   private val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
-  private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
-  private val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
-  private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
-  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
+  nodestracker.launch(
+    backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(scheduler),
+    settings = settings,
+    dbName = dbName
+  )(
+    fullConsistencyMaxDelayInMillis = 1000
+  )(
+    nodeCollectionName = nodesColName
+  )
+  private val nodeTrackerService: NodeTrackerService = nodestracker.getNodeTrackerService
 
   protected val unsuccessfulHealthCheckColName: String = randomString(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
   private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)

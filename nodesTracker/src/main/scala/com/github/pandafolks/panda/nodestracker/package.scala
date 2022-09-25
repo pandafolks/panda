@@ -24,14 +24,16 @@ package object nodestracker {
               dbName: String,
             )(
               fullConsistencyMaxDelayInMillis: Int
+            )(
+              nodeCollectionName: String = NODES_COLLECTION_NAME
             ): Unit = {
     logger.info("Creating \'nodestracker\' module...")
-    val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName)
+    val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodeCollectionName)
     val nodesConnection = MongoConnection.create1(settings, nodesCol)
     val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
     nodeTrackerService = Some(new NodeTrackerServiceImpl(nodeTrackerDao, backgroundJobsRegistry)(fullConsistencyMaxDelayInMillis))
 
-    createModuleRelatedDbIndexes(settings, dbName)
+    createModuleRelatedDbIndexes(settings = settings, dbName = dbName)(nodeCollectionName = nodeCollectionName)
     logger.info("\'nodestracker\' module created successfully")
   }
 
@@ -44,13 +46,18 @@ package object nodestracker {
         throw new PandaStartupException("\'nodestracker\' module is not initialized properly")
     }
 
-  private def createModuleRelatedDbIndexes(settings: MongoClientSettings, dbName: String): Unit = {
+  private def createModuleRelatedDbIndexes(
+                                            settings: MongoClientSettings,
+                                            dbName: String
+                                          )(
+                                            nodeCollectionName: String
+                                          ): Unit = {
     val tmpMongoClient: MongoClient = MongoClient(settings)
     val database: MongoDatabase = tmpMongoClient.getDatabase(dbName)
 
-    logger.debug(s"Creating indexes on the \'$NODES_COLLECTION_NAME\' collection...")
+    logger.debug(s"Creating indexes on the \'$nodeCollectionName\' collection...")
     Task.fromReactivePublisher(
-      database.getCollection(NODES_COLLECTION_NAME).createIndexes(
+      database.getCollection(nodeCollectionName).createIndexes(
         Seq(
           IndexModel(
             Indexes.compoundIndex(
@@ -64,6 +71,6 @@ package object nodestracker {
     ).runSyncUnsafe(1.minutes)
 
     tmpMongoClient.close()
-    logger.debug(s"Indexes on the \'$NODES_COLLECTION_NAME\' collection successfully created")
+    logger.debug(s"Indexes on the \'$nodeCollectionName\' collection successfully created")
   }
 }
