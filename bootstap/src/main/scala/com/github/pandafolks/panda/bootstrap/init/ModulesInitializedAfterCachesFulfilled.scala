@@ -15,11 +15,11 @@ import org.mongodb.scala.MongoClientSettings
  * split e.g. health check across all available instances. Going further, the health check mechanism reads participants
  * from the cache. If the cache is empty, this node won't do a single health check, even if other Panda nodes assume it will.
  */
-final class DaosAndServicesInitializedAfterCachesFulfilled(
+final class ModulesInitializedAfterCachesFulfilled(
                                                            private val dbAppClient: DbAppClient,
                                                            private val appConfiguration: AppConfiguration,
                                                            private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                                          ) extends DaosAndServicesInitialization {
+                                                          ) extends ModulesInitialization {
   locally {
 
     nodestracker.launch(

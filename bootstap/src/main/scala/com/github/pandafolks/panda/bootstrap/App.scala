@@ -5,9 +5,8 @@ import cats.implicits.toSemigroupKOps
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.http4s.server.Http4sEmberServerModule
 import com.avast.sst.pureconfig.PureConfigModule
-import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
-import com.github.pandafolks.panda.bootstrap.init.{DaosAndServicesInitializedAfterCachesFulfilled, DaosAndServicesInitializedBeforeCachesFulfilled}
+import com.github.pandafolks.panda.bootstrap.init.{ModulesInitializedAfterCachesFulfilled, ModulesInitializedBeforeCachesFulfilled}
 import com.github.pandafolks.panda.db.MongoAppClient
 import com.github.pandafolks.panda.gateway.{ApiGatewayRouting, BaseApiGatewayImpl}
 import com.github.pandafolks.panda.healthcheck.DistributedHealthCheckServiceImpl
@@ -16,7 +15,6 @@ import com.github.pandafolks.panda.participant.{ParticipantsCacheImpl, Participa
 import com.github.pandafolks.panda.routes.RoutesRouting
 import com.github.pandafolks.panda.user.AuthRouting
 import com.github.pandafolks.panda.user.token.AuthenticatorBasedOnHeader
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import org.http4s.server.{AuthMiddleware, Server}
 
@@ -25,18 +23,17 @@ object App extends MonixServerApp {
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
       dbAppClient = new MongoAppClient(appConfiguration.db)
-      backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(CoreScheduler.scheduler)
 
-      daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration, backgroundJobsRegistry)
+      modulesInitializedBeforeCaches = new ModulesInitializedBeforeCachesFulfilled(dbAppClient, appConfiguration)
 
       participantsCache <- Resource.eval(ParticipantsCacheImpl(
-        daosAndServicesInitializedBeforeCaches.getParticipantEventService,
-        backgroundJobsRegistry,
+        modulesInitializedBeforeCaches.getParticipantEventService,
+        modulesInitializedBeforeCaches.getBackgroundJobsRegistry,
         cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
       )) // Loading participants cache as soon as possible because many other mechanisms are based on this cached content.
-      treesService <- Resource.eval(daosAndServicesInitializedBeforeCaches.getTreesService) // treesService is some kind of cache.
+      treesService <- Resource.eval(modulesInitializedBeforeCaches.getTreesService) // treesService is some kind of cache.
 
-      daosAndServicesInitializedAfterCaches = new DaosAndServicesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration, backgroundJobsRegistry)
+      modulesInitializedAfterCaches = new ModulesInitializedAfterCachesFulfilled(dbAppClient, appConfiguration, modulesInitializedBeforeCaches.getBackgroundJobsRegistry)
 
       // Http clients
       httpGatewayClient <- HttpClient.createMonixBased(appConfiguration.gatewayClient)
@@ -46,28 +43,28 @@ object App extends MonixServerApp {
         client = httpGatewayClient,
         participantsCache = participantsCache,
         appConfiguration.gateway.loadBalancerRetries,
-        backgroundJobsRegistry = Some(backgroundJobsRegistry)
+        backgroundJobsRegistry = Some(modulesInitializedBeforeCaches.getBackgroundJobsRegistry)
       )
       apiGateway = new BaseApiGatewayImpl(loadBalancer, treesService)
 
       _ = new DistributedHealthCheckServiceImpl(
-        daosAndServicesInitializedBeforeCaches.getParticipantEventService,
+        modulesInitializedBeforeCaches.getParticipantEventService,
         participantsCache,
-        daosAndServicesInitializedAfterCaches.getNodeTrackerService,
-        daosAndServicesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
+        modulesInitializedAfterCaches.getNodeTrackerService,
+        modulesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
         httpInternalClient,
-        backgroundJobsRegistry
+        modulesInitializedBeforeCaches.getBackgroundJobsRegistry
       )(appConfiguration.healthCheckConfig)
 
       // routing
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
-      authRouting = new AuthRouting(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)
+      authRouting = new AuthRouting(modulesInitializedBeforeCaches.getTokenService, modulesInitializedBeforeCaches.getUserService)
 
-      authenticator = new AuthenticatorBasedOnHeader(daosAndServicesInitializedBeforeCaches.getTokenService, daosAndServicesInitializedBeforeCaches.getUserService)(
+      authenticator = new AuthenticatorBasedOnHeader(modulesInitializedBeforeCaches.getTokenService, modulesInitializedBeforeCaches.getUserService)(
         appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
       authMiddleware = AuthMiddleware(authenticator.authUser, authenticator.onFailure)
-      participantsRouting = new ParticipantsRouting(daosAndServicesInitializedBeforeCaches.getParticipantEventService, participantsCache)
-      routesRouting = new RoutesRouting(daosAndServicesInitializedBeforeCaches.getRoutesService)
+      participantsRouting = new ParticipantsRouting(modulesInitializedBeforeCaches.getParticipantEventService, participantsCache)
+      routesRouting = new RoutesRouting(modulesInitializedBeforeCaches.getRoutesService)
 
       authedRoutes = authMiddleware(
         participantsRouting.getRoutesWithAuth

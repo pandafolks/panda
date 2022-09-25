@@ -1,5 +1,6 @@
 package com.github.pandafolks.panda.bootstrap.init
 
+import com.github.pandafolks.panda.backgroundjobsregistry
 import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
@@ -12,13 +13,17 @@ import com.pandafolks.mattszm.panda.sequence.SequenceDao
 import monix.eval.Task
 
 /**
- * These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
+ * These Modules can be initialized at any point in time. Rule of thumb -> the faster the better.
  */
-final class DaosAndServicesInitializedBeforeCachesFulfilled(
-                                                            private val dbAppClient: DbAppClient,
-                                                            private val appConfiguration: AppConfiguration,
-                                                            private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                                           ) extends DaosAndServicesInitialization {
+final class ModulesInitializedBeforeCachesFulfilled(
+                                                     private val dbAppClient: DbAppClient,
+                                                     private val appConfiguration: AppConfiguration,
+                                                   ) extends ModulesInitialization {
+  locally {
+
+    backgroundjobsregistry.launch()
+
+  }
 
   private val sequenceDao: SequenceDao = new SequenceDao()
 
@@ -38,7 +43,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixDao: PrefixDao = new PrefixDaoImpl()
   private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
-  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao, backgroundJobsRegistry)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
+  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao, getBackgroundJobsRegistry)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
 
   def getUserService: UserService = userService
 
@@ -52,4 +57,5 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
 
   def getTreesService: Task[TreesService] = treesService
 
+  def getBackgroundJobsRegistry: BackgroundJobsRegistry = backgroundjobsregistry.getBackgroundJobsRegistry
 }
