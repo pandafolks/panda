@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.user
 
-import com.github.pandafolks.panda.utils.SubRouting
+import com.github.pandafolks.panda.utils.routing.SubRouting
 import monix.eval.Task
 import org.http4s.AuthedRoutes
 

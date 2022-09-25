@@ -1,4 +1,6 @@
-package com.github.pandafolks.panda.utils
+package com.github.pandafolks.panda.utils.routing
+
+import com.github.pandafolks.panda.utils.PersistenceError
 
 object RoutesResultParser {
 

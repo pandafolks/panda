@@ -1,8 +1,9 @@
 package com.github.pandafolks.panda.user
 
 import com.github.pandafolks.panda.user.token.TokenService
-import com.github.pandafolks.panda.utils.SubRouting._
-import com.github.pandafolks.panda.utils.{AlreadyExists, SubRoutingWithNoAuth}
+import com.github.pandafolks.panda.utils.routing.SubRouting._
+import com.github.pandafolks.panda.utils.AlreadyExists
+import com.github.pandafolks.panda.utils.routing.SubRoutingWithNoAuth
 import monix.eval.Task
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{AuthedRoutes, HttpRoutes, Response, Status}
