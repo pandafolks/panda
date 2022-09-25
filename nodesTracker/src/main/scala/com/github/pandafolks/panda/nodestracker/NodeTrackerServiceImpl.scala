@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.DurationInt
 
-final class NodeTrackerServiceImpl(
+private[nodestracker] final class NodeTrackerServiceImpl(
                                     private val nodeTrackerDao: NodeTrackerDao,
                                     private val backgroundJobsRegistry: BackgroundJobsRegistry,
                                   )(

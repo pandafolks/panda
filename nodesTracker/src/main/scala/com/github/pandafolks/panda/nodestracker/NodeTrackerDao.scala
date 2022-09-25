@@ -3,7 +3,7 @@ package com.github.pandafolks.panda.nodestracker
 import com.github.pandafolks.panda.utils.PersistenceError
 import monix.eval.Task
 
-trait NodeTrackerDao {
+private[nodestracker] trait NodeTrackerDao {
   /**
    * Inserts a randomly generated [[Node]]. This inserted node corresponds to the instance from which it was inserted.
    *

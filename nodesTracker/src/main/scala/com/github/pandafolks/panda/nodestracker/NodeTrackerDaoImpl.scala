@@ -8,7 +8,7 @@ import monix.eval.Task
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.{Aggregates, Filters, Sorts, UpdateOptions, Updates}
 
-final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
+private[nodestracker] final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
 
   private final val clock = java.time.Clock.systemUTC
 

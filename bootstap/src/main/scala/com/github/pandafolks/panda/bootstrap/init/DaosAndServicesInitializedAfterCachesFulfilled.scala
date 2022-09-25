@@ -3,10 +3,12 @@ package com.github.pandafolks.panda.bootstrap.init
 import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
-import com.github.pandafolks.panda.nodestracker.{NodeTrackerDao, NodeTrackerDaoImpl, NodeTrackerService, NodeTrackerServiceImpl}
+import com.github.pandafolks.panda.nodestracker
+import com.github.pandafolks.panda.nodestracker.NodeTrackerService
+import org.mongodb.scala.MongoClientSettings
 
 /**
- * These Daos and Services needs caches to be fulfilled and ready to operate.
+ * These modules needs caches to be fulfilled and ready to operate.
  *
  * Example: nodeTrackerService registers the Panda Node inside the instances tracker and marks it as ready to handle work.
  * Since this point in time, other Panda nodes would treat this node as fully operational and would
@@ -18,10 +20,18 @@ final class DaosAndServicesInitializedAfterCachesFulfilled(
                                                            private val appConfiguration: AppConfiguration,
                                                            private val backgroundJobsRegistry: BackgroundJobsRegistry,
                                                           ) extends DaosAndServicesInitialization {
+  locally {
 
-  private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(dbAppClient.getNodesConnection)
-  private val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao, backgroundJobsRegistry)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
+    nodestracker.launch(
+      backgroundJobsRegistry = backgroundJobsRegistry,
+      settings = dbAppClient.getSettings.asInstanceOf[MongoClientSettings],
+      dbName = dbAppClient.getDbName
+    )(
+      fullConsistencyMaxDelayInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
+    )
 
-  def getNodeTrackerService: NodeTrackerService = nodeTrackerService
+  }
+
+  def getNodeTrackerService: NodeTrackerService = nodestracker.getNodeTrackerService
 
 }
