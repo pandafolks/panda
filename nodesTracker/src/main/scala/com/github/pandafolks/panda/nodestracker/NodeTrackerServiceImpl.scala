@@ -25,16 +25,22 @@ final class NodeTrackerServiceImpl(
   private val nodeId: String = nodeTrackerDao.register()
     .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)
     .fold(persistenceError => {
-      logger.error("Instance cannot join cluster.")
+      logger.error("The instance cannot join cluster")
       throw new PandaStartupException(persistenceError.getMessage)
-    }, id => id)
+    }, id => {
+      logger.info(s"The instance joined the cluster with the ID: $id")
+      id
+    })
 
   locally {
     backgroundJobsRegistry.addJobAtFixedRate(0.seconds, nodeTrackerRegistrationIntervalInMillis.millisecond)(
       () => nodeTrackerDao.notify(nodeId)
         .map {
-          case Right(_) => ()
-          case Left(error) => logger.error(s"Cannot notify cluster about this instance being alive [id: $nodeId]. Reason: ${error.getMessage}"); ()
+          case Right(_) =>
+            logger.debug(s"The cluster has been notified the instance with ID $nodeId is healthy")
+            ()
+          case Left(error) =>
+            logger.error(s"Cannot notify cluster about this instance being alive [id: $nodeId]. Reason: ${error.getMessage}"); ()
         },
       "NodeTrackerServiceNotify"
     )

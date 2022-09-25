@@ -65,12 +65,14 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
     }
   }
 
-  private def backgroundJob(): Task[Unit] = {
+  private def backgroundJob(): Task[Unit] =
+    Task.eval(logger.debug("Starting DistributedHealthCheckServiceImpl#backgroundJob job")) >>
     Task.parZip2(
       getNodesSizeWithCurrentNodePosition,
       participantsCache.getAllWorkingParticipants
     ).flatMap {
       case ((Some(nodesSize), Some(currentNodeIndex)), participants) =>
+        Task.eval(logger.debug(s"Found $nodesSize nodes - the index of the current node is $currentNodeIndex")) >>
         Task.parTraverseUnordered(pickParticipantsForNode(participants, nodesSize, currentNodeIndex)) {
           participant =>
             // We are reading eventEmittedSinceLastCacheRefresh as early as possible because there is the scenario
@@ -145,7 +147,6 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
         }.flatMap(_ => Task.unit)
       case ((_, _), _) => Task.unit
     }
-  }
 
   @VisibleForTesting
   private def getNodesSizeWithCurrentNodePosition: Task[(Option[Int], Option[Int])] =
