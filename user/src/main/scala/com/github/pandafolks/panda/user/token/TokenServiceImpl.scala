@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.user.token
 import cats.data.OptionT
 import cats.effect.Resource
 import com.github.pandafolks.panda.user.{User, UserId}
+import com.github.pandafolks.panda.utils.SystemProperties
 import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import com.google.common.annotations.VisibleForTesting
 import com.mongodb.client.model.Filters
@@ -20,10 +21,15 @@ import scala.util.{Random, Try}
 final class TokenServiceImpl(private val config: TokensConfig)(private val c: Resource[Task,
   (CollectionOperator[User], CollectionOperator[Token])]) extends TokenService {
 
-  private val rawKey : String = Try { Source.fromResource("tokenKey.txt").getLines().mkString }
-    .getOrElse(Random.alphanumeric.take(20).mkString(""))
-
-  private final val key = PrivateKey(Codec.toUTF8(rawKey))
+  private final val key = PrivateKey(
+    Codec.toUTF8(
+      Option(SystemProperties.usersTokenKey)
+        .orElse(Try {
+          Source.fromResource("tokenKey.txt").getLines().mkString
+        }.toOption)
+        .getOrElse(Random.alphanumeric.take(20).mkString(""))
+    )
+  )
 
   @VisibleForTesting private final val crypto = CryptoBits(key)
 

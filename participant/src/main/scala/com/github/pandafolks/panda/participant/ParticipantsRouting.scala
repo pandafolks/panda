@@ -5,8 +5,8 @@ import com.github.pandafolks.panda.participant.ManagementRouting.{GROUPS_NAME, P
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
-import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
-import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
+import com.github.pandafolks.panda.utils.routing.RoutesResultParser.{parseErrors, parseSuccessfulResults}
+import com.github.pandafolks.panda.utils.routing.SubRouting.{API_NAME, API_VERSION_1}
 import io.circe.generic.auto._
 import monix.eval.Task
 import org.http4s.circe.{jsonEncoderOf, jsonOf}

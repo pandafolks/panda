@@ -1,4 +1,4 @@
-package com.github.pandafolks.panda.utils
+package com.github.pandafolks.panda.utils.routing
 
 import monix.eval.Task
 import org.http4s.HttpRoutes

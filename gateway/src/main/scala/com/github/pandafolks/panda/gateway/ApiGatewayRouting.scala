@@ -1,6 +1,6 @@
 package com.github.pandafolks.panda.gateway
 
-import com.github.pandafolks.panda.utils.SubRoutingWithNoAuth
+import com.github.pandafolks.panda.utils.routing.SubRoutingWithNoAuth
 import monix.eval.Task
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl

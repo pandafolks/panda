@@ -5,8 +5,8 @@ import com.github.pandafolks.panda.routes.filter.StandaloneFilter
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
 import com.github.pandafolks.panda.utils.PersistenceError
-import com.github.pandafolks.panda.utils.RoutesResultParser.{parseErrors, parseSuccessfulResults}
-import com.github.pandafolks.panda.utils.SubRouting.{API_NAME, API_VERSION_1}
+import com.github.pandafolks.panda.utils.routing.RoutesResultParser.{parseErrors, parseSuccessfulResults}
+import com.github.pandafolks.panda.utils.routing.SubRouting.{API_NAME, API_VERSION_1}
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
