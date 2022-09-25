@@ -29,7 +29,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
     val lb = new HashLoadBalancerImpl(
       new ClientStub(),
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable, containUnavailable),
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))()
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
     )
     Await.result(Future{Thread.sleep(2000)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
     lb
@@ -86,7 +86,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
     val loadBalancer: LoadBalancer = new HashLoadBalancerImpl(
       client,
       participantsCache,
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))()
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
     )
     Await.result(Future{Thread.sleep(2500)}, 3.seconds) // the reason is the execution of `notifyAboutAdd` is done as a separate process handled by QueueBasedChangeListener
 
