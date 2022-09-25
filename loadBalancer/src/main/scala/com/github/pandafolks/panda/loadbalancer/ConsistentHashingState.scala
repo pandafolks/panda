@@ -78,9 +78,11 @@ final class ConsistentHashingState(
 
   override def notifyAboutRemoveInternal(item: Participant): Task[Unit] = Task.eval(remove(item))
 
-  private def clearEmptyGroups(): Task[Unit] =
+  private def clearEmptyGroups(): Task[Unit] = {
+    Task.eval(logger.debug("Clearing empty groups of ConsistentHashingState#usedPositionsGroupedByGroup")) >>
     Task.eval(usedPositionsGroupedByGroup.keySet().forEach(g => {
       usedPositionsGroupedByGroup.remove(g, TreeMap.empty[Int, Participant])
       ()
     }))
+  }
 }

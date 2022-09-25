@@ -35,8 +35,8 @@ final class TreesServiceImpl private(
       backgroundJobsRegistry.addJobAtFixedRate(treesHandlerRefreshIntervalInMillis.millisecond, treesHandlerRefreshIntervalInMillis.millisecond)(
         () => reloadTreesIfNecessary()
           .onErrorRecover { e: Throwable => logger.error(s"Cannot reload ${RoutesTreesHandler.getClass.getName}", e) },
-          "TreesServiceReloadTrees"
-        )
+        "TreesServiceReloadTrees"
+      )
     }
   }
 
@@ -50,39 +50,41 @@ final class TreesServiceImpl private(
     routesTreesHandler.get.map(handler => Path.unsafeFromString(handler.getPrefix(group.name).getOrElse("")))
 
   @VisibleForTesting
-  private def reloadTreesIfNecessary(): Task[Unit] = c.use {
-    case (mapperOperator, prefixOperator) => for {
-      needsUpdate <- Task.parZip2(
-        latestSeenMappingTimestamp.get.flatMap(t => mapperDao.checkIfThereAreNewerMappings(t)(mapperOperator)),
-        latestSeenPrefixTimestamp.get.flatMap(t => prefixDao.checkIfThereAreNewerPrefixes(t)(prefixOperator))
-      )
-      data <- Task.parZip2(
-        if (needsUpdate._1) {
-          logger.info("Detected changes inside Mappers - refreshing the Mappers' caches")
-          mapperDao.findAll(mapperOperator).toListL.map(_.groupBy(_.httpMethod)).map(Some(_))
-        } else Task.now(Option.empty),
-        if (needsUpdate._2) {
-          logger.info("Detected changes inside Prefixes - refreshing the Prefixes' caches")
-          prefixDao.findAll(prefixOperator)
-            .foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
-            .firstOptionL
-        } else Task.now(Option.empty)
-      )
-      _ <- data match {
-        case (Some(mappers), Some(prefixes)) =>
-          routesTreesHandler.set(RoutesTreesHandler.construct(mappers, prefixes)) >>
-            latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers)) >>
-            latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
-        case (Some(mappers), None) =>
-          routesTreesHandler.update(previousState => RoutesTreesHandler.withNewMappers(previousState, mappers)) >>
-            latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers))
-        case (None, Some(prefixes)) =>
-          routesTreesHandler.update(previousState => RoutesTreesHandler.withNewPrefixes(previousState, prefixes)) >>
-            latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
-        case (None, None) => Task.unit
-      }
-    } yield ()
-  }
+  private def reloadTreesIfNecessary(): Task[Unit] =
+    Task.eval(logger.debug("Starting TreesServiceImpl#reloadTreesIfNecessary job")) >>
+    c.use {
+      case (mapperOperator, prefixOperator) => for {
+        needsUpdate <- Task.parZip2(
+          latestSeenMappingTimestamp.get.flatMap(t => mapperDao.checkIfThereAreNewerMappings(t)(mapperOperator)),
+          latestSeenPrefixTimestamp.get.flatMap(t => prefixDao.checkIfThereAreNewerPrefixes(t)(prefixOperator))
+        )
+        data <- Task.parZip2(
+          if (needsUpdate._1) {
+            logger.info("Detected changes inside Mappers - refreshing the Mappers' caches")
+            mapperDao.findAll(mapperOperator).toListL.map(_.groupBy(_.httpMethod)).map(Some(_))
+          } else Task.now(Option.empty),
+          if (needsUpdate._2) {
+            logger.info("Detected changes inside Prefixes - refreshing the Prefixes' caches")
+            prefixDao.findAll(prefixOperator)
+              .foldLeft(Map.empty[String, Prefix])((prevState, prefix) => prevState + (prefix.groupName -> prefix))
+              .firstOptionL
+          } else Task.now(Option.empty)
+        )
+        _ <- data match {
+          case (Some(mappers), Some(prefixes)) =>
+            routesTreesHandler.set(RoutesTreesHandler.construct(mappers, prefixes)) >>
+              latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers)) >>
+              latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
+          case (Some(mappers), None) =>
+            routesTreesHandler.update(previousState => RoutesTreesHandler.withNewMappers(previousState, mappers)) >>
+              latestSeenMappingTimestamp.set(TreesServiceImpl.findLatestSeenMappingTimestamp(mappers))
+          case (None, Some(prefixes)) =>
+            routesTreesHandler.update(previousState => RoutesTreesHandler.withNewPrefixes(previousState, prefixes)) >>
+              latestSeenPrefixTimestamp.set(TreesServiceImpl.findLatestSeenPrefixTimestamp(prefixes))
+          case (None, None) => Task.unit
+        }
+      } yield ()
+    }
 }
 
 object TreesServiceImpl {

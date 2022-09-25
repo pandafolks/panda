@@ -66,7 +66,8 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
       _ <- listener.notifyAboutAdd(cache.values.toList) // initial load to the listener
     } yield ()
 
-  private def refreshCache(): Task[Unit] = {
+  private def refreshCache(): Task[Unit] =
+    Task.eval(logger.debug("Starting ParticipantsCacheImpl#refreshCache job")) >>
     participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.get()).flatMap {
       case true =>
         logger.info("Detected new participants' events - refreshing the caches")
@@ -100,7 +101,6 @@ final class ParticipantsCacheImpl private( // This constructor cannot be used di
 
       case false => Task.unit
     }
-  }
 }
 
 object ParticipantsCacheImpl {
