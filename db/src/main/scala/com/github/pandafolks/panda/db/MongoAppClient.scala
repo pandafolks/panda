@@ -58,7 +58,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
 
 
   private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(config.dbName)
-  private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName)
+  private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName) // todo mszmal: remove once participants migrated
   private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
   private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(config.dbName)

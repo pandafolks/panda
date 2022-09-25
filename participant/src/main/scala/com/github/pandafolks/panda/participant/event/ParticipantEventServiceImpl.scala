@@ -17,6 +17,8 @@ final class ParticipantEventServiceImpl(
                                          private val c: Resource[Task, (CollectionOperator[ParticipantEvent],
                                            CollectionOperator[Sequence])]) extends ParticipantEventService {
 
+  private val participantEventSequenceKey: SequenceKey = SequenceKey("participantEventSequence")
+
   private val identifierCannotBeBlankError: Task[Left[UnsuccessfulSaveOperation, Nothing]] = Task.evalOnce(Left(UnsuccessfulSaveOperation("Identifier cannot be blank")))
 
   override def createParticipant(participantModificationPayload: ParticipantModificationPayload): Task[Either[PersistenceError, String]] = {
@@ -164,7 +166,7 @@ final class ParticipantEventServiceImpl(
                          )(
                            seqOperator: CollectionOperator[Sequence], participantEventOperator: CollectionOperator[ParticipantEvent]
                          ): Task[Either[PersistenceError, String]] =
-    EitherT(sequenceDao.getNextSequence(SequenceKey.getParticipantEventSequence, seqOperator))
+    EitherT(sequenceDao.getNextSequence(participantEventSequenceKey, seqOperator))
       .flatMap(seq => EitherT(
         participantEventDao.insertOne(
           ParticipantEvent(

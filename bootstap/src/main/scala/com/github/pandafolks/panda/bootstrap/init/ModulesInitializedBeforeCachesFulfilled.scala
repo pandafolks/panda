@@ -9,6 +9,7 @@ import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, Parti
 import com.github.pandafolks.panda.routes.{MapperDao, MapperDaoImpl, PrefixDao, PrefixDaoImpl, RoutesService, RoutesServiceImpl, TreesService, TreesServiceImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
+import com.pandafolks.mattszm.panda.sequence
 import com.pandafolks.mattszm.panda.sequence.SequenceDao
 import monix.eval.Task
 
@@ -23,9 +24,13 @@ final class ModulesInitializedBeforeCachesFulfilled(
 
     backgroundjobsregistry.launch()
 
+    sequence.launch(
+      dbName = dbAppClient.getDbName
+    )()
+
   }
 
-  private val sequenceDao: SequenceDao = new SequenceDao()
+  private val sequenceDao: SequenceDao = sequence.getSequenceDao
 
   private val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(dbAppClient.getParticipantEventsAndSequencesConnection)
   private val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
