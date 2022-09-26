@@ -20,20 +20,23 @@ package object nodestracker {
 
   def launch(
               backgroundJobsRegistry: BackgroundJobsRegistry,
-              settings: MongoClientSettings,
-              dbName: String,
             )(
               fullConsistencyMaxDelayInMillis: Int
             )(
+              settings: MongoClientSettings,
+              dbName: String,
               nodeCollectionName: String = NODES_COLLECTION_NAME
             ): Unit = {
     logger.info("Creating \'nodestracker\' module...")
+
     val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodeCollectionName)
     val nodesConnection = MongoConnection.create1(settings, nodesCol)
     val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
+
     nodeTrackerService = Some(new NodeTrackerServiceImpl(nodeTrackerDao, backgroundJobsRegistry)(fullConsistencyMaxDelayInMillis))
 
     createModuleRelatedDbIndexes(settings = settings, dbName = dbName)(nodeCollectionName = nodeCollectionName)
+
     logger.info("\'nodestracker\' module created successfully")
   }
 

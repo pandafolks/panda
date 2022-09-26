@@ -1,17 +1,17 @@
 package com.github.pandafolks.panda.bootstrap.init
 
-import com.github.pandafolks.panda.backgroundjobsregistry
 import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
-import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
-import com.github.pandafolks.panda.routes.{MapperDao, MapperDaoImpl, PrefixDao, PrefixDaoImpl, RoutesService, RoutesServiceImpl, TreesService, TreesServiceImpl}
+import com.github.pandafolks.panda.participant.event.ParticipantEventService
+import com.github.pandafolks.panda.routes._
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
+import com.github.pandafolks.panda.{backgroundjobsregistry, participant}
 import com.pandafolks.mattszm.panda.sequence
-import com.pandafolks.mattszm.panda.sequence.SequenceDao
 import monix.eval.Task
+import org.mongodb.scala.MongoClientSettings
 
 /**
  * These Modules can be initialized at any point in time. Rule of thumb -> the faster the better.
@@ -24,19 +24,24 @@ final class ModulesInitializedBeforeCachesFulfilled(
 
     backgroundjobsregistry.launch()
 
-    sequence.launch(
+    sequence.launch()(
       dbName = dbAppClient.getDbName
-    )()
+    )
+
+    participant.launch(
+      backgroundJobsRegistry = backgroundjobsregistry.getBackgroundJobsRegistry,
+      sequenceDao = sequence.getSequenceDao,
+      settings = dbAppClient.getSettings.asInstanceOf[MongoClientSettings],
+      dbName = dbAppClient.getDbName
+    )(
+      cacheRefreshIntervalInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
+    )(
+      sequenceCol = sequence.getSequenceCol,
+    )
 
   }
 
-  private val sequenceDao: SequenceDao = sequence.getSequenceDao
-
-  private val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(dbAppClient.getParticipantEventsAndSequencesConnection)
-  private val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
-    participantEventDao = participantEventDao,
-    sequenceDao = sequenceDao
-  )(dbAppClient.getParticipantEventsAndSequencesConnection)
+  private val participantEventService: ParticipantEventService = participant.getParticipantEventService
 
   private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
   private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersWithTokensConnection)

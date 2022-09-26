@@ -62,11 +62,11 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
   nodestracker.launch(
     backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(scheduler),
-    settings = settings,
-    dbName = dbName
   )(
     fullConsistencyMaxDelayInMillis = 1000
   )(
+    settings = settings,
+    dbName = dbName,
     nodeCollectionName = nodesColName
   )
   private val nodeTrackerService: NodeTrackerService = nodestracker.getNodeTrackerService

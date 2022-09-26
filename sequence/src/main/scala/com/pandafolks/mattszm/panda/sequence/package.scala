@@ -11,7 +11,7 @@ package object sequence {
   private var sequenceDao: Option[SequenceDao] = Option.empty
   private var sequenceCol: Option[CollectionCodecRef[Sequence]] = Option.empty
 
-  def launch(dbName: String)(sequenceColName: String = SEQUENCE_COLLECTION_NAME): Unit = {
+  def launch()(dbName: String, sequenceColName: String = SEQUENCE_COLLECTION_NAME): Unit = {
     logger.info("Creating \'sequence\' module...")
 
     sequenceDao = Some(new SequenceDao())

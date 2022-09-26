@@ -16,19 +16,20 @@ import org.mongodb.scala.MongoClientSettings
  * from the cache. If the cache is empty, this node won't do a single health check, even if other Panda nodes assume it will.
  */
 final class ModulesInitializedAfterCachesFulfilled(
-                                                           private val dbAppClient: DbAppClient,
-                                                           private val appConfiguration: AppConfiguration,
-                                                           private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                                          ) extends ModulesInitialization {
+                                                    private val dbAppClient: DbAppClient,
+                                                    private val appConfiguration: AppConfiguration,
+                                                    private val backgroundJobsRegistry: BackgroundJobsRegistry,
+                                                  ) extends ModulesInitialization {
   locally {
 
     nodestracker.launch(
       backgroundJobsRegistry = backgroundJobsRegistry,
-      settings = dbAppClient.getSettings.asInstanceOf[MongoClientSettings],
-      dbName = dbAppClient.getDbName
     )(
       fullConsistencyMaxDelayInMillis = appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
-    )()
+    )(
+      settings = dbAppClient.getSettings.asInstanceOf[MongoClientSettings],
+      dbName = dbAppClient.getDbName
+    )
 
   }
 
