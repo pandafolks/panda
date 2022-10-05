@@ -9,8 +9,8 @@ import org.mongodb.scala.bson.BsonInt64
 final class SequenceDao {
 
   def getNextSequence(key: SequenceKey, seqOperator: CollectionOperator[Sequence]): Task[Either[PersistenceError, BsonInt64]] = {
-    val filter = Filters.eq("key", key)
-    val update = Updates.inc("seq", 1L)
+    val filter = Filters.eq(Sequence.KEY_COLLECTION_NAME, key)
+    val update = Updates.inc(Sequence.SEQ_COLLECTION_NAME, 1L)
     val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
     seqOperator.source.findOneAndUpdate(
       filter = filter,

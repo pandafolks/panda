@@ -2,25 +2,18 @@ package com.github.pandafolks.panda.db
 
 import cats.effect.Resource
 import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
-import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME
 import com.github.pandafolks.panda.nodestracker.Node
-import com.github.pandafolks.panda.nodestracker.Node.NODES_COLLECTION_NAME
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
-import com.github.pandafolks.panda.participant.event.ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME
-import com.github.pandafolks.panda.routes.entity.Mapper.MAPPERS_COLLECTION_NAME
-import com.github.pandafolks.panda.routes.entity.Prefix.PREFIXES_COLLECTION_NAME
 import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
 import com.github.pandafolks.panda.user.User
-import com.github.pandafolks.panda.user.User.USERS_COLLECTION_NAME
 import com.github.pandafolks.panda.user.token.Token
-import com.github.pandafolks.panda.user.token.Token.TOKENS_COLLECTION_NAME
 import com.github.pandafolks.panda.utils.PandaStartupException
-import com.mongodb.{ConnectionString, ReadConcern, ReadPreference, WriteConcern}
+import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import com.mongodb.connection.ClusterConnectionMode
+import com.mongodb.{ConnectionString, ReadConcern, ReadPreference, WriteConcern}
 import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
 
@@ -91,53 +84,53 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
 
     (
       Task.fromReactivePublisher(
-        database.getCollection(USERS_COLLECTION_NAME).createIndexes(
+        database.getCollection(User.USERS_COLLECTION_NAME).createIndexes(
           Seq(
             IndexModel(
-              Indexes.ascending("username"),
+              Indexes.ascending(User.USERNAME_PROPERTY_NAME),
               IndexOptions().background(false).unique(true)
             ),
             IndexModel(
-              Indexes.ascending("id"),
+              Indexes.ascending(User.ID_PROPERTY_NAME),
               IndexOptions().background(false).unique(true)
             )
           )
         )
       ) >>
         Task.fromReactivePublisher(
-          database.getCollection(PARTICIPANT_EVENTS_COLLECTION_NAME).createIndexes(
+          database.getCollection(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
                 Indexes.compoundIndex(
-                  Indexes.ascending("participantIdentifier"),
-                  Indexes.descending("eventId")
+                  Indexes.ascending(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME),
+                  Indexes.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)
                 ),
                 IndexOptions().background(true).unique(true)
               ),
               IndexModel(
-                Indexes.ascending("eventId"),
+                Indexes.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME),
                 IndexOptions().background(false).unique(true)
               )
             )
           )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(TOKENS_COLLECTION_NAME).createIndexes(
+          database.getCollection(Token.TOKENS_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
-                Indexes.hashed("tempId"),
+                Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
                 IndexOptions().background(false).unique(false)
               )
             )
           )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(NODES_COLLECTION_NAME).createIndexes(
+          database.getCollection(Node.NODES_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
                 Indexes.compoundIndex(
-                  Indexes.ascending("lastUpdateTimestamp"),
-                  Indexes.ascending("_id")
+                  Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                  Indexes.ascending(Node.ID_PROPERTY_NAME)
                 ),
                 IndexOptions().background(false).unique(false)
               ),
@@ -145,26 +138,26 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME).createIndexes(
+          database.getCollection(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
-                Indexes.ascending("identifier"),
+                Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
                 IndexOptions().background(false).unique(true)
               )
             )
           )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(MAPPERS_COLLECTION_NAME).createIndexes(
+          database.getCollection(Mapper.MAPPERS_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
-                Indexes.ascending("lastUpdateTimestamp"),
+                Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
                 IndexOptions().background(false).unique(false)
               ),
               IndexModel(
                 Indexes.compoundIndex(
-                  Indexes.ascending("route"),
-                  Indexes.ascending("httpMethod")
+                  Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
+                  Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
                 ),
                 IndexOptions().background(false).unique(true)
               )
@@ -172,10 +165,10 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
           )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(PREFIXES_COLLECTION_NAME).createIndexes(
+          database.getCollection(Prefix.PREFIXES_COLLECTION_NAME).createIndexes(
             Seq(
               IndexModel(
-                Indexes.ascending("groupName"),
+                Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
                 IndexOptions().background(false).unique(true)
               )
             )

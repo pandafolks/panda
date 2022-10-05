@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.participant.ManagementRouting.{GROUPS_NAME, PARTICIPANTS_NAME, ParticipantsModificationResultPayload}
+import com.github.pandafolks.panda.participant.ParticipantsRouting.{GROUPS_NAME, PARTICIPANTS_NAME, ParticipantsModificationResultPayload}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
@@ -133,7 +133,7 @@ final class ParticipantsRouting(private val participantEventService: Participant
 
 }
 
-object ManagementRouting {
+object ParticipantsRouting {
 
   final val PARTICIPANTS_NAME = "participants"
   final val GROUPS_NAME = "groups"

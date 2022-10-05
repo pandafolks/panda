@@ -27,8 +27,8 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
 
   override def notify(nodeId: String): Task[Either[PersistenceError, Unit]] = c.use(nodeOperator =>
     nodeOperator.single.updateOne(
-      Filters.eq("_id", new ObjectId(nodeId)),
-      Updates.set("lastUpdateTimestamp", clock.millis()),
+      Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId(nodeId)),
+      Updates.set(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis()),
       updateOptions = UpdateOptions().upsert(true),
       retryStrategy = RetryStrategy(3)
     )
@@ -42,8 +42,8 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
   override def getNodes(deviation: Long): Task[List[Node]] = c.use(nodeOperator =>
     nodeOperator.source.aggregate(
       List(
-        Aggregates.filter(Filters.gte("lastUpdateTimestamp", clock.millis() - deviation)),
-        Aggregates.sort(Sorts.ascending("_id"))
+        Aggregates.filter(Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis() - deviation)),
+        Aggregates.sort(Sorts.ascending(Node.ID_PROPERTY_NAME))
       ), classOf[Node]
     ).toListL
   )

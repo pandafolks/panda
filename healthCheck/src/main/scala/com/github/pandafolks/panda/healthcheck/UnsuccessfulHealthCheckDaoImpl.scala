@@ -11,8 +11,8 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
                                           ) extends UnsuccessfulHealthCheckDao {
 
   override def incrementCounter(identifier: String): Task[Either[PersistenceError, Long]] = c.use { op =>
-    val filter = Filters.eq("identifier", identifier)
-    val update = Updates.inc("counter", 1L)
+    val filter = Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier)
+    val update = Updates.inc(UnsuccessfulHealthCheck.COUNTER_PROPERTY_NAME, 1L)
     val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
 
     op.source.findOneAndUpdate(
@@ -24,7 +24,7 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
   }
 
   override def clear(identifier: String): Task[Either[PersistenceError, Unit]] = c.use(op =>
-    op.single.deleteOne(Filters.eq("identifier", identifier))
+    op.single.deleteOne(Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier))
       .map(_ => Right(()))
       .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
   )

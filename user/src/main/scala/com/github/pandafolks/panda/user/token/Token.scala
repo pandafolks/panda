@@ -13,6 +13,8 @@ final case class Token(tempId: String, userId: UserId, creationTimeStamp: Long)
 object Token {
   final val TOKENS_COLLECTION_NAME = "tokens"
 
+  final val TEMP_ID_COLLECTION_NAME = "tempId"
+
   private val javaCodecs = CodecRegistries.fromCodecs(
     new UuidCodec(UuidRepresentation.STANDARD)
   )
