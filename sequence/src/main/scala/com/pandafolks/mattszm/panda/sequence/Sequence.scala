@@ -11,6 +11,9 @@ final case class Sequence(key: SequenceKey, seq: BsonInt64)
 object Sequence {
   final val SEQUENCE_COLLECTION_NAME = "sequence_generator"
 
+  final val KEY_COLLECTION_NAME = "key"
+  final val SEQ_COLLECTION_NAME = "seq"
+
   def getCollection(dbName: String, collectionName: String = SEQUENCE_COLLECTION_NAME): CollectionCodecRef[Sequence] =
     CollectionCodecRef(
       dbName,

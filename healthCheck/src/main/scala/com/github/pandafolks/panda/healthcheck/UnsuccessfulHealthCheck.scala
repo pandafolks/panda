@@ -10,6 +10,9 @@ final case class UnsuccessfulHealthCheck(identifier: String, counter: Long)
 object UnsuccessfulHealthCheck {
   final val UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME = "unsuccessful_health_check"
 
+  final val IDENTIFIER_PROPERTY_NAME = "identifier"
+  final val COUNTER_PROPERTY_NAME = "counter"
+
   def getCollection(dbName: String, collectionName: String = UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME): CollectionCodecRef[UnsuccessfulHealthCheck] =
     CollectionCodecRef(
       dbName,

@@ -14,6 +14,10 @@ final case class User(id: UserId, username: String, password: PasswordHash[BCryp
 object User {
   final val USERS_COLLECTION_NAME = "users"
 
+  final val ID_PROPERTY_NAME = "id"
+  final val USERNAME_PROPERTY_NAME = "username"
+  final val PASSWORD_PROPERTY_NAME = "password"
+
   private val javaCodecs: CodecRegistry = CodecRegistries.fromCodecs(
     new UuidCodec(UuidRepresentation.STANDARD)
   )

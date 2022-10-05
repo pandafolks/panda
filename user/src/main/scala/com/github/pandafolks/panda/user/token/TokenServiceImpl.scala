@@ -41,7 +41,7 @@ final class TokenServiceImpl(private val config: TokensConfig)(private val c: Re
     tempId => c.use {
       case (_, tokenOperator) =>
         tokenOperator.source
-          .find(Filters.eq("tempId", tempId))
+          .find(Filters.eq(Token.TEMP_ID_COLLECTION_NAME, tempId))
           .toListL
           .map(_.sortBy(t => -t.creationTimeStamp)) // very little collision chance so sorting in memory is ok
           .map(_.headOption)

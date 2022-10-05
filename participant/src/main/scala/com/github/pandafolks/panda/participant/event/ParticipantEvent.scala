@@ -53,6 +53,11 @@ final case class ParticipantEvent(
 object ParticipantEvent {
   final val PARTICIPANT_EVENTS_COLLECTION_NAME = "participant_events"
 
+  final val PARTICIPANT_IDENTIFIER_PROPERTY_NAME = "participantIdentifier"
+  final val PARTICIPANT_DATA_MODIFICATION_PROPERTY_NAME = "participantDataModification"
+  final val EVENT_ID_PROPERTY_NAME = "eventId"
+  final val EVENT_TYPE_PROPERTY_NAME = "eventType"
+
   private val javaCodecs = CodecRegistries.fromCodecs(
     new UuidCodec(UuidRepresentation.STANDARD)
   )

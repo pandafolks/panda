@@ -18,8 +18,8 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
   override def exists(identifier: String, participantEventOperator: CollectionOperator[ParticipantEvent]): Task[Either[PersistenceError, Boolean]] =
     OptionT(participantEventOperator.source.aggregate(
       List(
-        Aggregates.filter(Filters.eq("participantIdentifier", identifier)),
-        Aggregates.sort(Sorts.descending("eventId"))
+        Aggregates.filter(Filters.eq(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME, identifier)),
+        Aggregates.sort(Sorts.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME))
       ), classOf[ParticipantEvent]
     )
       .filter(event => event.eventType == Created() || event.eventType == Removed())
@@ -41,8 +41,8 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
                                 offset: Int): Observable[ParticipantEvent] =
     participantEventOperator.source.aggregate(
       List(
-        Aggregates.filter(Filters.gt("eventId", offset)),
-        Aggregates.sort(Sorts.ascending("eventId")),
+        Aggregates.filter(Filters.gt(ParticipantEvent.EVENT_ID_PROPERTY_NAME, offset)),
+        Aggregates.sort(Sorts.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)),
       ), classOf[ParticipantEvent]
     )
 
@@ -50,7 +50,7 @@ final class ParticipantEventDaoImpl(private val c: Resource[Task, (CollectionOpe
     case (participantEventOperator,  _) =>
     participantEventOperator.source.aggregate(
       List(
-        Aggregates.filter(Filters.gt("eventId", BsonInt64(eventId))),
+        Aggregates.filter(Filters.gt(ParticipantEvent.EVENT_ID_PROPERTY_NAME, BsonInt64(eventId))),
         Aggregates.limit(1)
       ), classOf[ParticipantEvent]
     ).nonEmptyL

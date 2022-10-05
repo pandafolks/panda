@@ -19,6 +19,7 @@ final class ParticipantEventServiceImpl(
 
   private val identifierCannotBeBlankError: Task[Left[UnsuccessfulSaveOperation, Nothing]] = Task.evalOnce(Left(UnsuccessfulSaveOperation("Identifier cannot be blank")))
 
+  private val participantEventSequenceKey: SequenceKey = SequenceKey("participantEventSequence")
   override def createParticipant(participantModificationPayload: ParticipantModificationPayload): Task[Either[PersistenceError, String]] = {
     if (participantModificationPayload.host.isEmpty || participantModificationPayload.port.isEmpty || participantModificationPayload.groupName.isEmpty)
       return Task.now(Left(UnsuccessfulSaveOperation("host, port and groupName have to be defined")))
@@ -164,7 +165,7 @@ final class ParticipantEventServiceImpl(
                          )(
                            seqOperator: CollectionOperator[Sequence], participantEventOperator: CollectionOperator[ParticipantEvent]
                          ): Task[Either[PersistenceError, String]] =
-    EitherT(sequenceDao.getNextSequence(SequenceKey.getParticipantEventSequence, seqOperator))
+    EitherT(sequenceDao.getNextSequence(participantEventSequenceKey, seqOperator))
       .flatMap(seq => EitherT(
         participantEventDao.insertOne(
           ParticipantEvent(
