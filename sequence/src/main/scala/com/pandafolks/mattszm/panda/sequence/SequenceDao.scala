@@ -1,22 +1,18 @@
 package com.pandafolks.mattszm.panda.sequence
 
-import com.github.pandafolks.panda.utils.{PersistenceError, UnsuccessfulUpdateOperation}
-import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}
+import com.github.pandafolks.panda.utils.PersistenceError
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import org.mongodb.scala.bson.BsonInt64
 
-final class SequenceDao {
+trait SequenceDao {
 
-  def getNextSequence(key: SequenceKey, seqOperator: CollectionOperator[Sequence]): Task[Either[PersistenceError, BsonInt64]] = {
-    val filter = Filters.eq(Sequence.KEY_COLLECTION_NAME, key)
-    val update = Updates.inc(Sequence.SEQ_COLLECTION_NAME, 1L)
-    val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
-    seqOperator.source.findOneAndUpdate(
-      filter = filter,
-      update = update,
-      findOneAndUpdateOptions = options
-    ).map(_.map(_.seq))
-      .map(_.toRight(UnsuccessfulUpdateOperation("No update performed")))
-  }
+  /**
+   * Generate and return the next sequence value for a provided key.
+   *
+   * @param key against which the sequence value will be generated
+   * @param seqOperator [[Sequence]] DB entry point
+   * @return Either generated sequence value or PersistenceError if the error during sequence creation occurred
+   */
+  def getNextSequence(key: SequenceKey, seqOperator: CollectionOperator[Sequence]): Task[Either[PersistenceError, BsonInt64]]
 }

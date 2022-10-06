@@ -7,7 +7,7 @@ import com.github.pandafolks.panda.nodestracker.{Node, NodeTrackerDao, NodeTrack
 import com.github.pandafolks.panda.participant.{ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.participant.event.{ParticipantEvent, ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao}
+import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -43,7 +43,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(dbName, participantEventsColName)
   protected val participantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
-  private val sequenceDao: SequenceDao = new SequenceDao()
+  private val sequenceDao: SequenceDao = new SequenceDaoImpl()
   private val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(participantEventsAndSequencesConnection)
   protected val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
     participantEventDao = participantEventDao,
