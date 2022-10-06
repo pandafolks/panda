@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant.event
 
 import cats.effect.Resource
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao}
+import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
@@ -32,7 +32,7 @@ trait ParticipantEventFixture {
   protected val participantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
 
-  protected val sequenceDao: SequenceDao = new SequenceDao()
+  protected val sequenceDao: SequenceDao = new SequenceDaoImpl()
 
   protected val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(participantEventsAndSequencesConnection)
   protected val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
