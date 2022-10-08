@@ -83,7 +83,7 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
             performHealthcheckCallAndReturnResult(participant)
               .flatMap {
                 // Healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
-                case true if !participant.isHealthy =>
+                case true if !participant.isHealthy => // we are iterating through working participants only, so the `isHealthy` check is enough
                   unsuccessfulHealthCheckDao.clear(participant.identifier)
                     .map {
                       case Left(error) =>

@@ -1,7 +1,8 @@
 package com.github.pandafolks.panda.participant.event
 
-import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload}
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
+import com.github.pandafolks.panda.participant._
+import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
@@ -348,9 +349,9 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       ).runToFuture
 
     whenReady(f) { res =>
-      res._1.toOption.get should be (())
-      res._2.size should be (3)
-      res._2.maxBy(_.eventId).eventType should be (ParticipantEventType.Joined())
+      res._1.toOption.get should be(())
+      res._2.size should be(3)
+      res._2.maxBy(_.eventId).eventType should be(ParticipantEventType.Joined())
     }
   }
 
@@ -368,8 +369,8 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       ).runToFuture
 
     whenReady(f) { res =>
-      res._1 should be (Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
-      res._2.size should be (0)
+      res._1 should be(Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
+      res._2.size should be(0)
     }
   }
 
@@ -386,9 +387,9 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       ).runToFuture
 
     whenReady(f) { res =>
-      res._1.toOption.get should be (())
-      res._2.size should be (2)
-      res._2.maxBy(_.eventId).eventType should be (ParticipantEventType.Disconnected())
+      res._1.toOption.get should be(())
+      res._2.size should be(2)
+      res._2.maxBy(_.eventId).eventType should be(ParticipantEventType.Disconnected())
     }
   }
 
@@ -406,8 +407,8 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       ).runToFuture
 
     whenReady(f) { res =>
-      res._1 should be (Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
-      res._2.size should be (0)
+      res._1 should be(Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
+      res._2.size should be(0)
     }
   }
 
@@ -420,10 +421,10 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
         >> participantEventsAndSequencesConnection.use(p => p._1.source.findAll.toListL).map(_.sortBy(_.eventId)).map(_.last.eventId)
         .flatMap(lastSeenEventId => participantEventService.markParticipantAsUnhealthy(identifier).map(_ => lastSeenEventId))
         .flatMap(lastSeenEventId => participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.getValue))
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
-      res should be (true)
+      res should be(true)
     }
   }
 
@@ -438,7 +439,60 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
       ).runToFuture
 
     whenReady(f) { res =>
-      res should be (false)
+      res should be(false)
+    }
+  }
+
+  "ParticipantEventService#constructAllParticipants" should "return all constructed participants" in {
+    val identifier1 = randomString("identifier1")
+    val identifier2 = randomString("identifier2")
+    val identifier3 = randomString("identifier3")
+
+    val f = (
+      participantEventService.createParticipant(ParticipantModificationPayload(
+        host = Some("127.0.0.2"), port = Some(1002), groupName = Some("ships"), identifier = Some(identifier1), healthcheckRoute = Option.empty, working = Some(false)
+      )) >>
+        participantEventService.modifyParticipant(ParticipantModificationPayload( // two events will be emitted because of setting working explicitly
+          host = Option.empty, port = Option.empty, groupName = Some("ships2"), identifier = Some(identifier1), healthcheckRoute = Some("SomePath/"), working = Some(false)
+        )) >>
+        participantEventService.createParticipant(ParticipantModificationPayload(
+          host = Some("127.0.0.2"), port = Some(1003), groupName = Some("planes"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(false)
+        )) >>
+        participantEventService.markParticipantAsHealthy(identifier1) >>
+        participantEventService.markParticipantAsUnhealthy(identifier1) >>
+        participantEventService.removeParticipant(identifier2) >>
+        participantEventService.createParticipant(ParticipantModificationPayload(
+          host = Some("127.0.0.3"), port = Some(1005), groupName = Some("planes"), identifier = Some(identifier3), healthcheckRoute = Option.empty, working = Some(false)
+        )) >>
+        participantEventService.markParticipantAsHealthy(identifier2) >> // identifier2 removed so the event won't be emitted
+        participantEventService.createParticipant(ParticipantModificationPayload( // re-creation of identifier2 + two events will be emitted because of setting working to true
+          host = Some("127.0.0.2"), port = Some(1004), groupName = Some("planes"), identifier = Some(identifier2), healthcheckRoute = Option.empty, working = Some(true)
+        )) >>
+        participantEventService.removeParticipant(identifier3) >>
+        participantEventService.modifyParticipant(ParticipantModificationPayload( // identifier3 removed so the event won't be emitted
+          host = Option.empty, port = Option.empty, groupName = Option.empty, identifier = Some(identifier3), healthcheckRoute = Some("SomePath2/"), working = Option.empty
+        )) >>
+        participantEventService.markParticipantAsHealthy(identifier3) >> // identifier3 removed so the event won't be emitted
+        participantEventService.markParticipantAsHealthy(identifier1) >>
+        participantEventService.markParticipantAsHealthy(identifier1) >> // emitting same event one after another
+        participantEventService.constructAllParticipants()
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res._2 should be(13L)
+
+      val participantsMap = res._1.foldLeft(Map.empty[String, Participant]) ((prev, item) => prev + (item.identifier -> item))
+      participantsMap.size should be (2) // only identifier1 and identifier2
+
+      participantsMap(identifier1) should be (Participant(
+        host = "127.0.0.2", port = 1002, group = Group("ships2"), identifier = identifier1,
+        healthcheckInfo = HealthcheckInfo("SomePath/"), status = NotWorking, health = Healthy
+      ))
+
+      participantsMap(identifier2) should be (Participant(
+        host = "127.0.0.2", port = 1004, group = Group("planes"), identifier = identifier2,
+        healthcheckInfo = HealthcheckInfo("healthcheck"), status = Working, health = Unhealthy
+      ))
     }
   }
 }
