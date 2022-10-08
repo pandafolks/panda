@@ -24,7 +24,8 @@ class ParticipantEventServiceItTest extends AsyncFlatSpec with ParticipantEventF
   override protected def afterAll(): Unit = mongoContainer.stop()
 
   override protected def beforeEach(): Unit = Await.result(participantEventsAndSequencesConnection.use {
-    case (p, _) => p.db.dropCollection(participantEventsColName)
+    case (p, _) =>
+      p.db.dropDatabase(dbName)
   }.runToFuture, 5.seconds)
 
   "ParticipantEventService#createParticipant" should "insert Created event and assign default identifier" in {
