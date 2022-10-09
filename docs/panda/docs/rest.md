@@ -4,6 +4,8 @@ In order to communicate with and maintain the Panda gateway, there is a REST API
 
 
 ## Gateway entrypoint
+<br />
+
 All REST calls targeted against provided routes need to go through this endpoint. <br />
 Supported methods: ```GET```,```POST```,```PUT```,```PATCH```,```DELETE```. 
 Everything after ```gateway``` keyword will be resolved and dispatched to one of the routes if the match was found.
@@ -14,10 +16,14 @@ There is no authorization check. <br /><br />
 
 ```shell
 gateway/...
-```
+``` 
+---
 <br />
 
 ## Authentication endpoints
+##### *User management endpoints* 
+<br />
+
 The endpoint is used for acquiring authentication tokens that are needed in the Panda maintaining operations like adding new participants or modifying routes. <br />
 **Request payload example:**
 ```json 
@@ -27,8 +33,8 @@ The endpoint is used for acquiring authentication tokens that are needed in the 
 } 
 ```
 **Status codes:** <br />
-- **200** - if the user was successfully found <br />
-- **401** - if the user cannot be recognized
+- **200** - the user was successfully found <br />
+- **401** - the user cannot be recognized
 
 ```shell
 [POST] api/v1/auth/login
@@ -43,8 +49,8 @@ The endpoint is used for removing the user with provided credentials. <br />
 } 
 ```
 **Status codes:** <br />
-- **204** - if the user was successfully removed <br />
-- **401** - if the user cannot be recognized
+- **204** - the user was successfully removed <br />
+- **401** - the user cannot be recognized
 
 ```shell
 [DELETE] api/v1/auth/destroy
@@ -60,11 +66,38 @@ The endpoint is used for creating a new user with provided credentials. The endp
 } 
 ```
 **Status codes:** <br />
-- **201** - if the user was successfully created <br />
-- **409** - if the user with requested username already exists <br />
-- **400** - if any error during creation occurred
+- **201** - the user was successfully created <br />
+- **409** - the user with requested username already exists <br />
+- **400** - any error during creation occurred
 
 ```shell
 [POST] api/v1/auth/register
+```
+---
+<br />
+
+## Participants endpoints
+##### *Endpoints used for participants (serves the requests are routed to) management*
+<br />
+
+Returns registered groups (unique types of services). <br   />
+**Response payload example:**
+```json 
+[
+    {
+        "name": "cars"
+    },
+    {
+        "name": "planes"
+    }
+]
+```
+**Status codes:** <br />
+- **200** - response successfully returned<br />
+- **403** - the user does not have access to this resource<br />
+- **404** - there isn't any registered group
+
+```shell
+[GET] api/v1/auth/groups
 ```
 ---
