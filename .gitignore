@@ -270,3 +270,5 @@ ehthumbs_vista.db
 *.lnk
 
 # End of https://www.gitignore.io/api/linux,osx,windows,java,scala,intellij,jetbrains,visualstudiocode,sbt,bloop,metals
+
+docs/panda/site/

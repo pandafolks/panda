@@ -1,0 +1,19 @@
+name: build
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install mkdocs
+        working-directory: /docs/panda
+        run: pip install mkdocs
+      - name: Deploy docs
+        working-directory: /docs/panda
+        run: mkdocs gh-deploy --force --clean --verbose
