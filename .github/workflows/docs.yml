@@ -12,8 +12,8 @@ jobs:
         with:
           python-version: 3.x
       - name: Install mkdocs
-        working-directory: /docs/panda
+        working-directory: ./docs/panda
         run: pip install mkdocs
       - name: Deploy docs
-        working-directory: /docs/panda
+        working-directory: ./docs/panda
         run: mkdocs gh-deploy --force --clean --verbose
