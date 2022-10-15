@@ -3,3 +3,4 @@ site_name: Panda
 nav:
   - Home: index.md
   - Rest: rest.md
+  - Config: config.md

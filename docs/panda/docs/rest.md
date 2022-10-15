@@ -38,6 +38,9 @@ The endpoint is used for acquiring authentication tokens that are needed in the 
 ```text 
 a6f32febacfa21aba3b00be666197b3d8d3157ff-1665825498141-c6d6680e-0a02-44ce-b58e-ffd22e3b31d5
 ```
+**How to use a Token as a Header:** <br />
+`Authorization: "Bearer a6f32febacfa21aba3b00be666197b3d8d3157ff-1665825498141-c6d6680e-0a02-44ce-b58e-ffd22e3b31d5"`<br />
+
 **Status codes:** <br />
 - **200** - the user was successfully found <br />
 - **401** - the user cannot be recognized
@@ -45,6 +48,7 @@ a6f32febacfa21aba3b00be666197b3d8d3157ff-1665825498141-c6d6680e-0a02-44ce-b58e-f
 ```shell
 [POST] api/v1/auth/login
 ```
+
 ---
 The endpoint is used for removing the user with provided credentials. <br />
 **Request payload example:**
@@ -105,11 +109,12 @@ Returns registered groups (unique types of services). <br   />
 - **404** - there isn't any registered group
 
 ```shell
-[GET] api/v1/auth/groups
+[GET] api/v1/groups
 ```
 ---
 
-Returns all participants (registered services). It is possible to optional filtering out results by the participants' current status.
+Returns all participants (registered services). It is possible to optional filtering out results by the participants' current status. <br />
+
 **Response payload example:**
 ```json 
 [
@@ -171,7 +176,7 @@ Returns all participants (registered services). It is possible to optional filte
 - **403** - the user does not have access to this resource<br />
 - **404** - there aren't any results
 ```shell
-[GET] api/v1/auth/participants?filter=[all/working/healthy]
+[GET] api/v1/participants?filter=[all/working/healthy]
 ```
 ---
 
@@ -224,7 +229,7 @@ It is possible to optional filtering out results by the participants' current st
 - **403** - the user does not have access to this resource<br />
 - **404** - there aren't any results
 ```shell
-[GET] api/v1/auth/participants/{group_name}?filter=[all/working/healthy]
+[GET] api/v1/participants/{group_name}?filter=[all/working/healthy]
 ```
 ---
 
@@ -271,7 +276,7 @@ Creates new participants. The required fields are `host`, `port`, and `groupName
 - **200** - creation request performed<br />
 - **403** - the user does not have access to this resource<br />
 ```shell
-[POST] api/v1/auth/participants
+[POST] api/v1/participants
 ```
 ---
 
@@ -314,7 +319,7 @@ Only those properties that were contained in the payload will be updated.
 - **200** - update request performed<br />
 - **403** - the user does not have access to this resource<br />
 ```shell
-[PUT] api/v1/auth/participants
+[PUT] api/v1/participants
 ```
 ---
 
@@ -341,8 +346,460 @@ Removes participants with delivered identifiers.
 - **200** - removal request performed<br />
 - **403** - the user does not have access to this resource<br />
 ```shell
-[DELETE] api/v1/auth/participants
+[DELETE] api/v1/participants
 ```
 ---
-  
+<br />
 
+## Routes endpoints
+##### *Endpoints used for mappers and prefixes management. All calls targeting these endpoints are required to be authenticated.*
+`routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesRouting.scala`
+<br /><br />
+  
+Returns the union of all available Mappers and Prefixes. It is possible to optional filtering out results either by the 
+group name the Mappers belong to or by the Mappers' `standalone` property. If the Mapper is a `standalone` one that means it can be 
+used directly via the Gateway and in the Composition Mappers, whereas not `standalone` Mappers can be used only via Composition Mappers. <br />
+
+**Response payload example:**
+```json 
+{
+    "mappers": [
+        [
+            "cars/all",
+            {
+                "mapping": "cars",
+                "method": "POST",
+                "isStandalone": true
+            }
+        ],
+        [
+            "cars/supercars/**",
+            {
+                "mapping": "planes",
+                "method": "GET",
+                "isStandalone": true
+            }
+        ],
+        [
+            "planes/{{plane_id}}/passengers",
+            {
+                "mapping": "planes",
+                "method": "GET",
+                "isStandalone": true
+            }
+        ],
+        [
+            "planes/somepath1/param123",
+            {
+                "mapping": "planes",
+                "method": "GET",
+                "isStandalone": false
+            }
+        ],
+        [
+            "cars/all",
+            {
+                "mapping": "cars",
+                "method": "GET",
+                "isStandalone": true
+            }
+        ],
+        [
+            "planes/somepath1/param123",
+            {
+                "mapping": "planes",
+                "method": "DELETE",
+                "isStandalone": true
+            }
+        ],
+        [
+            "cars/rent/complex2",
+            {
+                "mapping": {
+                    "property2": {
+                        "property3": "planes/somepath1/param123"
+                    },
+                    "property1": "some/other/path"
+                },
+                "method": "GET",
+                "isStandalone": true
+            }
+        ]
+    ],
+    "prefixes": {
+        "cars": "api/v1",
+        "planes": "api/v2"
+    }
+}
+```
+
+**Status codes:** <br />
+- **200** - response successfully returned<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[GET] api/v1/routes?group=[{group_name}]&standalone=[true/false]
+```
+---
+
+Returns all available Mappers. It is possible to optional filtering out results by the `standalone` property. 
+If the Mapper is a `standalone` one that means it can be used directly via the Gateway and in the Composition Mappers, 
+whereas not `standalone` Mappers can be used only via Composition Mappers. <br />
+
+**Response payload example:**
+```json 
+[
+    [
+        "cars/all",
+        {
+            "mapping": "cars",
+            "method": "POST",
+            "isStandalone": true
+        }
+    ],
+    [
+        "cars/supercars/**",
+        {
+            "mapping": "planes",
+            "method": "GET",
+            "isStandalone": true
+        }
+    ],
+    [
+        "planes/{{plane_id}}/passengers",
+        {
+            "mapping": "planes",
+            "method": "GET",
+            "isStandalone": true
+        }
+    ],
+    [
+        "planes/somepath1/param123",
+        {
+            "mapping": "planes",
+            "method": "GET",
+            "isStandalone": false
+        }
+    ],
+    [
+        "cars/all",
+        {
+            "mapping": "cars",
+            "method": "GET",
+            "isStandalone": true
+        }
+    ],
+    [
+        "planes/somepath1/param123",
+        {
+            "mapping": "planes",
+            "method": "DELETE",
+            "isStandalone": true
+        }
+    ],
+    [
+        "cars/rent/complex2",
+        {
+            "mapping": {
+                "property2": {
+                    "property3": "planes/somepath1/param123"
+                },
+                "property1": "some/other/path"
+            },
+            "method": "GET",
+            "isStandalone": true
+        }
+    ]
+]
+```
+
+**Status codes:** <br />
+- **200** - response successfully returned<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[GET] api/v1/routes/mappers?standalone=[true/false]
+```
+---
+
+Returns all available prefixes. <br />
+
+**Response payload example:**
+```json 
+{
+    "cars": "api/v1",
+    "planes": "api/v2"
+}
+```
+
+**Status codes:** <br />
+- **200** - response successfully returned<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[GET] api/v1/routes/prefixes
+```
+---
+
+Creates Mappers and Prefixes. Mappers' uniqueness is based on the combination of the Route and the HTTP Method.<br />
+
+**Request payload example:**
+```json 
+{
+   "mappers":[
+      [
+         "cars/supercars/**",
+         {
+            "mapping":"planes",
+            "method":"GET",
+            "isStandalone":true
+         }
+      ],
+      [
+         "planes/{{plane_id}}/passengers",
+         {
+            "mapping":"planes",
+            "method":"get",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/cars/rent/complex2",
+         {
+            "mapping":{
+               "property1":"some/other/path",
+               "property2":{
+                  "property3":"/planes/somepath1/param123"
+               }
+            },
+            "method":"GET",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/planes/somepath1/param123",
+         {
+            "mapping":"planes",
+            "method":"DELETE",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/planes/somepath1/param123",
+         {
+            "mapping":"planes",
+            "method":"GET",
+            "isStandalone":false
+         }
+      ],
+      [
+         "/cars/all",
+         {
+            "mapping":"cars"
+         }
+      ],
+      [
+         "/cars/all",
+         {
+            "mapping":"cars",
+            "method":"POST"
+         }
+      ]
+   ],
+   "prefixes":{
+      "cars":"api/v1",
+      "planes":"/api/v2"
+   }
+}
+```
+
+**Response payload example:**
+```json 
+{
+    "message": "Created successfully 7 routes out of 7 requested and 2 prefixes out of 2 requested",
+    "successfulRoutes": [
+        "cars/rent/complex2",
+        "planes/somepath1/param123",
+        "planes/somepath1/param123",
+        "cars/all",
+        "cars/all"
+    ],
+    "successfulGroupPrefixes": [
+        "cars"
+    ],
+    "routesErrors": [
+        "[AlreadyExists$]: Route 'cars/supercars/**' [GET] already exists",
+        "[AlreadyExists$]: Route 'planes/{{plane_id}}/passengers' [GET] already exists"
+    ],
+    "groupPrefixesErrors": [
+      "[AlreadyExists$]: Group 'planes' has already defined prefix"
+    ]
+}
+```
+
+**Defaults (auto generated if omitted in the payload):** <br />
+- **isStandalone** - `true` <br />
+- **method** - `GET` <br />
+
+**Status codes:** <br />
+- **200** - creation request performed<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[POST] api/v1/routes
+```
+---
+
+Updates (and creates if not exists) Mappers and Prefixes. Mappers' uniqueness is based on the combination of the Route and the HTTP Method.<br />
+
+**Request payload example:**
+```json 
+{
+   "mappers":[
+      [
+         "cars/supercars/**",
+         {
+            "mapping":"planes",
+            "method":"GET",
+            "isStandalone":true
+         }
+      ],
+      [
+         "planes/{{plane_id}}/passengers",
+         {
+            "mapping":"planes",
+            "method":"get",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/cars/rent/complex2",
+         {
+            "mapping":{
+               "property1":"some/other/path",
+               "property2":{
+                  "property3":"/planes/somepath1/param123"
+               }
+            },
+            "method":"GET",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/planes/somepath1/param123",
+         {
+            "mapping":"planes",
+            "method":"DELETE",
+            "isStandalone":true
+         }
+      ],
+      [
+         "/planes/somepath1/param123",
+         {
+            "mapping":"planes",
+            "method":"GET",
+            "isStandalone":false
+         }
+      ],
+      [
+         "/cars/all",
+         {
+            "mapping":"cars"
+         }
+      ],
+      [
+         "/cars/all",
+         {
+            "mapping":"cars",
+            "method":"POST"
+         }
+      ]
+   ],
+   "prefixes":{
+      "cars":"api/v1",
+      "planes":"/api/v2"
+   }
+}
+```
+
+**Response payload example:**
+```json 
+{
+    "message": "Created successfully 7 routes out of 7 requested and 2 prefixes out of 2 requested",
+    "successfulRoutes": [
+        "cars/supercars/**",
+        "planes/{{plane_id}}/passengers",
+        "cars/rent/complex2",
+        "planes/somepath1/param123",
+        "planes/somepath1/param123",
+        "cars/all",
+        "cars/all"
+    ],
+    "successfulGroupPrefixes": [
+        "cars",
+        "planes"
+    ],
+    "routesErrors": [],
+    "groupPrefixesErrors": []
+}
+```
+
+**Defaults (auto generated if omitted in the payload):** <br />
+- **isStandalone** - `true` <br />
+- **method** - `GET` <br />
+
+  **Status codes:** <br />
+- **200** - update request performed<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[POST] api/v1/routes/override
+```
+---
+
+Removes Mappers and Prefixes. Mappers' uniqueness is based on the combination of the Route and the HTTP Method.<br />
+
+**Request payload example:**
+```json 
+{
+   "mappers":[
+      {
+         "route":"/planes/somepath1/param123",
+         "method":"DELETE"
+      },
+      {
+         "route":"cars/all/"
+      }
+   ],
+   "prefixes":[
+      "planes2",
+      "cars23",
+      "cars"
+   ]
+}
+```
+
+**Response payload example:**
+```json 
+{
+    "message": "Removed successfully 2 routes out of 2 requested and 1 prefixes out of 3 requested",
+    "successfulRoutes": [
+        "planes/somepath1/param123",
+        "cars/all"
+    ],
+    "successfulGroupPrefixes": [
+        "cars"
+    ],
+    "routesErrors": [],
+    "groupPrefixesErrors": [
+        "[NotExists$]: There is no prefix associated with the group 'planes2'",
+        "[NotExists$]: There is no prefix associated with the group 'cars23'"
+    ]
+}
+```
+
+**Defaults (auto generated if omitted in the payload):** <br />
+- **method** - `GET` <br />
+
+  **Status codes:** <br />
+- **200** - removal request performed<br />
+- **403** - the user does not have access to this resource<br />
+```shell
+[DELETE] api/v1/routes
+```
+---

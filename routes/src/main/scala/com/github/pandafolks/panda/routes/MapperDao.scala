@@ -11,7 +11,7 @@ trait MapperDao {
 
   /**
    * Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]]
-   * if the one for specified route does not exist.
+   * if the one for specified route and method does not exist.
    *
    * @param route
    * @param mapperRecordDto

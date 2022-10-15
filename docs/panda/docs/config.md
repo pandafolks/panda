@@ -1,3 +1,10 @@
+# Application Config
+
+This is an example configuration that you can run Panda instances with. <br />
+`bootstap/src/main/resources/application.conf`
+<br /><br />
+
+```conf
 app-server {
     # This is a Http4sEmberServerConfig
     listen-address = "0.0.0.0"
@@ -67,3 +74,5 @@ init-user {                                         # If there is no user in the
     username = "admin"
     password = "admin"
 }
+
+``` 
