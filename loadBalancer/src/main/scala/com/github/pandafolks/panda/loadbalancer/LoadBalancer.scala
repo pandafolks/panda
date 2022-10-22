@@ -42,11 +42,11 @@ object LoadBalancer {
 
   def notReachedAnyInstanceLog(requestedPath: Path, group: Group, logger: Logger): Task[Response[Task]] =
     Task.now(s"[path: ${requestedPath.renderString}]: Could not reach any of the instances belonging to the group \"${group.name}\"")
-      .tapEval(message => Task.eval(logger.debug(message)))
+      .tapEval(message => Task.eval(logger.info(message)))
       .flatMap(massage => Responses.serviceUnavailableWithInfo(massage))
 
   def noAvailableInstanceLog(requestedPath: Path, group: Group, logger: Logger): Task[Response[Task]] =
     Task.now(s"[path: ${requestedPath.renderString}]: There is no available instance for the related group \"${group.name}\"")
-      .tapEval(message => Task.eval(logger.debug(message)))
+      .tapEval(message => Task.eval(logger.info(message)))
       .flatMap(massage => Responses.notFoundWithInfo(massage))
 }

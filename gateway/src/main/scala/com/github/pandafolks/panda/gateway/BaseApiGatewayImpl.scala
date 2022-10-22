@@ -19,11 +19,11 @@ final class BaseApiGatewayImpl(
       .flatMap {
         case None =>
           Task.now(s"${request.pathInfo} was not recognized as a supported path")
-            .tapEval(message => Task.eval(logger.debug(message)))
+            .tapEval(message => Task.eval(logger.info(message)))
             .flatMap(message => Responses.notFoundWithInfo(message))
         case Some((routeInfo, _)) if routeInfo.mappingContent.left.isEmpty =>
           Task.now(s"${request.pathInfo} is a composition route, ${this.getClass.getName} does not support composition routes")
-            .tapEval(message => Task.eval(logger.debug(message)))
+            .tapEval(message => Task.eval(logger.info(message)))
             .flatMap(message => Responses.badRequestWithInfo(message))
         case Some((routeInfo, _)) =>
           Task.now(Group(routeInfo.mappingContent.left.get)).flatMap { relatedGroup =>
