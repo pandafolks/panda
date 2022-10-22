@@ -1,4 +1,5 @@
 # Welcome to Panda
+[![codecov](https://codecov.io/github/pandafolks/panda/branch/master/graph/badge.svg?token=RO6VFA3SVU)](https://codecov.io/github/pandafolks/panda)
 <br />
 
 ## What is Panda?
