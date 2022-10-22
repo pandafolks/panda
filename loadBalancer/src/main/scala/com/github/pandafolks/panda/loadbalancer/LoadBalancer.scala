@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
+import com.github.pandafolks.panda.utils.http.Responses
 import monix.eval.Task
 import org.http4s.{Header, Request, Response}
 import org.http4s.Uri.{Authority, Path, RegName}
@@ -39,10 +40,13 @@ object LoadBalancer {
         Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
       ))
 
-  def notReachedAnyInstanceLog(requestedPath: Path, group: Group, logger: Logger): Unit =
-    logger.info("[path: \"" + requestedPath.renderString + "\"]: " +
-      "Could not reach any of the instances belonging to the group " + "\"" + group.name + "\"")
+  def notReachedAnyInstanceLog(requestedPath: Path, group: Group, logger: Logger): Task[Response[Task]] =
+    Task.now(s"[path: ${requestedPath.renderString}]: Could not reach any of the instances belonging to the group \"${group.name}\"")
+      .tapEval(message => Task.eval(logger.info(message)))
+      .flatMap(massage => Responses.serviceUnavailableWithInfo(massage))
 
-  def noAvailableInstanceLog(requestedPath: Path, logger: Logger): Unit =
-    logger.info("[path: \"" + requestedPath.renderString + "\"]: There is no available instance for the requested path")
+  def noAvailableInstanceLog(requestedPath: Path, group: Group, logger: Logger): Task[Response[Task]] =
+    Task.now(s"[path: ${requestedPath.renderString}]: There is no available instance for the related group \"${group.name}\"")
+      .tapEval(message => Task.eval(logger.info(message)))
+      .flatMap(massage => Responses.notFoundWithInfo(massage))
 }

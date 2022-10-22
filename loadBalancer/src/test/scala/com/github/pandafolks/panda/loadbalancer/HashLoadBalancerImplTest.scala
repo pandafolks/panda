@@ -101,6 +101,6 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
     val loadBalancer = createRandomLBWithSingleGroup(containAvailable = false, containUnavailable = true)
 
     LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(_.status should be (Status.NotFound))
+      .map(_.status should be (Status.ServiceUnavailable))
   }
 }

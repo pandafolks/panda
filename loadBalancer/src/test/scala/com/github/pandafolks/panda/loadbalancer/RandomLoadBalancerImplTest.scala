@@ -71,6 +71,6 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
     val loadBalancer = createRandomLBWithSingleGroup(false)
 
     LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(_.status should be (Status.NotFound))
+      .map(_.status should be (Status.ServiceUnavailable))
   }
 }

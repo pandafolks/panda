@@ -81,7 +81,7 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
     val loadBalancer = createRoundRobinLBWithSingleGroup(false)
 
     LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(_.status should be (Status.NotFound))
+      .map(_.status should be (Status.ServiceUnavailable))
   }
 
   private def fromResponseAssert(response: Response[Task], availableRouteIndex: Int): Assertion =

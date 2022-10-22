@@ -1,11 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriodic="300 seconds">
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%20.20thread] %50.50logger{50}: %message%n%ex{full}</pattern>
             <charset>utf8</charset>
         </encoder>
     </appender>
+
+    <appender name="GATEWAY" class="ch.qos.logback.core.FileAppender">
+        <file>gateway_traffic.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%20.20thread] %50.50logger{50}: %message%n%ex{full}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+<!--    gateway related loggers-->
+    <logger name="org.http4s.server.middleware.Logger" additivity="false" level="INFO">
+        <appender-ref ref="GATEWAY"/>
+    </logger>
+
+    <logger name="com.github.pandafolks.panda.gateway.BaseApiGatewayImpl" additivity="false" level="INFO">
+        <appender-ref ref="GATEWAY"/>
+    </logger>
+
+    <logger name="com.github.pandafolks.panda.loadbalancer.HashLoadBalancerImpl" additivity="false" level="INFO">
+        <appender-ref ref="GATEWAY"/>
+    </logger>
+
+    <logger name="com.github.pandafolks.panda.loadbalancer.RandomLoadBalancerImpl" additivity="false" level="INFO">
+        <appender-ref ref="GATEWAY"/>
+    </logger>
+
+    <logger name="com.github.pandafolks.panda.loadbalancer.RoundRobinLoadBalancerImpl" additivity="false" level="INFO">
+        <appender-ref ref="GATEWAY"/>
+    </logger>
+<!--    gateway related loggers-->
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
