@@ -28,12 +28,10 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
     def rc(hash: Int, leftTriesNumber: Int = retriesNumber + 1): Task[Response[Task]] =
       if (leftTriesNumber == 0) {
         LoadBalancer.notReachedAnyInstanceLog(requestedPath, group, logger)
-        Response.notFoundFor(request)
       } else {
         Task.eval(consistentHashingState.get(group, hash))
           .flatMap(participantOption =>
-            participantOption.fold(Task.now(LoadBalancer.noAvailableInstanceLog(requestedPath, logger))
-              .flatMap(_ => Response.notFoundFor(request)))(participant =>
+            participantOption.fold(LoadBalancer.noAvailableInstanceLog(requestedPath, group, logger))(participant =>
               client.run(LoadBalancer.fillRequestWithParticipant(request, participant, requestedPath)).use(Task.eval(_))
             )
           ).onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }

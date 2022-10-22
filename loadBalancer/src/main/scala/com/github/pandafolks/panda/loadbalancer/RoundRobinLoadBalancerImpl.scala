@@ -20,8 +20,7 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
     participantsCache.getHealthyParticipantsAssociatedWithGroup(group).flatMap {
       case eligibleParticipants if eligibleParticipants.isEmpty =>
         lastUsedIndexes.remove(group)
-        LoadBalancer.noAvailableInstanceLog(requestedPath, logger)
-        Response.notFoundFor(request)
+        LoadBalancer.noAvailableInstanceLog(requestedPath, group, logger)
       case eligibleParticipants =>
         Task.evalOnce(
           AtomicInt(lastUsedIndexes.computeIfAbsent(group, _ => AtomicInt(0))
@@ -35,7 +34,6 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
           .onErrorRestart(eligibleParticipants.size - 1L) // trying to hit all available servers (in the worst case)
           .onErrorRecoverWith { case _: Throwable =>
             LoadBalancer.notReachedAnyInstanceLog(requestedPath, group, logger)
-            Response.notFoundFor(request)
           }
     }
 }
