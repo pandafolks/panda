@@ -1,8 +1,7 @@
 # Rest Documentation
-
 In order to communicate with and maintain the Panda gateway, there is a REST API provided.
-<br /><br />
 
+---
 ## Gateway entrypoint
 `gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala`
 <br /><br />
@@ -19,8 +18,6 @@ There is no authorization check. <br /><br />
 gateway/...
 ``` 
 ---
-<br />
-
 ## Authentication endpoints
 ##### *User management endpoints.* 
 `user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala`
@@ -84,8 +81,6 @@ The endpoint is used for creating a new user with provided credentials. The endp
 [POST] api/v1/auth/register
 ```
 ---
-<br />
-
 ## Participants endpoints
 ##### *Endpoints used for participants (serves the requests are routed to) management. All calls targeting these endpoints are required to be authenticated.*
 `participant/src/main/scala/com/github/pandafolks/panda/participant/ParticipantsRouting.scala`
@@ -349,8 +344,6 @@ Removes participants with delivered identifiers.
 [DELETE] api/v1/participants
 ```
 ---
-<br />
-
 ## Routes endpoints
 ##### *Endpoints used for mappers and prefixes management. All calls targeting these endpoints are required to be authenticated.*
 `routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesRouting.scala`
