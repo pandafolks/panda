@@ -1,5 +1,6 @@
 # Welcome to Panda
-[![codecov](https://codecov.io/github/pandafolks/panda/branch/master/graph/badge.svg?token=RO6VFA3SVU)](https://codecov.io/github/pandafolks/panda)
+[![Code Coverage](https://codecov.io/github/pandafolks/panda/branch/master/graph/badge.svg?token=RO6VFA3SVU)](https://codecov.io/github/pandafolks/panda)
+[![Continuous Integration](https://github.com/pandafolks/panda/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/pandafolks/panda/actions/workflows/build.yml)
 <br />
 
 ## What is Panda?
