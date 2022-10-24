@@ -5,6 +5,7 @@ nav:
   - Rest: rest.md
   - Documentation: documentation.md
   - Config: config.md
+  - Contributing: contributing.md
 
 theme:
   name: material
