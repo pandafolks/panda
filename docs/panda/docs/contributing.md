@@ -4,10 +4,11 @@ Hello everyone, this project was created mainly in order to evolve contributors'
 If you don't have either scala or distributed systems experience, that's all right, you can play around here! 
 We don't have deadlines or any other pressure, so the quality of the solutions is a crucial factor.
 
+---
 ## Code of Conduct
-
 People are expected to follow the [Scala Code of Conduct](https://www.scala-lang.org/conduct/)
 
+---
 ## General Workflow
 
 1. Make sure you can license your work under Apache 2.0 
@@ -36,6 +37,7 @@ sbt it:test
 Despite we try to work along with the issues tracker. Once you see something that may be done in a better way, feel 
 free to make a Pull Request with improvement.
 
+---
 ## Hints
 
 ### Application entry point

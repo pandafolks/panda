@@ -12,7 +12,7 @@ It's a High performance all-in-one API Gateway.
 
 ---
 ## Can I contribute?
-Of course! Firstly, learn [how to contribute](https://github.com/pandafolks/panda/blob/master/CONTRIBUTING.md). 
+Of course! Firstly, learn [how to contribute](https://pandafolks.github.io/panda/contributing/). 
 Next, check out the [open issues](https://github.com/pandafolks/panda/issues). 
 
 ---
