@@ -17,8 +17,8 @@ jobs:
         continue-on-error: false
       - name: Run jar
         id: run
-        run: java -jar target/scala-2.13/panda.jar
+        run: java -jar target/scala-2.13/panda.jar > logs.log 2>&1
         continue-on-error: false
       - name: Check if running
-        if: contains(steps.run.outputs, 'Running Panda on the')
+        if: contains("$(cat logs.log)", 'Running Panda on the')
         run: exit 1
