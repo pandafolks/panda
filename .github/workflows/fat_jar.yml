@@ -1,4 +1,4 @@
-name: Generating and running fat jar
+name: Creating and running Fat Jar
 
 on:
   push:
@@ -27,6 +27,6 @@ jobs:
         uses: andstor/file-reader-action@v1
         with:
           path: "log.log"
-      - name: Check if running
-        if: contains(steps.logs.outputs, 'blabla bla')
+      - name: Check if started properly
+        if: contains(steps.logs.outputs, 'blabfdvkgndfvdfvdf')
         run: exit 1
