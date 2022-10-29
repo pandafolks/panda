@@ -28,5 +28,5 @@ jobs:
         with:
           path: "log.log"
       - name: Check if running
-        if: contains(steps.logs.outputs, 'Running Panda on the')
+        if: contains(steps.logs.outputs, 'blabla bla')
         run: exit 1
