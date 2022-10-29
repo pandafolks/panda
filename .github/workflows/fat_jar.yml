@@ -28,5 +28,5 @@ jobs:
         with:
           path: "log.log"
       - name: Check if started properly
-        if: "!contains(steps.logs.outputs.contents, 'Running Panda on the')"
+        if: "!contains(steps.logs.outputs.contents, 'Runnfding Panda on the')"
         run: exit 1
