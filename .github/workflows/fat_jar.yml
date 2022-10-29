@@ -16,9 +16,17 @@ jobs:
         run: sbt assembly
         continue-on-error: false
       - name: Run jar
-        id: run
-        run: nohup java -jar target/scala-2.13/panda.jar > logs.log 2>&1
+        run: nohup java -jar target/scala-2.13/panda.jar > log.log 2>&1 &
         continue-on-error: false
+      - name: Sleep for 10s
+        uses: juliangruber/sleep-action@v1
+        with:
+          time: 10s
+      - name: Read log contents
+        id: logs
+        uses: andstor/file-reader-action@v1
+        with:
+          path: "log.log"
       - name: Check if running
-        if: contains("${{cat logs.log}}", 'Running Panda on the')
+        if: contains(steps.logs.outputs, 'Running Panda on the')
         run: exit 1
