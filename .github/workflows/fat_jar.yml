@@ -1,0 +1,32 @@
+name: Creating and running fat Jar
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build with sbt assembly
+        run: sbt assembly
+        continue-on-error: false
+      - name: Run jar
+        run: nohup java -jar target/scala-2.13/panda.jar > log.log 2>&1 &
+        continue-on-error: false
+      - name: Sleep for 10s
+        uses: juliangruber/sleep-action@v1
+        with:
+          time: 10s
+      - name: Read log contents
+        id: logs
+        uses: andstor/file-reader-action@v1
+        with:
+          path: "log.log"
+      - name: Check if started properly
+        if: "!contains(steps.logs.outputs.contents, 'Running Panda on the')"
+        run: exit 1
