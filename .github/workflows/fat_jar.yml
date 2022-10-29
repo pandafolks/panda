@@ -1,0 +1,26 @@
+name: Generating and running fat jar
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build with sbt assembly
+        run: sbt assembly
+        with:
+          fail_ci_if_error: true
+      - name: Run jar
+        id: run
+        run: java -jar target/scala-2.13/panda.jar
+        with:
+          fail_ci_if_error: true
+      - name: Check if running
+        if: contains(steps.run.outputs, 'Running Panda on the')
+        run: exit 1

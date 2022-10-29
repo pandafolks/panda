@@ -17,7 +17,9 @@ inThisBuild(List(
 //skip in publish := true
 
 lazy val sharedSettings = Seq(
-  scalaVersion       := "2.13.8",
+  scalaVersion := "2.13.8",
+  version := "0.1.0-SNAPSHOT",
+  mainClass in(Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App"),
   scalacOptions ++= Seq(
     "-unchecked",
     "-deprecation",
@@ -26,7 +28,7 @@ lazy val sharedSettings = Seq(
     "-language:implicitConversions",
     "-language:experimental.macros"
   ),
-  scalacOptions in (Compile, console) ++= Seq("-Ywarn-unused:imports"),
+  scalacOptions in(Compile, console) ++= Seq("-Ywarn-unused:imports"),
   scalacOptions ++= Seq(
     "-Ywarn-unused:imports",
     "-Ywarn-dead-code",
@@ -42,21 +44,21 @@ lazy val sharedSettings = Seq(
   ),
 
   // ScalaDoc settings
-  scalacOptions in (Compile, doc) ++= Seq("-no-link-warnings"),
+  scalacOptions in(Compile, doc) ++= Seq("-no-link-warnings"),
   autoAPIMappings := true,
   scalacOptions in ThisBuild ++= Seq(
     "-sourcepath",
     file(".").getAbsolutePath.replaceAll("[.]$", "")
   ),
-  parallelExecution in Test             := true,
-  parallelExecution in ThisBuild        := true,
-  testForkedParallel in Test            := true,
-  testForkedParallel in ThisBuild       := true,
+  parallelExecution in Test := true,
+  parallelExecution in ThisBuild := true,
+  testForkedParallel in Test := true,
+  testForkedParallel in ThisBuild := true,
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 3),
-  logBuffered in Test            := false,
+  logBuffered in Test := false,
   logBuffered in IntegrationTest := false,
   incOptions := incOptions.value.withLogRecompileOnMacro(false),
-  pomIncludeRepository    := { _ => false },
+  pomIncludeRepository := { _ => false },
 
   autoAPIMappings := true,
   Test / publishArtifact := false,
@@ -71,7 +73,7 @@ lazy val sharedSettings = Seq(
   ),
 )
 
-scalacOptions in (Compile, doc) ++= Seq("-no-link-warnings")
+scalacOptions in(Compile, doc) ++= Seq("-no-link-warnings")
 
 val IT = config("it") extend Test
 
@@ -100,10 +102,17 @@ lazy val httpClient = pandaConnector("httpClient", Dependencies.httpClientDepend
 lazy val backgroundJobsRegistry = pandaConnector("backgroundJobsRegistry", Dependencies.backgroundJobsRegistryDependencies, Seq(utils))
 lazy val utils = pandaConnector("utils", Dependencies.utilsDependencies)
 
-mainClass in (Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App")
+mainClass in(Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App")
 
 ThisBuild / assemblyMergeStrategy := {
-  case PathList("META-INF", _*) => MergeStrategy.discard
+  case PathList("META-INF", xs@_*) =>
+    (xs map {
+      _.toLowerCase
+    }) match {
+      case "services" :: xs =>
+        MergeStrategy.filterDistinctLines
+      case _ => MergeStrategy.discard
+    }
   case _ => MergeStrategy.first
 }
 
