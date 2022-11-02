@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -18,4 +15,4 @@ jobs:
         with:
           name: dependency-check-report.html
           path: target/scala-2.13/dependency-check-report.html
-          retention-days: 5
+          retention-days: 30
