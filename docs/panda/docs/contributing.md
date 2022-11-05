@@ -11,30 +11,30 @@ People are expected to follow the [Scala Code of Conduct](https://www.scala-lang
 ---
 ## General Workflow
 
-1. Make sure you can license your work under Apache 2.0 
-2. Pick a ticket from the issues section. Don't hesitate to ask clarifying questions if something is unclear.
-3. If you don't have write access to the repository, you should do
+- Make sure you can license your work under Apache 2.0 
+- Pick a ticket from the issues section. Don't hesitate to ask clarifying questions if something is unclear.
+- If you don't have write access to the repository, you should do
    your work in a local branch of your own fork and then submit a pull
    request. If you do have write access to the repository, never work
    directly on master.
-4. If you add new methods to services, remember about adding Docs. We are trying to avoid comments inside the code. 
+- If you add new methods to services, remember about adding Docs. We are trying to avoid comments inside the code. 
    However, if some part is more tricky than usual, a short explanation is advised.
-5. Once you finish work on your Pull Request, make sure both unit and integration tests are passing:
-   ```sbtshell
-   sbt test
-   ```
-   ```sbtshell
-   sbt it:test
-   ```
-6. Make sure the code is formatted with:
-   ```shell
-   sbt scalafmtAll
-   ```
-7. Resolve conflicts with the master branch (if any).
-8. Submit a Pull Request.
-9. Anyone can comment on a Pull Request, and you are expected to
+- Once you finish work on your Pull Request, make sure both unit and integration tests are passing:
+```sbtshell
+sbt test
+```
+```sbtshell
+sbt it:test
+```
+- Make sure the code is formatted with:
+```shell
+sbt scalafmtAll
+```
+- Resolve conflicts with the master branch (if any).
+- Submit a Pull Request.
+- Anyone can comment on a Pull Request, and you are expected to
    answer questions or to incorporate feedback.
-10. Once the Pull Request is approved, owners will take care of merging.
+- Once the Pull Request is approved, owners will take care of merging.
 
 Despite we try to work along with the issues tracker. Once you see something that may be done in a better way, feel 
 free to make a Pull Request with improvement.
@@ -63,20 +63,20 @@ You could register them inside Panda by running `registerInsidePanda.sh` script.
 ### Managing dependencies
 Panda provides `Makefile` file for managing project dependencies and tasks in the easy way. To see list of useful 
 commands run this in the repository root:
-   ```bash
-   make help
-   ```
+```bash
+make help
+```
 
 ### Creating executable jar
-   ```sbtshell
-   sbt assembly
-   ```
+```sbtshell
+sbt assembly
+```
 You would find `panda.jar` inside your `/target` directory.
 You can run it with `java -jar panda.jar`.
 
 ### Using your own config file
 By default, Panda will use `application.conf` config from `bootstap/src/main/resources`. 
 Feel free to create your own config, you could use it inside panda by adding VM option: 
-   ```sbtshell
-   -Dconfig.resource=application.conf
-   ```
+```sbtshell
+-Dconfig.resource=application.conf
+```
