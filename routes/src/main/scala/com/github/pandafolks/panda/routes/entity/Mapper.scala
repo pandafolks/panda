@@ -7,12 +7,12 @@ import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
 final case class Mapper(
-                         route: String,
-                         mappingContent: MappingContent,
-                         httpMethod: HttpMethod,
-                         isStandalone: Boolean,
-                         lastUpdateTimestamp: Long
-                       )
+    route: String,
+    mappingContent: MappingContent,
+    httpMethod: HttpMethod,
+    isStandalone: Boolean,
+    lastUpdateTimestamp: Long
+)
 
 object Mapper {
   final val MAPPERS_COLLECTION_NAME = "mappers"
@@ -28,10 +28,13 @@ object Mapper {
       dbName,
       collectionName,
       classOf[Mapper],
-      fromRegistries(fromProviders(
-        classOf[Mapper],
-        classOf[MappingContent],
-        classOf[HttpMethod]
-      ), DEFAULT_CODEC_REGISTRY)
+      fromRegistries(
+        fromProviders(
+          classOf[Mapper],
+          classOf[MappingContent],
+          classOf[HttpMethod]
+        ),
+        DEFAULT_CODEC_REGISTRY
+      )
     )
 }

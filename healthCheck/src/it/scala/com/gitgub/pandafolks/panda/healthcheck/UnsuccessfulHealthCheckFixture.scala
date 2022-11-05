@@ -17,18 +17,25 @@ trait UnsuccessfulHealthCheckFixture {
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
-    MongoClientSettings.builder()
+    MongoClientSettings
+      .builder()
       .applyToClusterSettings(builder => {
         builder.applyConnectionString(new ConnectionString(mongoContainer.getReplicaSetUrl(dbName)))
         ()
-      }
-      ).build()
+      })
+      .build()
 
-  protected val unsuccessfulHealthCheckColName: String = randomString(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
-  private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)
-  protected val unsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] = MongoConnection.create1(settings, unsuccessfulHealthCheckCol)
+  protected val unsuccessfulHealthCheckColName: String = randomString(
+    UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME
+  )
+  private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] =
+    UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)
+  protected val unsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] =
+    MongoConnection.create1(settings, unsuccessfulHealthCheckCol)
 
-  protected val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDaoImpl = new UnsuccessfulHealthCheckDaoImpl(unsuccessfulHealthCheckConnection)
+  protected val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDaoImpl = new UnsuccessfulHealthCheckDaoImpl(
+    unsuccessfulHealthCheckConnection
+  )
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 

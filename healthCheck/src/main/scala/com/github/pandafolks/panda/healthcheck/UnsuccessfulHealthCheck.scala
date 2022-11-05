@@ -13,13 +13,19 @@ object UnsuccessfulHealthCheck {
   final val IDENTIFIER_PROPERTY_NAME = "identifier"
   final val COUNTER_PROPERTY_NAME = "counter"
 
-  def getCollection(dbName: String, collectionName: String = UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME): CollectionCodecRef[UnsuccessfulHealthCheck] =
+  def getCollection(
+      dbName: String,
+      collectionName: String = UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME
+  ): CollectionCodecRef[UnsuccessfulHealthCheck] =
     CollectionCodecRef(
       dbName,
       collectionName,
       classOf[UnsuccessfulHealthCheck],
-      fromRegistries(fromProviders(
-        classOf[UnsuccessfulHealthCheck],
-      ), DEFAULT_CODEC_REGISTRY)
+      fromRegistries(
+        fromProviders(
+          classOf[UnsuccessfulHealthCheck]
+        ),
+        DEFAULT_CODEC_REGISTRY
+      )
     )
 }

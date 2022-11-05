@@ -8,13 +8,15 @@ import org.http4s._
 
 final class ClientStub extends Client[Task] {
   override def run(req: Request[Task]): Resource[Task, Response[Task]] =
-    Resource.eval(Task.eval(
-      req.uri.toString.dropWhile(_ == '/') match {
-        case path if ClientStub.AVAILABLE_WORKING_ROUTES.contains(path) =>
-          Response[Task](Status.Ok)
-        case _ => Response[Task](Status.ServiceUnavailable)
-      }
-    ))
+    Resource.eval(
+      Task.eval(
+        req.uri.toString.dropWhile(_ == '/') match {
+          case path if ClientStub.AVAILABLE_WORKING_ROUTES.contains(path) =>
+            Response[Task](Status.Ok)
+          case _ => Response[Task](Status.ServiceUnavailable)
+        }
+      )
+    )
 
   override def fetch[A](req: Request[Task])(f: Response[Task] => Task[A]): Task[A] = ???
 
@@ -28,25 +30,36 @@ final class ClientStub extends Client[Task] {
 
   override def streaming[A](req: Request[Task])(f: Response[Task] => fs2.Stream[Task, A]): fs2.Stream[Task, A] = ???
 
-  override def streaming[A](req: Task[Request[Task]])(f: Response[Task] => fs2.Stream[Task, A]): fs2.Stream[Task, A] = ???
+  override def streaming[A](req: Task[Request[Task]])(f: Response[Task] => fs2.Stream[Task, A]): fs2.Stream[Task, A] =
+    ???
 
-  override def expectOr[A](req: Request[Task])(onError: Response[Task] => Task[Throwable])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
+  override def expectOr[A](req: Request[Task])(onError: Response[Task] => Task[Throwable])(implicit
+      d: EntityDecoder[Task, A]
+  ): Task[A] = ???
 
   override def expect[A](req: Request[Task])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
 
-  override def expectOr[A](req: Task[Request[Task]])(onError: Response[Task] => Task[Throwable])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
+  override def expectOr[A](req: Task[Request[Task]])(onError: Response[Task] => Task[Throwable])(implicit
+      d: EntityDecoder[Task, A]
+  ): Task[A] = ???
 
   override def expect[A](req: Task[Request[Task]])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
 
-  override def expectOr[A](uri: Uri)(onError: Response[Task] => Task[Throwable])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
+  override def expectOr[A](uri: Uri)(onError: Response[Task] => Task[Throwable])(implicit
+      d: EntityDecoder[Task, A]
+  ): Task[A] = ???
 
   override def expect[A](uri: Uri)(implicit d: EntityDecoder[Task, A]): Task[A] = ???
 
-  override def expectOr[A](s: String)(onError: Response[Task] => Task[Throwable])(implicit d: EntityDecoder[Task, A]): Task[A] = ???
+  override def expectOr[A](s: String)(onError: Response[Task] => Task[Throwable])(implicit
+      d: EntityDecoder[Task, A]
+  ): Task[A] = ???
 
   override def expect[A](s: String)(implicit d: EntityDecoder[Task, A]): Task[A] = ???
 
-  override def expectOptionOr[A](req: Request[Task])(onError: Response[Task] => Task[Throwable])(implicit d: EntityDecoder[Task, A]): Task[Option[A]] = ???
+  override def expectOptionOr[A](req: Request[Task])(onError: Response[Task] => Task[Throwable])(implicit
+      d: EntityDecoder[Task, A]
+  ): Task[Option[A]] = ???
 
   override def expectOption[A](req: Request[Task])(implicit d: EntityDecoder[Task, A]): Task[Option[A]] = ???
 
@@ -74,6 +87,6 @@ final class ClientStub extends Client[Task] {
 object ClientStub {
   final val AVAILABLE_WORKING_ROUTES: List[String] = List(
     "13.204.158.92:3000/api/v1/health",
-    "193.207.130.139:3005/healthcheck",
+    "193.207.130.139:3005/healthcheck"
   )
 }

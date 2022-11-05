@@ -17,24 +17,29 @@ trait ParticipantEventFixture {
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
-    MongoClientSettings.builder()
+    MongoClientSettings
+      .builder()
       .applyToClusterSettings(builder => {
         builder.applyConnectionString(new ConnectionString(mongoContainer.getReplicaSetUrl(dbName)))
         ()
-      }
-      ).build()
+      })
+      .build()
 
   protected val sequenceColName: String = randomString(Sequence.SEQUENCE_COLLECTION_NAME)
   protected val participantEventsColName: String = randomString(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME)
   private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(dbName, sequenceColName)
-  private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(dbName, participantEventsColName)
+  private val participantEventsCol: CollectionCodecRef[ParticipantEvent] =
+    ParticipantEvent.getCollection(dbName, participantEventsColName)
 
-  protected val participantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
+  protected val participantEventsAndSequencesConnection
+      : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
 
   protected val sequenceDao: SequenceDao = new SequenceDaoImpl()
 
-  protected val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(participantEventsAndSequencesConnection)
+  protected val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(
+    participantEventsAndSequencesConnection
+  )
   protected val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
     participantEventDao = participantEventDao,
     sequenceDao = sequenceDao

@@ -14,8 +14,14 @@ import tsec.passwordhashers.jca.BCrypt
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
-class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matchers with ScalaFutures
-  with EitherValues with BeforeAndAfterAll with PrivateMethodTester {
+class TokenServiceItTest
+    extends AsyncFlatSpec
+    with UserTokenFixture
+    with Matchers
+    with ScalaFutures
+    with EitherValues
+    with BeforeAndAfterAll
+    with PrivateMethodTester {
   implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
@@ -35,10 +41,12 @@ class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matche
       .flatMap(token => tokenService.validateSignedToken(token))
       .runToFuture
 
-    whenReady(validateSignedTokenF) { res => {
-      res.isDefined should be(true)
-      res.get should be(userId)
-    }}
+    whenReady(validateSignedTokenF) { res =>
+      {
+        res.isDefined should be(true)
+        res.get should be(userId)
+      }
+    }
   }
 
   it should "cooperate and handle unsuccessful case (token not valid)" in {
@@ -54,23 +62,28 @@ class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matche
       .flatMap(_ => tokenService.validateSignedToken("blabla"))
       .runToFuture
 
-    whenReady(validateSignedTokenF) { res => {
-      res.isDefined should be(false)
-    }}
+    whenReady(validateSignedTokenF) { res =>
+      {
+        res.isDefined should be(false)
+      }
+    }
   }
 
   it should "cooperate and handle unsuccessful case (token not present in db)" in {
     val crypto = PrivateMethod[CryptoBits](Symbol("crypto"))
     val tempId = UUID.randomUUID().toString
     val clock = java.time.Clock.systemUTC
-    val manuallyCreatedValidToken = tokenService.invokePrivate(crypto())
+    val manuallyCreatedValidToken = tokenService
+      .invokePrivate(crypto())
       .signToken(tempId, clock.instant().toEpochMilli.toString)
 
     val validateSignedTokenF = tokenService.validateSignedToken(manuallyCreatedValidToken).runToFuture
 
-    whenReady(validateSignedTokenF) { res => {
-      res.isDefined should be(false)
-    }}
+    whenReady(validateSignedTokenF) { res =>
+      {
+        res.isDefined should be(false)
+      }
+    }
   }
 
   it should "cooperate and handle unsuccessful case (token expired)" in {
@@ -87,8 +100,10 @@ class TokenServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matche
       .flatMap(token => tokenService.validateSignedToken(token))
       .runToFuture
 
-    whenReady(validateSignedTokenF) { res => {
-      res.isDefined should be(false)
-    }}
+    whenReady(validateSignedTokenF) { res =>
+      {
+        res.isDefined should be(false)
+      }
+    }
   }
 }

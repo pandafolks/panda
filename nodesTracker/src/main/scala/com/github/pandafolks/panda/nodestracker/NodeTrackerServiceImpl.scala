@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.DurationInt
 
 final class NodeTrackerServiceImpl(
-                                    private val nodeTrackerDao: NodeTrackerDao,
-                                    private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                  )(
-                                    private val fullConsistencyMaxDelayInMillis: Int) extends NodeTrackerService {
+    private val nodeTrackerDao: NodeTrackerDao,
+    private val backgroundJobsRegistry: BackgroundJobsRegistry
+)(private val fullConsistencyMaxDelayInMillis: Int)
+    extends NodeTrackerService {
 
   import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
@@ -22,31 +22,40 @@ final class NodeTrackerServiceImpl(
   private val nodeTrackerRegistrationIntervalInMillis: Int = fullConsistencyMaxDelayInMillis / 4
   private val nodeTrackerDeviationForGetWorkingNodesInMillis: Long = (fullConsistencyMaxDelayInMillis / 2).toLong
 
-  private val nodeId: String = nodeTrackerDao.register()
+  private val nodeId: String = nodeTrackerDao
+    .register()
     .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)
-    .fold(persistenceError => {
-      logger.error("The instance cannot join cluster")
-      throw new PandaStartupException(persistenceError.getMessage)
-    }, id => {
-      logger.info(s"The instance joined the cluster with the ID: $id")
-      id
-    })
+    .fold(
+      persistenceError => {
+        logger.error("The instance cannot join cluster")
+        throw new PandaStartupException(persistenceError.getMessage)
+      },
+      id => {
+        logger.info(s"The instance joined the cluster with the ID: $id")
+        id
+      }
+    )
 
   locally {
     backgroundJobsRegistry.addJobAtFixedRate(0.seconds, nodeTrackerRegistrationIntervalInMillis.millisecond)(
-      () => nodeTrackerDao.notify(nodeId)
-        .map {
-          case Right(_) =>
-            logger.debug(s"The cluster has been notified the instance with ID $nodeId is healthy")
-            ()
-          case Left(error) =>
-            logger.error(s"Cannot notify cluster about this instance being alive [id: $nodeId]. Reason: ${error.getMessage}"); ()
-        },
+      () =>
+        nodeTrackerDao
+          .notify(nodeId)
+          .map {
+            case Right(_) =>
+              logger.debug(s"The cluster has been notified the instance with ID $nodeId is healthy")
+              ()
+            case Left(error) =>
+              logger.error(
+                s"Cannot notify cluster about this instance being alive [id: $nodeId]. Reason: ${error.getMessage}"
+              ); ()
+          },
       "NodeTrackerServiceNotify"
     )
   }
 
   override def getNodeId: String = nodeId
 
-  override def getWorkingNodes: Task[List[Node]] = nodeTrackerDao.getNodes(nodeTrackerDeviationForGetWorkingNodesInMillis)
+  override def getWorkingNodes: Task[List[Node]] =
+    nodeTrackerDao.getNodes(nodeTrackerDeviationForGetWorkingNodesInMillis)
 }

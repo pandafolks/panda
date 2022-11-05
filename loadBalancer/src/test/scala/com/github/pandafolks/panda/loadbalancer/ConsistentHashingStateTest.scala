@@ -25,7 +25,8 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
   implicit final val scheduler: Scheduler = CoreScheduler.scheduler
 
   "get" should "always return appropriate identifier" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
 
     val r = new Random(42)
     val group1 = Group("cars")
@@ -55,31 +56,28 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     val getShipsListWithFutures: Future[List[Option[Participant]]] = getShipsFutures.sequence
     val getPlanesListWithFutures: Future[List[Option[Participant]]] = getPlanesFutures.sequence
 
-
-    whenReady(getCarsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
-      res =>
-        res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.identifier.startsWith(group1.name) should be(true))
-        res.size should be(1000)
+    whenReady(getCarsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) { res =>
+      res.map(r => r.isDefined should be(true))
+      res.map(r => r.get.identifier.startsWith(group1.name) should be(true))
+      res.size should be(1000)
     }
 
-    whenReady(getShipsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
-      res =>
-        res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.identifier.startsWith(group2.name) should be(true))
-        res.size should be(3000)
+    whenReady(getShipsListWithFutures, Timeout.apply(Span.apply(10, Seconds))) { res =>
+      res.map(r => r.isDefined should be(true))
+      res.map(r => r.get.identifier.startsWith(group2.name) should be(true))
+      res.size should be(3000)
     }
 
-    whenReady(getPlanesListWithFutures, Timeout.apply(Span.apply(10, Seconds))) {
-      res =>
-        res.map(r => r.isDefined should be(true))
-        res.map(r => r.get.identifier.startsWith(group3.name) should be(true))
-        res.size should be(200)
+    whenReady(getPlanesListWithFutures, Timeout.apply(Span.apply(10, Seconds))) { res =>
+      res.map(r => r.isDefined should be(true))
+      res.map(r => r.get.identifier.startsWith(group3.name) should be(true))
+      res.size should be(200)
     }
   }
 
   it should "return None if there is no requested group / the group is empty" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -92,20 +90,23 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
 
     val requestedGroup = Group("blabla")
-    underTest.get(requestedGroup, 3123123) should be (None)
+    underTest.get(requestedGroup, 3123123) should be(None)
 
     val p = Participant("whatever", 123123, requestedGroup, "someIden")
     underTest.add(p)
-    underTest.get(requestedGroup, 3123123) should be (Some(p))
+    underTest.get(requestedGroup, 3123123) should be(Some(p))
 
     underTest.remove(p)
-    underTest.get(requestedGroup, 3123123) should be (None)
+    underTest.get(requestedGroup, 3123123) should be(None)
   }
 
   "add" should "not lose any data during concurrent invocations (one group case)" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 600)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedParticipantsWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 600)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedParticipantsWithPositions =
+      PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
 
     val group = Group("cars")
 
@@ -115,72 +116,79 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
-    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
-      _ =>
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(1)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group).size should be(300000)
-        underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(600))
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(500)
+    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) { _ =>
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(1)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group).size should be(300000)
+      underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(600))
+      underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(500)
     }
   }
 
-    it should "not lose any data during concurrent invocations (multiple groups case)" in {
-      val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
-      val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
-      val usedParticipantsWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
+  it should "not lose any data during concurrent invocations (multiple groups case)" in {
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedParticipantsWithPositions =
+      PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
 
-      val group1 = Group("cars")
-      val group2 = Group("planes")
-      val group3 = Group("ships")
+    val group1 = Group("cars")
+    val group2 = Group("planes")
+    val group3 = Group("ships")
 
-      var futures: List[Future[Unit]] = List()
-      for (i <- 1 to 500) {
-        futures = Future(underTest.add(Participant("ip", 123, group1, group1.name + i))) :: futures
-        futures = Future(underTest.add(Participant("ip", 123, group2, group2.name + i))) :: futures
-        futures = Future(underTest.add(Participant("ip", 123, group3, group3.name + i))) :: futures
-      }
-      val futureWithList: Future[List[Unit]] = futures.sequence
+    var futures: List[Future[Unit]] = List()
+    for (i <- 1 to 500) {
+      futures = Future(underTest.add(Participant("ip", 123, group1, group1.name + i))) :: futures
+      futures = Future(underTest.add(Participant("ip", 123, group2, group2.name + i))) :: futures
+      futures = Future(underTest.add(Participant("ip", 123, group3, group3.name + i))) :: futures
+    }
+    val futureWithList: Future[List[Unit]] = futures.sequence
 
-      whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
-        _ =>
-          underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(3)
-          underTest.invokePrivate(usedPositionsGroupedByGroup()).values().asScala.map(_.size).sum should be(750000)
-          underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(250000)
-          underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
-          underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group3).size should be(250000)
-          underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
-          underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(1500)
+    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) { _ =>
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(3)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).values().asScala.map(_.size).sum should be(750000)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(250000)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group3).size should be(250000)
+      underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
+      underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(1500)
 
-      }
+    }
+  }
+
+  "remove" should "delete only requested identifier" in {
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedParticipantsWithPositions =
+      PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
+
+    val group1 = Group("cars")
+    val group2 = Group("planes")
+
+    for (i <- 1 to 500) {
+      underTest.add(Participant("ip", 123, group1, group1.name + i))
+      underTest.add(Participant("ip", 123, group2, group2.name + i))
     }
 
-      "remove" should "delete only requested identifier" in {
-        val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
-        val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
-        val usedParticipantsWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
-
-        val group1 = Group("cars")
-        val group2 = Group("planes")
-
-        for (i <- 1 to 500) {
-          underTest.add(Participant("ip", 123, group1, group1.name + i))
-          underTest.add(Participant("ip", 123, group2, group2.name + i))
-        }
-
-        underTest.remove(Participant("ip", 123, group1, "cars100"))
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).values().asScala.map(_.size).sum should be(499500)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(249500)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
-        underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(999)
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().contains("cars100") should be(false)
-      }
+    underTest.remove(Participant("ip", 123, group1, "cars100"))
+    underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
+    underTest.invokePrivate(usedPositionsGroupedByGroup()).values().asScala.map(_.size).sum should be(499500)
+    underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(249500)
+    underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
+    underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
+    underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(999)
+    underTest.invokePrivate(usedParticipantsWithPositions()).keySet().contains("cars100") should be(false)
+  }
 
   it should "delete only requested identifiers (all identifiers from single group)" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedParticipantsWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedParticipantsWithPositions =
+      PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -196,23 +204,28 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
+    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) { _ =>
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(0)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
 
-    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
-      _ =>
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(2)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(0)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(250000)
-
-        underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().asScala.count(k => k.identifier.startsWith("cars")) should be (0)
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(500)
+      underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
+      underTest
+        .invokePrivate(usedParticipantsWithPositions())
+        .keySet()
+        .asScala
+        .count(k => k.identifier.startsWith("cars")) should be(0)
+      underTest.invokePrivate(usedParticipantsWithPositions()).keySet().size() should be(500)
     }
   }
 
   it should "delete only requested identifiers (multiple groups)" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
-    val usedParticipantsWithPositions = PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val usedParticipantsWithPositions =
+      PrivateMethod[ConcurrentHashMap[Participant, List[Int]]](Symbol("usedParticipantsWithPositions"))
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -233,25 +246,36 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
+    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) { _ =>
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(3)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(200000)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(200000)
+      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group3).size should be(200000)
 
-    whenReady(futureWithList, Timeout.apply(Span.apply(10, Seconds))) {
-      _ =>
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(3)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).size should be(200000)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).size should be(200000)
-        underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group3).size should be(200000)
-
-
-        underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group1.name)) should be (400)
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group2.name)) should be (400)
-        underTest.invokePrivate(usedParticipantsWithPositions()).keySet().asScala.count(k => k.identifier.startsWith(group3.name)) should be (400)
+      underTest.invokePrivate(usedParticipantsWithPositions()).values().asScala.map(_.size should be(500))
+      underTest
+        .invokePrivate(usedParticipantsWithPositions())
+        .keySet()
+        .asScala
+        .count(k => k.identifier.startsWith(group1.name)) should be(400)
+      underTest
+        .invokePrivate(usedParticipantsWithPositions())
+        .keySet()
+        .asScala
+        .count(k => k.identifier.startsWith(group2.name)) should be(400)
+      underTest
+        .invokePrivate(usedParticipantsWithPositions())
+        .keySet()
+        .asScala
+        .count(k => k.identifier.startsWith(group3.name)) should be(400)
     }
   }
 
   it should "clear empty groups" in {
-    val underTest = new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
-    val usedPositionsGroupedByGroup = PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
+    val underTest =
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+    val usedPositionsGroupedByGroup =
+      PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val underTestMethod = PrivateMethod[Task[Unit]](Symbol("clearEmptyGroups"))
 
     val group1 = Group("cars")
@@ -269,17 +293,20 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
     }
     val futureWithList: Future[List[Unit]] = futures.sequence
 
-    val f = futureWithList.map(_ => (
-      underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size(),
-      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty,
-      underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty
-    )).flatMap(res => underTest.invokePrivate(underTestMethod()).runToFuture.map(_ => res))
+    val f = futureWithList
+      .map(_ =>
+        (
+          underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size(),
+          underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group1).isEmpty,
+          underTest.invokePrivate(usedPositionsGroupedByGroup()).get(group2).isEmpty
+        )
+      )
+      .flatMap(res => underTest.invokePrivate(underTestMethod()).runToFuture.map(_ => res))
 
-    whenReady(f, Timeout.apply(Span.apply(10, Seconds))) {
-      res =>
-        res._1 should be(2)
-        res._2 should be(true)
-        res._3 should be(true)
+    whenReady(f, Timeout.apply(Span.apply(10, Seconds))) { res =>
+      res._1 should be(2)
+      res._2 should be(true)
+      res._3 should be(true)
     }
     underTest.invokePrivate(usedPositionsGroupedByGroup()).keySet().size() should be(0)
   }

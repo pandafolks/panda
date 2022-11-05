@@ -5,10 +5,10 @@ import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistr
 import org.mongodb.scala.bson.codecs.Macros.createCodecProvider
 
 final case class Prefix(
-                         groupName: String,
-                         value: String,
-                         lastUpdateTimestamp: Long
-                       )
+    groupName: String,
+    value: String,
+    lastUpdateTimestamp: Long
+)
 
 object Prefix {
   final val PREFIXES_COLLECTION_NAME = "prefixes"

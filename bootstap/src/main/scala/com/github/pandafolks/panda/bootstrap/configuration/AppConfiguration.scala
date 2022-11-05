@@ -14,18 +14,19 @@ import com.github.pandafolks.panda.user.token.TokensConfig
 import pureconfig.generic.auto._
 
 final case class AppConfiguration(
-                                   appServer: Http4sEmberServerConfig,
-                                   gatewayClient: Http4sEmberClientConfig,
-                                   internalClient: Http4sEmberClientConfig,
-                                   gateway: GatewayConfig,
-                                   db: DbConfig,
-                                   consistency: ConsistencyConfig,
-                                   healthCheckConfig: HealthCheckConfig,
-                                   authTokens: TokensConfig,
-                                   initUser: UserCredentials,
-                                 )
+    appServer: Http4sEmberServerConfig,
+    gatewayClient: Http4sEmberClientConfig,
+    internalClient: Http4sEmberClientConfig,
+    gateway: GatewayConfig,
+    db: DbConfig,
+    consistency: ConsistencyConfig,
+    healthCheckConfig: HealthCheckConfig,
+    authTokens: TokensConfig,
+    initUser: UserCredentials
+)
 
 object AppConfiguration {
-  implicit val LoadBalanceAlgorithmConverter: ConfigReader[LoadBalanceAlgorithm] = deriveEnumerationReader[LoadBalanceAlgorithm]
+  implicit val LoadBalanceAlgorithmConverter: ConfigReader[LoadBalanceAlgorithm] =
+    deriveEnumerationReader[LoadBalanceAlgorithm]
   implicit val reader: ConfigReader[AppConfiguration] = deriveReader
 }

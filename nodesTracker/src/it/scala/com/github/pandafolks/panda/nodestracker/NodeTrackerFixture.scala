@@ -21,20 +21,21 @@ trait NodeTrackerFixture {
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
-    MongoClientSettings.builder()
+    MongoClientSettings
+      .builder()
       .applyToClusterSettings(builder => {
         builder.applyConnectionString(new ConnectionString(mongoContainer.getReplicaSetUrl(dbName)))
         ()
-      }
-      ).build()
+      })
+      .build()
 
   protected val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
   protected val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
   protected val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
 
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
-  protected val nodeTrackerService: NodeTrackerService = new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
+  protected val nodeTrackerService: NodeTrackerService =
+    new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }
-

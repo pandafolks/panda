@@ -26,18 +26,23 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
   private val baseSettings =
     if (config.connectionString.isDefined)
       MongoClientSettings.builder().applyConnectionString(new ConnectionString(config.connectionString.get))
-    else MongoClientSettings.builder()
-      .credential(MongoCredential.createCredential(config.username.get, config.dbName, config.password.get.toCharArray))
-      .applyToClusterSettings(builder => {
-        builder
-          .hosts(config.contactPoints.get.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
-          .mode(config.mode.get.toLowerCase() match {
-            case "multiple" => ClusterConnectionMode.MULTIPLE
-            case "load_balanced" => throw new PandaStartupException("MongoDB LOAD_BALANCED cluster mode is not supported.")
-            case _ => ClusterConnectionMode.SINGLE
-          })
-        ()
-      })
+    else
+      MongoClientSettings
+        .builder()
+        .credential(
+          MongoCredential.createCredential(config.username.get, config.dbName, config.password.get.toCharArray)
+        )
+        .applyToClusterSettings(builder => {
+          builder
+            .hosts(config.contactPoints.get.map(cp => new ServerAddress(cp.host, cp.port)).asJava)
+            .mode(config.mode.get.toLowerCase() match {
+              case "multiple" => ClusterConnectionMode.MULTIPLE
+              case "load_balanced" =>
+                throw new PandaStartupException("MongoDB LOAD_BALANCED cluster mode is not supported.")
+              case _ => ClusterConnectionMode.SINGLE
+            })
+          ()
+        })
 
   private val settings: MongoClientSettings = baseSettings
     .readPreference(ReadPreference.nearest())
@@ -49,33 +54,40 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
       builder
         .heartbeatFrequency(2000, TimeUnit.MILLISECONDS) // 2 seconds
       ()
-    }).build()
-
+    })
+    .build()
 
   private val participantEventsCol: CollectionCodecRef[ParticipantEvent] = ParticipantEvent.getCollection(config.dbName)
   private val sequenceCol: CollectionCodecRef[Sequence] = Sequence.getCollection(config.dbName)
   private val usersCol: CollectionCodecRef[User] = User.getCollection(config.dbName)
   private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(config.dbName)
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(config.dbName)
-  private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] = UnsuccessfulHealthCheck.getCollection(config.dbName)
+  private val unsuccessfulHealthCheckCol: CollectionCodecRef[UnsuccessfulHealthCheck] =
+    UnsuccessfulHealthCheck.getCollection(config.dbName)
   private val mappersCol: CollectionCodecRef[Mapper] = Mapper.getCollection(config.dbName)
   private val prefixesCol: CollectionCodecRef[Prefix] = Prefix.getCollection(config.dbName)
 
-  private val participantEventsAndSequencesConnection = MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
+  private val participantEventsAndSequencesConnection =
+    MongoConnection.create2(settings, (participantEventsCol, sequenceCol))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
   private val nodesConnection = MongoConnection.create1(settings, nodesCol)
   private val unsuccessfulHealthCheckConnection = MongoConnection.create1(settings, unsuccessfulHealthCheckCol)
   private val mappersAndPrefixesConnection = MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
-  override def getParticipantEventsAndSequencesConnection: Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] = participantEventsAndSequencesConnection
+  override def getParticipantEventsAndSequencesConnection
+      : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
+    participantEventsAndSequencesConnection
 
-  override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] = usersWithTokensConnection
+  override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] =
+    usersWithTokensConnection
 
   override def getNodesConnection: Resource[Task, CollectionOperator[Node]] = nodesConnection
 
-  override def getUnsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] = unsuccessfulHealthCheckConnection
+  override def getUnsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] =
+    unsuccessfulHealthCheckConnection
 
-  override def getMappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = mappersAndPrefixesConnection
+  override def getMappersAndPrefixesConnection
+      : Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = mappersAndPrefixesConnection
 
   locally {
     //    creating indexes
@@ -84,97 +96,111 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
 
     (
       Task.fromReactivePublisher(
-        database.getCollection(User.USERS_COLLECTION_NAME).createIndexes(
-          Seq(
-            IndexModel(
-              Indexes.ascending(User.USERNAME_PROPERTY_NAME),
-              IndexOptions().background(false).unique(true)
-            ),
-            IndexModel(
-              Indexes.ascending(User.ID_PROPERTY_NAME),
-              IndexOptions().background(false).unique(true)
+        database
+          .getCollection(User.USERS_COLLECTION_NAME)
+          .createIndexes(
+            Seq(
+              IndexModel(
+                Indexes.ascending(User.USERNAME_PROPERTY_NAME),
+                IndexOptions().background(false).unique(true)
+              ),
+              IndexModel(
+                Indexes.ascending(User.ID_PROPERTY_NAME),
+                IndexOptions().background(false).unique(true)
+              )
             )
           )
-        )
       ) >>
         Task.fromReactivePublisher(
-          database.getCollection(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.compoundIndex(
-                  Indexes.ascending(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME),
-                  Indexes.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)
+          database
+            .getCollection(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.compoundIndex(
+                    Indexes.ascending(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME),
+                    Indexes.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)
+                  ),
+                  IndexOptions().background(true).unique(true)
                 ),
-                IndexOptions().background(true).unique(true)
-              ),
-              IndexModel(
-                Indexes.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
+                IndexModel(
+                  Indexes.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME),
+                  IndexOptions().background(false).unique(true)
+                )
               )
             )
-          )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(Token.TOKENS_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
-                IndexOptions().background(false).unique(false)
+          database
+            .getCollection(Token.TOKENS_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
+                  IndexOptions().background(false).unique(false)
+                )
               )
             )
-          )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(Node.NODES_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.compoundIndex(
-                  Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                  Indexes.ascending(Node.ID_PROPERTY_NAME)
+          database
+            .getCollection(Node.NODES_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.compoundIndex(
+                    Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                    Indexes.ascending(Node.ID_PROPERTY_NAME)
+                  ),
+                  IndexOptions().background(false).unique(false)
+                )
+              )
+            )
+        ) >>
+        Task.fromReactivePublisher(
+          database
+            .getCollection(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
+                  IndexOptions().background(false).unique(true)
+                )
+              )
+            )
+        ) >>
+        Task.fromReactivePublisher(
+          database
+            .getCollection(Mapper.MAPPERS_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                  IndexOptions().background(false).unique(false)
                 ),
-                IndexOptions().background(false).unique(false)
-              ),
-            )
-          )
-        ) >>
-        Task.fromReactivePublisher(
-          database.getCollection(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
+                IndexModel(
+                  Indexes.compoundIndex(
+                    Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
+                    Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
+                  ),
+                  IndexOptions().background(false).unique(true)
+                )
               )
             )
-          )
         ) >>
         Task.fromReactivePublisher(
-          database.getCollection(Mapper.MAPPERS_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                IndexOptions().background(false).unique(false)
-              ),
-              IndexModel(
-                Indexes.compoundIndex(
-                  Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
-                  Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
-                ),
-                IndexOptions().background(false).unique(true)
+          database
+            .getCollection(Prefix.PREFIXES_COLLECTION_NAME)
+            .createIndexes(
+              Seq(
+                IndexModel(
+                  Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
+                  IndexOptions().background(false).unique(true)
+                )
               )
             )
-          )
-        ) >>
-        Task.fromReactivePublisher(
-          database.getCollection(Prefix.PREFIXES_COLLECTION_NAME).createIndexes(
-            Seq(
-              IndexModel(
-                Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
-              )
-            )
-          )
         )
-      ).runSyncUnsafe(1.minutes)
+    ).runSyncUnsafe(1.minutes)
 
     tmpMongoClient.close()
   }

@@ -17,12 +17,13 @@ trait RoutesFixture {
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
-    MongoClientSettings.builder()
+    MongoClientSettings
+      .builder()
       .applyToClusterSettings(builder => {
         builder.applyConnectionString(new ConnectionString(mongoContainer.getReplicaSetUrl(dbName)))
         ()
-      }
-      ).build()
+      })
+      .build()
 
   protected val mappersColName: String = randomString(Mapper.MAPPERS_COLLECTION_NAME)
   protected val prefixesColName: String = randomString(Prefix.PREFIXES_COLLECTION_NAME)
@@ -30,12 +31,14 @@ trait RoutesFixture {
   private val mappersCol: CollectionCodecRef[Mapper] = Mapper.getCollection(dbName, mappersColName)
   private val prefixesCol: CollectionCodecRef[Prefix] = Prefix.getCollection(dbName, prefixesColName)
 
-  protected val mappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = MongoConnection.create2(settings, (mappersCol, prefixesCol))
+  protected val mappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] =
+    MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
   protected val mapperDao = new MapperDaoImpl()
   protected val prefixDao = new PrefixDaoImpl()
 
-  protected val routesService = new RoutesServiceImpl(mapperDao, prefixDao)(mappersAndPrefixesConnection)(0, 0L) // cache turned off
+  protected val routesService =
+    new RoutesServiceImpl(mapperDao, prefixDao)(mappersAndPrefixesConnection)(0, 0L) // cache turned off
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 

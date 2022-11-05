@@ -1,7 +1,11 @@
 package com.github.pandafolks.panda.participant
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.participant.ParticipantsRouting.{GROUPS_NAME, PARTICIPANTS_NAME, ParticipantsModificationResultPayload}
+import com.github.pandafolks.panda.participant.ParticipantsRouting.{
+  GROUPS_NAME,
+  PARTICIPANTS_NAME,
+  ParticipantsModificationResultPayload
+}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
@@ -13,65 +17,81 @@ import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
 import org.http4s._
 
-
-final class ParticipantsRouting(private val participantEventService: ParticipantEventService,
-                                private val participantsCache: ParticipantsCache) extends Http4sDsl[Task]
-  with SubRoutingWithAuth {
+final class ParticipantsRouting(
+    private val participantEventService: ParticipantEventService,
+    private val participantsCache: ParticipantsCache
+) extends Http4sDsl[Task]
+    with SubRoutingWithAuth {
 
   private val routes = AuthedRoutes.of[User, Task] {
-    case _@GET -> Root / API_NAME / API_VERSION_1 / GROUPS_NAME as _ =>
+    case _ @GET -> Root / API_NAME / API_VERSION_1 / GROUPS_NAME as _ =>
       participantsCache.getAllGroups.flatMap {
         case groups if groups.nonEmpty => Ok(Seq(groups: _*))
-        case _ => Task.eval(Response.notFound)
+        case _                         => Task.eval(Response.notFound)
       }
 
-    case _@GET -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
-      handleParticipantsResponse(maybeFilter
-        .map(_.getParticipants)
-        .getOrElse(participantsCache.getAllParticipants)
+    case _ @GET -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME :? OptionalFilterQueryParamMatcher(
+          maybeFilter
+        ) as _ =>
+      handleParticipantsResponse(
+        maybeFilter
+          .map(_.getParticipants)
+          .getOrElse(participantsCache.getAllParticipants)
       )
 
-    case _@GET -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME / group :? OptionalFilterQueryParamMatcher(maybeFilter) as _ =>
-      handleParticipantsResponse(maybeFilter
-        .map(_.getParticipants(Group(group)))
-        .getOrElse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))
+    case _ @GET -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME / group :? OptionalFilterQueryParamMatcher(
+          maybeFilter
+        ) as _ =>
+      handleParticipantsResponse(
+        maybeFilter
+          .map(_.getParticipants(Group(group)))
+          .getOrElse(participantsCache.getParticipantsAssociatedWithGroup(Group(group)))
       )
 
     // participants modification endpoints:
-    case req@POST -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
+    case req @ POST -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
       for {
         participantPayload <- req.req.as[Seq[ParticipantModificationPayload]]
         saveResults <- participantPayload.map(participantEventService.createParticipant).sequence
         successfullySaved = parseSuccessfulResults(saveResults)
-        response <- Ok(ParticipantsModificationResultPayload(
-          message = s"Created successfully ${successfullySaved.size} participants out of ${saveResults.size} requested",
-          successfulParticipantIdentifiers = successfullySaved,
-          errors = parseErrors(saveResults)
-        ))
+        response <- Ok(
+          ParticipantsModificationResultPayload(
+            message =
+              s"Created successfully ${successfullySaved.size} participants out of ${saveResults.size} requested",
+            successfulParticipantIdentifiers = successfullySaved,
+            errors = parseErrors(saveResults)
+          )
+        )
       } yield response
 
-    case req@PUT -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
+    case req @ PUT -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
       for {
         participantPayload <- req.req.as[Seq[ParticipantModificationPayload]]
         modifyResults <- participantPayload.map(participantEventService.modifyParticipant).sequence
         successfullyModified = parseSuccessfulResults(modifyResults)
-        response <- Ok(ParticipantsModificationResultPayload(
-          message = s"Modified successfully ${successfullyModified.size} participants out of ${modifyResults.size} requested",
-          successfulParticipantIdentifiers = successfullyModified,
-          errors = parseErrors(modifyResults)
-        ))
+        response <- Ok(
+          ParticipantsModificationResultPayload(
+            message =
+              s"Modified successfully ${successfullyModified.size} participants out of ${modifyResults.size} requested",
+            successfulParticipantIdentifiers = successfullyModified,
+            errors = parseErrors(modifyResults)
+          )
+        )
       } yield response
 
-    case req@DELETE -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
+    case req @ DELETE -> Root / API_NAME / API_VERSION_1 / PARTICIPANTS_NAME as _ =>
       for {
         payload <- req.req.as[Seq[String]]
         removeResults <- payload.map(participantEventService.removeParticipant).sequence
         successfullyRemoved = parseSuccessfulResults(removeResults)
-        response <- Ok(ParticipantsModificationResultPayload(
-          message = s"Removed successfully ${successfullyRemoved.size} participants out of ${removeResults.size} requested",
-          successfulParticipantIdentifiers = successfullyRemoved,
-          errors = parseErrors(removeResults)
-        ))
+        response <- Ok(
+          ParticipantsModificationResultPayload(
+            message =
+              s"Removed successfully ${successfullyRemoved.size} participants out of ${removeResults.size} requested",
+            successfulParticipantIdentifiers = successfullyRemoved,
+            errors = parseErrors(removeResults)
+          )
+        )
       } yield response
 
   }
@@ -79,17 +99,19 @@ final class ParticipantsRouting(private val participantEventService: Participant
   private def handleParticipantsResponse(participants: Task[Seq[Participant]]): Task[Response[Task]] =
     participants.flatMap {
       case participants if participants.nonEmpty => Ok(Seq(participants: _*))
-      case _ => Task.eval(Response.notFound)
+      case _                                     => Task.eval(Response.notFound)
     }
 
   override def getRoutesWithAuth: AuthedRoutes[User, Task] = routes
 
-  implicit val participantCreationDtoDecoder: EntityDecoder[Task, ParticipantModificationPayload] = jsonOf[Task, ParticipantModificationPayload]
-  implicit val participantCreationDtoSeqDecoder: EntityDecoder[Task, Seq[ParticipantModificationPayload]] = jsonOf[Task, Seq[ParticipantModificationPayload]]
+  implicit val participantCreationDtoDecoder: EntityDecoder[Task, ParticipantModificationPayload] =
+    jsonOf[Task, ParticipantModificationPayload]
+  implicit val participantCreationDtoSeqDecoder: EntityDecoder[Task, Seq[ParticipantModificationPayload]] =
+    jsonOf[Task, Seq[ParticipantModificationPayload]]
   implicit val stringSeqEncoder: EntityDecoder[Task, Seq[String]] = jsonOf[Task, Seq[String]]
 
-  implicit val createdParticipantsResultEncoder: EntityEncoder[Task, ParticipantsModificationResultPayload] = jsonEncoderOf[Task, ParticipantsModificationResultPayload]
-
+  implicit val createdParticipantsResultEncoder: EntityEncoder[Task, ParticipantsModificationResultPayload] =
+    jsonEncoderOf[Task, ParticipantsModificationResultPayload]
 
   object ParticipantsFilter {
 
@@ -126,10 +148,11 @@ final class ParticipantsRouting(private val participantEventService: Participant
     QueryParamDecoder[String].map(_.toLowerCase match {
       case "working" => ParticipantsFilter.WorkingParticipantsFilter
       case "healthy" => ParticipantsFilter.HealthyParticipantsFilter
-      case _ => ParticipantsFilter.AllParticipantsFilter
+      case _         => ParticipantsFilter.AllParticipantsFilter
     })
 
-  object OptionalFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[ParticipantsFilter.ParticipantsFilter]("filter")
+  object OptionalFilterQueryParamMatcher
+      extends OptionalQueryParamDecoderMatcher[ParticipantsFilter.ParticipantsFilter]("filter")
 
 }
 
@@ -138,8 +161,10 @@ object ParticipantsRouting {
   final val PARTICIPANTS_NAME = "participants"
   final val GROUPS_NAME = "groups"
 
-  final case class ParticipantsModificationResultPayload(message: String,
-                                                         successfulParticipantIdentifiers: List[String],
-                                                         errors: List[String])
+  final case class ParticipantsModificationResultPayload(
+      message: String,
+      successfulParticipantIdentifiers: List[String],
+      errors: List[String]
+  )
 
 }

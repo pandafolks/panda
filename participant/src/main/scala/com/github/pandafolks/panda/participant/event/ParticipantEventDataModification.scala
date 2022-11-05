@@ -3,11 +3,11 @@ package com.github.pandafolks.panda.participant.event
 import com.github.pandafolks.panda.participant.ParticipantModificationPayload
 
 case class ParticipantEventDataModification(
-                                             host: Option[String],
-                                             port: Option[Int],
-                                             groupName: Option[String],
-                                             healthcheckRoute: Option[String]
-                                      )
+    host: Option[String],
+    port: Option[Int],
+    groupName: Option[String],
+    healthcheckRoute: Option[String]
+)
 
 object ParticipantEventDataModification {
   def empty: ParticipantEventDataModification = new ParticipantEventDataModification(None, None, None, None)

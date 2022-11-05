@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentHashMap
 
-final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
-                                       private val participantsCache: ParticipantsCache) extends LoadBalancer {
+final class RoundRobinLoadBalancerImpl(
+    private val client: Client[Task],
+    private val participantsCache: ParticipantsCache
+) extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val lastUsedIndexes: ConcurrentHashMap[Group, AtomicInt] = new ConcurrentHashMap
@@ -22,14 +24,21 @@ final class RoundRobinLoadBalancerImpl(private val client: Client[Task],
         lastUsedIndexes.remove(group)
         LoadBalancer.noAvailableInstanceLog(requestedPath, group, logger)
       case eligibleParticipants =>
-        Task.evalOnce(
-          AtomicInt(lastUsedIndexes.computeIfAbsent(group, _ => AtomicInt(0))
-            .getAndTransform(prev => (prev + 1) % Int.MaxValue) % eligibleParticipants.size)
-        ).map(atomicIndex => eligibleParticipants(atomicIndex.getAndIncrement() % eligibleParticipants.size))
+        Task
+          .evalOnce(
+            AtomicInt(
+              lastUsedIndexes
+                .computeIfAbsent(group, _ => AtomicInt(0))
+                .getAndTransform(prev => (prev + 1) % Int.MaxValue) % eligibleParticipants.size
+            )
+          )
+          .map(atomicIndex => eligibleParticipants(atomicIndex.getAndIncrement() % eligibleParticipants.size))
           .flatMap(chosenParticipant => {
-            client.run(
-              LoadBalancer.fillRequestWithParticipant(request, chosenParticipant, requestedPath)
-            ).use(Task.eval(_))
+            client
+              .run(
+                LoadBalancer.fillRequestWithParticipant(request, chosenParticipant, requestedPath)
+              )
+              .use(Task.eval(_))
           })
           .onErrorRestart(eligibleParticipants.size - 1L) // trying to hit all available servers (in the worst case)
           .onErrorRecoverWith { case _: Throwable =>

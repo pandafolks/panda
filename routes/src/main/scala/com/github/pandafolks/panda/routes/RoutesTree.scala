@@ -23,16 +23,16 @@ object RoutesTree {
   final case class Wildcard(expression: String = "") extends Value
 
   final case class RouteInfo(
-                              mappingContent: MappingContent,
-                              isPocket: Boolean = false,
-                              isStandalone: Boolean = true
-                            )
+      mappingContent: MappingContent,
+      isPocket: Boolean = false,
+      isStandalone: Boolean = true
+  )
 
   final case class Node(value: Value, children: List[Node], routeInfo: Option[RouteInfo] = Option.empty)
 
   implicit val orderingByValueType: Ordering[Node] = Ordering.by {
     _.value match {
-      case _: Fixed => 0
+      case _: Fixed    => 0
       case _: Wildcard => 1
     }
   }

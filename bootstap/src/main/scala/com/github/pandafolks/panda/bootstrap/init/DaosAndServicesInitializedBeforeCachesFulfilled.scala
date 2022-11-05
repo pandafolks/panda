@@ -4,41 +4,66 @@ import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
-import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
-import com.github.pandafolks.panda.routes.{MapperDao, MapperDaoImpl, PrefixDao, PrefixDaoImpl, RoutesService, RoutesServiceImpl, TreesService, TreesServiceImpl}
+import com.github.pandafolks.panda.participant.event.{
+  ParticipantEventDao,
+  ParticipantEventDaoImpl,
+  ParticipantEventService,
+  ParticipantEventServiceImpl
+}
+import com.github.pandafolks.panda.routes.{
+  MapperDao,
+  MapperDaoImpl,
+  PrefixDao,
+  PrefixDaoImpl,
+  RoutesService,
+  RoutesServiceImpl,
+  TreesService,
+  TreesServiceImpl
+}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import com.pandafolks.mattszm.panda.sequence.{SequenceDao, SequenceDaoImpl}
 import monix.eval.Task
 
-/**
- * These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
- */
+/** These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
+  */
 final class DaosAndServicesInitializedBeforeCachesFulfilled(
-                                                            private val dbAppClient: DbAppClient,
-                                                            private val appConfiguration: AppConfiguration,
-                                                            private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                                           ) extends DaosAndServicesInitialization {
+    private val dbAppClient: DbAppClient,
+    private val appConfiguration: AppConfiguration,
+    private val backgroundJobsRegistry: BackgroundJobsRegistry
+) extends DaosAndServicesInitialization {
 
   private val sequenceDao: SequenceDao = new SequenceDaoImpl()
 
-  private val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(dbAppClient.getParticipantEventsAndSequencesConnection)
+  private val participantEventDao: ParticipantEventDao = new ParticipantEventDaoImpl(
+    dbAppClient.getParticipantEventsAndSequencesConnection
+  )
   private val participantEventService: ParticipantEventService = new ParticipantEventServiceImpl(
     participantEventDao = participantEventDao,
     sequenceDao = sequenceDao
   )(dbAppClient.getParticipantEventsAndSequencesConnection)
 
   private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
-  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(dbAppClient.getUsersWithTokensConnection)
+  private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(
+    dbAppClient.getUsersWithTokensConnection
+  )
 
-  private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens)(dbAppClient.getUsersWithTokensConnection)
+  private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens)(
+    dbAppClient.getUsersWithTokensConnection
+  )
 
-  private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = new UnsuccessfulHealthCheckDaoImpl(dbAppClient.getUnsuccessfulHealthCheckConnection)
+  private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao = new UnsuccessfulHealthCheckDaoImpl(
+    dbAppClient.getUnsuccessfulHealthCheckConnection
+  )
 
   private val mapperDao: MapperDao = new MapperDaoImpl()
   private val prefixDao: PrefixDao = new PrefixDaoImpl()
-  private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixDao)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
-  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao, backgroundJobsRegistry)(dbAppClient.getMappersAndPrefixesConnection)(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
+  private val routesService: RoutesService = new RoutesServiceImpl(mapperDao, prefixDao)(
+    dbAppClient.getMappersAndPrefixesConnection
+  )(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis)
+  private val treesService: Task[TreesService] = TreesServiceImpl(mapperDao, prefixDao, backgroundJobsRegistry)(
+    dbAppClient.getMappersAndPrefixesConnection
+  )(appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis).uncancelable.memoize
 
   def getUserService: UserService = userService
 
