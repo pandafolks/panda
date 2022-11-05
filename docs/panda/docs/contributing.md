@@ -20,19 +20,16 @@ People are expected to follow the [Scala Code of Conduct](https://www.scala-lang
 4. If you add new methods to services, remember about adding Docs. We are trying to avoid comments inside the code. 
    However, if some part is more tricky than usual, a short explanation is advised.
 5. Once you finish work on your Pull Request, make sure both unit and integration tests are passing:
-
-```sbtshell
-sbt test
-```
-
-```sbtshell
-sbt it:test
-```
+   ```sbtshell
+   sbt test
+   ```
+   ```sbtshell
+   sbt it:test
+   ```
 6. Make sure the code is formatted with:
-
-```shell
-sbt scalafmtAll
-```
+   ```shell
+   sbt scalafmtAll
+   ```
 7. Resolve conflicts with the master branch (if any).
 8. Submit a Pull Request.
 9. Anyone can comment on a Pull Request, and you are expected to
@@ -75,7 +72,7 @@ make help
 sbt assembly
 ```
 You would find `panda.jar` inside your `/target` directory.
-You could run it with `java -jar panda.jar`.
+You can run it with `java -jar panda.jar`.
 
 ### Using your own config file
 By default, Panda will use `application.conf` config from `bootstap/src/main/resources`. 
