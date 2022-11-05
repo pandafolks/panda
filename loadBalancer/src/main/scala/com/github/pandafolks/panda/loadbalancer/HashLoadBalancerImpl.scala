@@ -12,10 +12,12 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Random
 import scala.util.hashing.MurmurHash3
 
-final class HashLoadBalancerImpl(private val client: Client[Task],
-                                 private val participantsCache: ParticipantsCache,
-                                 private val consistentHashingState: ConsistentHashingState,
-                                 private val retriesNumber: Int = 10) extends LoadBalancer {
+final class HashLoadBalancerImpl(
+    private val client: Client[Task],
+    private val participantsCache: ParticipantsCache,
+    private val consistentHashingState: ConsistentHashingState,
+    private val retriesNumber: Int = 10
+) extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val random = new Random(System.currentTimeMillis())
@@ -29,20 +31,23 @@ final class HashLoadBalancerImpl(private val client: Client[Task],
       if (leftTriesNumber == 0) {
         LoadBalancer.notReachedAnyInstanceLog(requestedPath, group, logger)
       } else {
-        Task.eval(consistentHashingState.get(group, hash))
+        Task
+          .eval(consistentHashingState.get(group, hash))
           .flatMap(participantOption =>
             participantOption.fold(LoadBalancer.noAvailableInstanceLog(requestedPath, group, logger))(participant =>
               client.run(LoadBalancer.fillRequestWithParticipant(request, participant, requestedPath)).use(Task.eval(_))
             )
-          ).onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }
+          )
+          .onErrorRecoverWith { case _: Throwable => rc(random.nextInt(Integer.MAX_VALUE), leftTriesNumber - 1) }
       }
 
-    rc(request.remote
-      .map(_.host.toUriString)
-      .map(h => Math.abs(MurmurHash3.stringHash(h)))
-      .getOrElse(random.nextInt(Integer.MAX_VALUE))
-      // If the connectionInfo is not accessible the value should be random in order to spread requests evenly instead of
-      // fixed value which will route all requests to single instance.
+    rc(
+      request.remote
+        .map(_.host.toUriString)
+        .map(h => Math.abs(MurmurHash3.stringHash(h)))
+        .getOrElse(random.nextInt(Integer.MAX_VALUE))
+        // If the connectionInfo is not accessible the value should be random in order to spread requests evenly instead of
+        // fixed value which will route all requests to single instance.
     )
   }
 }

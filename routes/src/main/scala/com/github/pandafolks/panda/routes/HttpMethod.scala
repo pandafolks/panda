@@ -29,11 +29,14 @@ object HttpMethod {
   final val values: List[HttpMethod] = List(Get(), Post(), Put(), Patch(), Delete())
 
   final val valuesByName: Map[String, HttpMethod] =
-    values.foldLeft(Map.empty[String, HttpMethod])((prevState, header) => prevState + (header.getName.toUpperCase -> header))
+    values.foldLeft(Map.empty[String, HttpMethod])((prevState, header) =>
+      prevState + (header.getName.toUpperCase -> header)
+    )
 
   def getByName(name: String): HttpMethod = valuesByName.getOrElse(name.toUpperCase(), Get())
 
-  def getByName(name: Option[String]): HttpMethod = name.flatMap(n => valuesByName.get(n.toUpperCase())).getOrElse(Get())
+  def getByName(name: Option[String]): HttpMethod =
+    name.flatMap(n => valuesByName.get(n.toUpperCase())).getOrElse(Get())
 
   def unify(name: Option[String]): String = getByName(name).getName
 

@@ -8,14 +8,14 @@ import org.http4s.Uri.Path
 import org.http4s.circe.jsonEncoderOf
 
 final case class Participant(
-                              host: String,
-                              port: Int,
-                              group: Group,
-                              identifier: String,
-                              healthcheckInfo: HealthcheckInfo,
-                              status: ParticipantStatus,
-                              health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
-                            ) {
+    host: String,
+    port: Int,
+    group: Group,
+    identifier: String,
+    healthcheckInfo: HealthcheckInfo,
+    status: ParticipantStatus,
+    health: ParticipantHealth = Unhealthy // Participant will become healthy after first successful health check
+) {
   def isWorking: Boolean = status == Working
 
   def isHealthy: Boolean = health == Healthy
@@ -33,7 +33,7 @@ object Participant {
       group = group,
       identifier = createDefaultIdentifier(host, port, group.name),
       healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
-      status = Working,
+      status = Working
     )
 
   def apply(host: String, port: Int, group: Group, identifier: String): Participant =
@@ -43,7 +43,7 @@ object Participant {
       group = group,
       identifier = identifier,
       healthcheckInfo = HealthcheckInfo(HEALTHCHECK_DEFAULT_ROUTE),
-      status = Working,
+      status = Working
     )
 
   def apply(host: String, port: Int, group: Group, healthcheckInfo: HealthcheckInfo): Participant =
@@ -61,9 +61,10 @@ object Participant {
 
   @Deprecated
   def createHealthcheckEndpoint(host: String, port: Int, route: String): String =
-      Path.unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
-        .concat(Path.unsafeFromString(route))
-        .renderString
+    Path
+      .unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
+      .concat(Path.unsafeFromString(route))
+      .renderString
 
   implicit val participantEncoder: EntityEncoder[Task, Participant] = jsonEncoderOf[Task, Participant]
   implicit val participantSeqEncoder: EntityEncoder[Task, Seq[Participant]] = jsonEncoderOf[Task, Seq[Participant]]

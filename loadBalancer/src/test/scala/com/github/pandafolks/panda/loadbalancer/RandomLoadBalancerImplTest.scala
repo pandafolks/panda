@@ -31,21 +31,24 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
   "RandomLoadBalancerImpl#route" should "route to the available server" in {
     val loadBalancer = createRandomLBWithSingleGroup()
 
-    Await.result(
-      Task.traverse((0 to 20).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
-      30.seconds
-    ).map(LoadBalancerTestUtils.fromResponseAssert)
+    Await
+      .result(
+        Task.traverse((0 to 20).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
+        30.seconds
+      )
+      .map(LoadBalancerTestUtils.fromResponseAssert)
     succeed
   }
 
   it should "route to the available server (multi-thread environment)" in {
     val loadBalancer = createRandomLBWithSingleGroup()
 
-    Await.result(
-      Task.parTraverseN(8)((0 to 40).toList)
-      (_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
-      30.seconds
-    ).map(LoadBalancerTestUtils.fromResponseAssert)
+    Await
+      .result(
+        Task.parTraverseN(8)((0 to 40).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
+        30.seconds
+      )
+      .map(LoadBalancerTestUtils.fromResponseAssert)
     succeed
   }
 
@@ -57,20 +60,31 @@ class RandomLoadBalancerImplTest extends AsyncFlatSpec {
       Participant("218.214.92.75", 4002, Group("cars"))
     )
     val participantsCache: ParticipantsCache = Await.result(
-      ParticipantsCacheImpl(mockParticipantEventService, new InMemoryBackgroundJobsRegistryImpl(scheduler), tempParticipants).runToFuture, 5.seconds)
+      ParticipantsCacheImpl(
+        mockParticipantEventService,
+        new InMemoryBackgroundJobsRegistryImpl(scheduler),
+        tempParticipants
+      ).runToFuture,
+      5.seconds
+    )
     val loadBalancer: LoadBalancer = new RandomLoadBalancerImpl(client, participantsCache)
 
-    loadBalancer.route(
-      LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
-      Path.unsafeFromString("rest/api/v1/planes/passengers"),
-      Group("planesGroup")
-    ).runToFuture.map(_.status should be (Status.NotFound))
+    loadBalancer
+      .route(
+        LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
+        Path.unsafeFromString("rest/api/v1/planes/passengers"),
+        Group("planesGroup")
+      )
+      .runToFuture
+      .map(_.status should be(Status.NotFound))
   }
 
   it should "return `Not Found` if all servers are unreachable" in {
     val loadBalancer = createRandomLBWithSingleGroup(false)
 
-    LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(_.status should be (Status.ServiceUnavailable))
+    LoadBalancerTestUtils
+      .commonRouteAction(loadBalancer)
+      .runToFuture
+      .map(_.status should be(Status.ServiceUnavailable))
   }
 }

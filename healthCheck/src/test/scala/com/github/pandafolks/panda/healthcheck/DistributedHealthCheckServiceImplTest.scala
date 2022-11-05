@@ -114,14 +114,21 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
     )(HealthCheckConfig(-1, -1))
     val underTestMethod = PrivateMethod[List[Participant]](Symbol("pickParticipantsForNode"))
 
-    val result = for (_ <- 0 until 10) yield distributedHealthCheckServiceImpl.invokePrivate(underTestMethod(participants, 5, 2)) // index 2 means third node out of 5
+    val result =
+      for (_ <- 0 until 10)
+        yield distributedHealthCheckServiceImpl.invokePrivate(
+          underTestMethod(participants, 5, 2)
+        ) // index 2 means third node out of 5
 
-    result.forall(chosenParticipants => chosenParticipants.forall(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % 5 == 2)) should be (true)
-    result.forall(_ == result.head) should be (true)
+    result.forall(chosenParticipants =>
+      chosenParticipants.forall(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % 5 == 2)
+    ) should be(true)
+    result.forall(_ == result.head) should be(true)
   }
 
   it should "return nothing if delivered position is out of scope" in {
-    val participants = List.fill(20)(Participant("randomHost", -1, Group("randomGroup"), randomString("anotherIdentifier")))
+    val participants =
+      List.fill(20)(Participant("randomHost", -1, Group("randomGroup"), randomString("anotherIdentifier")))
 
     val participantsCacheMock = mock(classOf[ParticipantsCache])
     when(participantsCacheMock.registerListener(any[ChangeListener[Participant]]())) thenReturn Task.unit
@@ -136,9 +143,11 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
     )(HealthCheckConfig(-1, -1))
     val underTestMethod = PrivateMethod[List[Participant]](Symbol("pickParticipantsForNode"))
 
-    val result = for (_ <- 0 until 10) yield distributedHealthCheckServiceImpl.invokePrivate(underTestMethod(participants, 5, 5)) // out of scope
+    val result =
+      for (_ <- 0 until 10)
+        yield distributedHealthCheckServiceImpl.invokePrivate(underTestMethod(participants, 5, 5)) // out of scope
 
-    result.forall(_.isEmpty) should be (true)
+    result.forall(_.isEmpty) should be(true)
   }
 
   private def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(20)).sample.get

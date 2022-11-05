@@ -37,13 +37,34 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
 
     // This test case needs to be highly synchronized
     (0 to 3).foreach { _ =>
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 0) // round robin starts from 0 and retries until it hits 'first available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 0) // round robin starts from 1 and retries until it hits 'first available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 0) // round robin starts from 2 and retries until it hits 'first available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 0) // round robin starts from 3 and immediately hits 'first available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 1) // round robin starts from 4 and retries until it hits 'second available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 1) // round robin starts from 5 and immediately hits 'second available'
-      fromResponseAssert(Await.result(routeAction.runToFuture, 5.second), 0) // round robin starts from 6 and retries until it hits 'first available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        0
+      ) // round robin starts from 0 and retries until it hits 'first available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        0
+      ) // round robin starts from 1 and retries until it hits 'first available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        0
+      ) // round robin starts from 2 and retries until it hits 'first available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        0
+      ) // round robin starts from 3 and immediately hits 'first available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        1
+      ) // round robin starts from 4 and retries until it hits 'second available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        1
+      ) // round robin starts from 5 and immediately hits 'second available'
+      fromResponseAssert(
+        Await.result(routeAction.runToFuture, 5.second),
+        0
+      ) // round robin starts from 6 and retries until it hits 'first available'
     }
     succeed
   }
@@ -51,15 +72,16 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
   it should "route to the available server (multi-thread environment)" in {
     val loadBalancer = createRoundRobinLBWithSingleGroup()
 
-    Await.result(
-      Task.parTraverseN(8)((0 to 40).toList)
-      (_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
-      30.seconds
-    ).map(LoadBalancerTestUtils.fromResponseAssert)
+    Await
+      .result(
+        Task.parTraverseN(8)((0 to 40).toList)(_ => LoadBalancerTestUtils.commonRouteAction(loadBalancer)).runToFuture,
+        30.seconds
+      )
+      .map(LoadBalancerTestUtils.fromResponseAssert)
     succeed
   }
 
-    it should "return `Not Found` if there is no available instance for the requested path" in {
+  it should "return `Not Found` if there is no available instance for the requested path" in {
     val client = new ClientStub()
     val tempParticipants = List(
       Participant("59.145.84.51", 4001, Group("cars")),
@@ -67,24 +89,36 @@ class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
       Participant("218.214.92.75", 4002, Group("cars"))
     )
     val participantsCache: ParticipantsCache = Await.result(
-      ParticipantsCacheImpl(mockParticipantEventService, new InMemoryBackgroundJobsRegistryImpl(scheduler), tempParticipants).runToFuture, 5.seconds)
+      ParticipantsCacheImpl(
+        mockParticipantEventService,
+        new InMemoryBackgroundJobsRegistryImpl(scheduler),
+        tempParticipants
+      ).runToFuture,
+      5.seconds
+    )
     val loadBalancer: LoadBalancer = new RoundRobinLoadBalancerImpl(client, participantsCache)
 
-    loadBalancer.route(
-      LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
-      Path.unsafeFromString("rest/api/v1/planes/passengers"),
-      Group("planesGroup")
-    ).runToFuture.map(_.status should be (Status.NotFound))
+    loadBalancer
+      .route(
+        LoadBalancerTestUtils.createRequest("/gateway/planes/passengers"),
+        Path.unsafeFromString("rest/api/v1/planes/passengers"),
+        Group("planesGroup")
+      )
+      .runToFuture
+      .map(_.status should be(Status.NotFound))
   }
 
   it should "return `Not Found` if all servers are unreachable" in {
     val loadBalancer = createRoundRobinLBWithSingleGroup(false)
 
-    LoadBalancerTestUtils.commonRouteAction(loadBalancer).runToFuture
-      .map(_.status should be (Status.ServiceUnavailable))
+    LoadBalancerTestUtils
+      .commonRouteAction(loadBalancer)
+      .runToFuture
+      .map(_.status should be(Status.ServiceUnavailable))
   }
 
   private def fromResponseAssert(response: Response[Task], availableRouteIndex: Int): Assertion =
-    response.headers.headers.find(p => p.name == CIString("from"))
-        .fold(fail())(_.value should be (ClientStub.AVAILABLE_ROUTES.toArray.apply(availableRouteIndex)))
+    response.headers.headers
+      .find(p => p.name == CIString("from"))
+      .fold(fail())(_.value should be(ClientStub.AVAILABLE_ROUTES.toArray.apply(availableRouteIndex)))
 }

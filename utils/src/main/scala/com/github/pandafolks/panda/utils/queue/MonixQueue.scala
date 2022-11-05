@@ -4,7 +4,7 @@ import monix.eval.Task
 import monix.execution.{AsyncQueue, BufferCapacity, ChannelType}
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
-final class MonixQueue[T] private(queue: AsyncQueue[T]) {
+final class MonixQueue[T] private (queue: AsyncQueue[T]) {
   def poll: Task[T] = Task.deferFuture(queue.poll())
 
   def offer(item: T): Task[Unit] = Task.eval(queue.offer(item)).void

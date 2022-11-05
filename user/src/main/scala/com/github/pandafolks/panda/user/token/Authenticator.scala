@@ -12,10 +12,14 @@ trait Authenticator {
   def authUser: Kleisli[Task, Request[Task], Either[String, User]]
 
   def onFailure: AuthedRoutes[String, Task] =
-    Kleisli(req => OptionT.liftF(Task.now(
-      Response[Task](
-        status = Forbidden,
-        body = Stream(req.context).through(utf8Encode)
+    Kleisli(req =>
+      OptionT.liftF(
+        Task.now(
+          Response[Task](
+            status = Forbidden,
+            body = Stream(req.context).through(utf8Encode)
+          )
+        )
       )
-    )))
+    )
 }

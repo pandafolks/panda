@@ -28,11 +28,16 @@ sbt test
 ```sbtshell
 sbt it:test
 ```
-6. Resolve conflicts with the master branch (if any).
-7. Submit a Pull Request.
-8. Anyone can comment on a Pull Request, and you are expected to
+6. Make sure the code is formatted with:
+
+```shell
+sbt scalafmtAll
+```
+7. Resolve conflicts with the master branch (if any).
+8. Submit a Pull Request.
+9. Anyone can comment on a Pull Request, and you are expected to
    answer questions or to incorporate feedback.
-9. Once the Pull Request is approved, owners will take care of merging.
+10. Once the Pull Request is approved, owners will take care of merging.
 
 Despite we try to work along with the issues tracker. Once you see something that may be done in a better way, feel 
 free to make a Pull Request with improvement.

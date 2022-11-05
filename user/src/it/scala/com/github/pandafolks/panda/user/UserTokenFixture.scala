@@ -7,7 +7,6 @@ import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
-
 trait UserTokenFixture {
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
@@ -16,15 +15,17 @@ trait UserTokenFixture {
   mongoContainer.start()
 
   private val settings: MongoClientSettings =
-    MongoClientSettings.builder()
+    MongoClientSettings
+      .builder()
       .applyToClusterSettings(builder => {
         builder.applyConnectionString(new ConnectionString(mongoContainer.getReplicaSetUrl(dbName)))
         ()
-      }
-      ).build()
+      })
+      .build()
 
   private val usersCol: CollectionCodecRef[User] = User.getCollection(dbName, randomString(User.USERS_COLLECTION_NAME))
-  private val tokensCol: CollectionCodecRef[Token] = Token.getCollection(dbName, randomString(Token.TOKENS_COLLECTION_NAME))
+  private val tokensCol: CollectionCodecRef[Token] =
+    Token.getCollection(dbName, randomString(Token.TOKENS_COLLECTION_NAME))
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
 
   private val userDao: UserDao = new UserDaoImpl(usersWithTokensConnection)

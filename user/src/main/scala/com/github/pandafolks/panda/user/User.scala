@@ -30,4 +30,3 @@ object User {
       fromRegistries(fromProviders(classOf[User]), javaCodecs)
     )
 }
-

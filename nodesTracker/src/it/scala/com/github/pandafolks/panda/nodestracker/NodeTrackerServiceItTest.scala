@@ -11,8 +11,12 @@ import org.scalatest.matchers.should.Matchers
 import java.time.Clock
 import scala.concurrent.duration.DurationInt
 
-class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture with Matchers with ScalaFutures
-  with BeforeAndAfterAll {
+class NodeTrackerServiceItTest
+    extends AsyncFlatSpec
+    with NodeTrackerFixture
+    with Matchers
+    with ScalaFutures
+    with BeforeAndAfterAll {
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
@@ -32,10 +36,10 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
         _ <- Task.sleep(500.millisecond)
         thirdTimeStamp <- getNode
       } yield List(firstTimeStamp, secondsTimeStamp, thirdTimeStamp)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
-      res.map(_._id).forall(_ == res.head._id) should be (true)
+      res.map(_._id).forall(_ == res.head._id) should be(true)
       res should contain theSameElementsInOrderAs res.sortBy(_.lastUpdateTimestamp)
     }
   }
@@ -58,11 +62,14 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
         _ <- c.single.insertOne(notValidNode2)
       } yield ()
     ) >>
-      nodeTrackerService.getWorkingNodes
-      ).runToFuture
+      nodeTrackerService.getWorkingNodes).runToFuture
 
     whenReady(f) { res =>
-      res.filter(addedNodes.contains(_)) should contain theSameElementsInOrderAs List(validNode1, validNode2, validNode3).sortBy(_._id)
+      res.filter(addedNodes.contains(_)) should contain theSameElementsInOrderAs List(
+        validNode1,
+        validNode2,
+        validNode3
+      ).sortBy(_._id)
     }
   }
 
@@ -85,8 +92,7 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
         _ <- c.single.insertOne(notValidNode2)
       } yield ()
     ) >>
-      Task.sequence(List.fill(20)(nodeTrackerService.getWorkingNodes))
-      ).runToFuture
+      Task.sequence(List.fill(20)(nodeTrackerService.getWorkingNodes))).runToFuture
 
     whenReady(f) { res =>
       val filterOut = res.map(_.filter(addedNodes.contains(_)))
@@ -97,4 +103,3 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
   private def getNode: Task[Node] =
     nodesConnection.use(c => c.source.find(Filters.eq("_id", new ObjectId(nodeTrackerService.getNodeId))).firstL)
 }
-

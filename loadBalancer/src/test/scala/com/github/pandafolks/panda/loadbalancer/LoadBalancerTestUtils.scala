@@ -16,15 +16,21 @@ import org.typelevel.ci.CIString
 import org.typelevel.vault.Vault
 
 object LoadBalancerTestUtils {
-  def createParticipantsCacheWithSingleGroup(containAvailable: Boolean = true, containUnavailable: Boolean = true): ParticipantsCache = {
+  def createParticipantsCacheWithSingleGroup(
+      containAvailable: Boolean = true,
+      containUnavailable: Boolean = true
+  ): ParticipantsCache = {
     val tempParticipants = Vector(
-      (Participant("59.145.84.51", 4001, Group("cars")), false),     // 0
-      (Participant("13.204.158.90", 4001, Group("cars")), false),    // 1 - looks like the first available but with wrong port
-      (Participant("211.188.80.67", 4001, Group("cars")), false),    // 2
-      (Participant("13.204.158.90", 3000, Group("cars")), true),     // 3 - first available
-      (Participant("44.233.130.109", 4001, Group("cars")), false),   // 4
-      (Participant("193.207.130.133", 3000, Group("cars")), true),   // 5 - second available
-      (Participant("218.214.92.75", 4002, Group("cars")), false)     // 6
+      (Participant("59.145.84.51", 4001, Group("cars")), false), // 0
+      (
+        Participant("13.204.158.90", 4001, Group("cars")),
+        false
+      ), // 1 - looks like the first available but with wrong port
+      (Participant("211.188.80.67", 4001, Group("cars")), false), // 2
+      (Participant("13.204.158.90", 3000, Group("cars")), true), // 3 - first available
+      (Participant("44.233.130.109", 4001, Group("cars")), false), // 4
+      (Participant("193.207.130.133", 3000, Group("cars")), true), // 5 - second available
+      (Participant("218.214.92.75", 4002, Group("cars")), false) // 6
     ).filter(p => containAvailable || !p._2)
       .filter(p => containUnavailable || p._2)
       .map(_._1)
@@ -43,14 +49,19 @@ object LoadBalancerTestUtils {
 
       override def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = ???
 
-      override def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now { tempParticipants } // enforcing the participants order
+      override def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]] = Task.now {
+        tempParticipants
+      } // enforcing the participants order
 
-      override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(tempParticipants.map(_.copy(health = Healthy))) // enforcing all participants to be healthy
+      override def registerListener(listener: ChangeListener[Participant]): Task[Unit] = listener.notifyAboutAdd(
+        tempParticipants.map(_.copy(health = Healthy))
+      ) // enforcing all participants to be healthy
     }
   }
 
   def createRequest(path: String): Request[Task] =
-    Request[Task](uri = new Uri(path = Path.unsafeFromString(path)),
+    Request[Task](
+      uri = new Uri(path = Path.unsafeFromString(path)),
       attributes = Vault.insert(
         Keys.ConnectionInfo,
         Request.Connection(
@@ -70,12 +81,12 @@ object LoadBalancerTestUtils {
     )
 
   def fromResponseAssert(response: Response[Task]): Assertion =
-    response.headers.headers.find(p => p.name == CIString("from"))
-      .fold(fail())(
-        header => ClientStub.AVAILABLE_ROUTES should contain (header.value))
+    response.headers.headers
+      .find(p => p.name == CIString("from"))
+      .fold(fail())(header => ClientStub.AVAILABLE_ROUTES should contain(header.value))
 
   def fromResponseAssertAndReturnFrom(response: Response[Task]): String =
-    response.headers.headers.find(p => p.name == CIString("from"))
-      .fold(fail())(
-        header => { ClientStub.AVAILABLE_ROUTES should contain (header.value); header.value } )
+    response.headers.headers
+      .find(p => p.name == CIString("from"))
+      .fold(fail())(header => { ClientStub.AVAILABLE_ROUTES should contain(header.value); header.value })
 }

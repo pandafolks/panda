@@ -19,9 +19,12 @@ object Sequence {
       dbName,
       collectionName,
       classOf[Sequence],
-      fromRegistries(fromProviders(
-        classOf[Sequence],
-        classOf[SequenceKey]
-      ), DEFAULT_CODEC_REGISTRY)
+      fromRegistries(
+        fromProviders(
+          classOf[Sequence],
+          classOf[SequenceKey]
+        ),
+        DEFAULT_CODEC_REGISTRY
+      )
     )
 }

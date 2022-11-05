@@ -20,19 +20,20 @@ import scala.collection.immutable
 import scala.concurrent.duration.DurationInt
 import scala.util.hashing.MurmurHash3
 
-/**
- * This is a distributed implementation of [[HealthCheckService]].
- * Distributed in this scenario means it supports by default multi-node Panda configurations and makes use
- * of such configurations in terms of efficiency and splitting health check calls across multiple nodes.
- */
-final class DistributedHealthCheckServiceImpl(private val participantEventService: ParticipantEventService,
-                                              private val participantsCache: ParticipantsCache,
-                                              private val nodeTrackerService: NodeTrackerService,
-                                              private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
-                                              private val client: Client[Task],
-                                              private val backgroundJobsRegistry: BackgroundJobsRegistry,
-                                             )(private val healthCheckConfig: HealthCheckConfig)
-  extends HealthCheckService with ChangeListener[Participant] {
+/** This is a distributed implementation of [[HealthCheckService]]. Distributed in this scenario means it supports by
+  * default multi-node Panda configurations and makes use of such configurations in terms of efficiency and splitting
+  * health check calls across multiple nodes.
+  */
+final class DistributedHealthCheckServiceImpl(
+    private val participantEventService: ParticipantEventService,
+    private val participantsCache: ParticipantsCache,
+    private val nodeTrackerService: NodeTrackerService,
+    private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
+    private val client: Client[Task],
+    private val backgroundJobsRegistry: BackgroundJobsRegistry
+)(private val healthCheckConfig: HealthCheckConfig)
+    extends HealthCheckService
+    with ChangeListener[Participant] {
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
@@ -58,8 +59,12 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
     if (healthCheckConfig.callsInterval > 0 && healthCheckConfig.numberOfFailuresNeededToReact > 0) {
       backgroundJobsRegistry.addJobAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds)(
-        () => backgroundJob()
-          .onErrorRecover { e: Throwable => logger.error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e) },
+        () =>
+          backgroundJob()
+            .onErrorRecover { e: Throwable =>
+              logger
+                .error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e)
+            },
         "DistributedHealthCheck"
       )
     }
@@ -67,113 +72,161 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
 
   private def backgroundJob(): Task[Unit] =
     Task.eval(logger.debug("Starting DistributedHealthCheckServiceImpl#backgroundJob job")) >>
-    Task.parZip2(
-      getNodesSizeWithCurrentNodePosition,
-      participantsCache.getAllWorkingParticipants
-    ).flatMap {
-      case ((Some(nodesSize), Some(currentNodeIndex)), participants) =>
-        Task.eval(logger.debug(s"Found $nodesSize nodes - the index of the current node is $currentNodeIndex")) >>
-        Task.parTraverseUnordered(pickParticipantsForNode(participants, nodesSize, currentNodeIndex)) {
-          participant =>
-            // We are reading eventEmittedSinceLastCacheRefresh as early as possible because there is the scenario
-            // when the health check could take some time and in the meantime, cache got refreshed and
-            // eventsEmittedSinceLastCacheRefresh cleared and as a result, we would insert redundant event - as this is
-            // not the end of the world and we handle this in the proper way, reading this value earlier minimizes the risk.
-          val eventEmittedSinceLastCacheRefresh = Option(eventsEmittedSinceLastCacheRefresh.get(participant.identifier))
-            performHealthcheckCallAndReturnResult(participant)
-              .flatMap {
-                // Healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
-                case true if !participant.isHealthy => // we are iterating through working participants only, so the `isHealthy` check is enough
-                  unsuccessfulHealthCheckDao.clear(participant.identifier)
-                    .map {
-                      case Left(error) =>
-                        logger.error(s"Unsuccessful healthcheck counter of ${participant.identifier} not cleared because of error.")
-                        logger.error(error.getMessage)
-                        ()
-                      case _ => ()
-                    } >> Task.eval(eventEmittedSinceLastCacheRefresh.fold(true)(_ != EmittedEventType.MarkedParticipantAsHealthy))
-                    .flatMap { eventNeedsToBeEmitted =>
-                      if (eventNeedsToBeEmitted)
-                        participantEventService.markParticipantAsHealthy(participant.identifier)
-                          .map { markAsHealthyResult =>
-                            if (markAsHealthyResult.isRight) {
-                              eventsEmittedSinceLastCacheRefresh.put(participant.identifier, EmittedEventType.MarkedParticipantAsHealthy)
+      Task
+        .parZip2(
+          getNodesSizeWithCurrentNodePosition,
+          participantsCache.getAllWorkingParticipants
+        )
+        .flatMap {
+          case ((Some(nodesSize), Some(currentNodeIndex)), participants) =>
+            Task.eval(logger.debug(s"Found $nodesSize nodes - the index of the current node is $currentNodeIndex")) >>
+              Task
+                .parTraverseUnordered(pickParticipantsForNode(participants, nodesSize, currentNodeIndex)) {
+                  participant =>
+                    // We are reading eventEmittedSinceLastCacheRefresh as early as possible because there is the scenario
+                    // when the health check could take some time and in the meantime, cache got refreshed and
+                    // eventsEmittedSinceLastCacheRefresh cleared and as a result, we would insert redundant event - as this is
+                    // not the end of the world and we handle this in the proper way, reading this value earlier minimizes the risk.
+                    val eventEmittedSinceLastCacheRefresh =
+                      Option(eventsEmittedSinceLastCacheRefresh.get(participant.identifier))
+                    performHealthcheckCallAndReturnResult(participant)
+                      .flatMap {
+                        // Healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
+                        case true
+                            if !participant.isHealthy => // we are iterating through working participants only, so the `isHealthy` check is enough
+                          unsuccessfulHealthCheckDao
+                            .clear(participant.identifier)
+                            .map {
+                              case Left(error) =>
+                                logger.error(
+                                  s"Unsuccessful healthcheck counter of ${participant.identifier} not cleared because of error."
+                                )
+                                logger.error(error.getMessage)
+                                ()
+                              case _ => ()
+                            } >> Task
+                            .eval(
+                              eventEmittedSinceLastCacheRefresh
+                                .fold(true)(_ != EmittedEventType.MarkedParticipantAsHealthy)
+                            )
+                            .flatMap { eventNeedsToBeEmitted =>
+                              if (eventNeedsToBeEmitted)
+                                participantEventService
+                                  .markParticipantAsHealthy(participant.identifier)
+                                  .map { markAsHealthyResult =>
+                                    if (markAsHealthyResult.isRight) {
+                                      eventsEmittedSinceLastCacheRefresh.put(
+                                        participant.identifier,
+                                        EmittedEventType.MarkedParticipantAsHealthy
+                                      )
+                                    }
+                                    markAsHealthyResult
+                                  }
+                              else Task.now(Right(()))
                             }
-                            markAsHealthyResult
-                          }
-                      else Task.now(Right(()))
-                    }.map {
-                    case Left(error) =>
-                      logger.error(s"${participant.identifier} could not be marked as healthy because of error.")
-                      logger.error(error.getMessage)
-                      ()
-                    case _ => ()
-                  }
+                            .map {
+                              case Left(error) =>
+                                logger.error(
+                                  s"${participant.identifier} could not be marked as healthy because of error."
+                                )
+                                logger.error(error.getMessage)
+                                ()
+                              case _ => ()
+                            }
 
-                // Healthcheck failed, but the latest participant state inside cache was healthy, so we are incrementing related failed healthchecks counter and if the counter reaches specified limit we mark participant as not healthy.
-                case false if participant.isHealthy =>
-                  unsuccessfulHealthCheckDao.incrementCounter(participant.identifier).map {
-                    case Right(counter)
-                      if counter >= healthCheckConfig.numberOfFailuresNeededToReact
-                        && eventEmittedSinceLastCacheRefresh.fold(true)(_ != EmittedEventType.MarkedParticipantAsUnhealthy) => true
-                    case Right(_) => false
-                    case Left(error) =>
-                      logger.error(s"Unsuccessful healthcheck counter of ${participant.identifier} not incremented because of error.")
-                      logger.error(error.getMessage)
-                      false
-                  }.flatMap { eventNeedsToBeEmitted =>
-                    if (eventNeedsToBeEmitted)
-                      participantEventService.markParticipantAsUnhealthy(participant.identifier)
-                        .map { markAsUnhealthyResult =>
-                          if (markAsUnhealthyResult.isRight) {
-                            eventsEmittedSinceLastCacheRefresh.put(participant.identifier, EmittedEventType.MarkedParticipantAsUnhealthy)
-                          }
-                          markAsUnhealthyResult
-                        }
-                    else Task.now(Right(()))
-                  }.map {
-                    case Left(error) =>
-                      logger.error(s"${participant.identifier} could not be marked as unhealthy because of error.")
-                      logger.error(error.getMessage)
-                      ()
-                    case _ => ()
-                  }
+                        // Healthcheck failed, but the latest participant state inside cache was healthy, so we are incrementing related failed healthchecks counter and if the counter reaches specified limit we mark participant as not healthy.
+                        case false if participant.isHealthy =>
+                          unsuccessfulHealthCheckDao
+                            .incrementCounter(participant.identifier)
+                            .map {
+                              case Right(counter)
+                                  if counter >= healthCheckConfig.numberOfFailuresNeededToReact
+                                    && eventEmittedSinceLastCacheRefresh.fold(true)(
+                                      _ != EmittedEventType.MarkedParticipantAsUnhealthy
+                                    ) =>
+                                true
+                              case Right(_) => false
+                              case Left(error) =>
+                                logger.error(
+                                  s"Unsuccessful healthcheck counter of ${participant.identifier} not incremented because of error."
+                                )
+                                logger.error(error.getMessage)
+                                false
+                            }
+                            .flatMap { eventNeedsToBeEmitted =>
+                              if (eventNeedsToBeEmitted)
+                                participantEventService
+                                  .markParticipantAsUnhealthy(participant.identifier)
+                                  .map { markAsUnhealthyResult =>
+                                    if (markAsUnhealthyResult.isRight) {
+                                      eventsEmittedSinceLastCacheRefresh.put(
+                                        participant.identifier,
+                                        EmittedEventType.MarkedParticipantAsUnhealthy
+                                      )
+                                    }
+                                    markAsUnhealthyResult
+                                  }
+                              else Task.now(Right(()))
+                            }
+                            .map {
+                              case Left(error) =>
+                                logger.error(
+                                  s"${participant.identifier} could not be marked as unhealthy because of error."
+                                )
+                                logger.error(error.getMessage)
+                                ()
+                              case _ => ()
+                            }
 
-                // 2 scenarios where actions are not needed:
-                //    - healthcheck successful + participant healthy (all good)
-                //    - healthcheck failed + participant not healthy (we already are aware that participant is not healthy, so no event needs to be emitted)
-                case _ => Task.unit
-              }
-        }.flatMap(_ => Task.unit)
-      case ((_, _), _) => Task.unit
-    }
+                        // 2 scenarios where actions are not needed:
+                        //    - healthcheck successful + participant healthy (all good)
+                        //    - healthcheck failed + participant not healthy (we already are aware that participant is not healthy, so no event needs to be emitted)
+                        case _ => Task.unit
+                      }
+                }
+                .flatMap(_ => Task.unit)
+          case ((_, _), _) => Task.unit
+        }
 
   @VisibleForTesting
   private def getNodesSizeWithCurrentNodePosition: Task[(Option[Int], Option[Int])] =
     nodeTrackerService.getWorkingNodes.flatMap(nodes =>
-      Task.eval(nodes.map(_._id.toString).indexOf(nodeTrackerService.getNodeId))
+      Task
+        .eval(nodes.map(_._id.toString).indexOf(nodeTrackerService.getNodeId))
         .map {
           case index if index >= 0 => (Some(nodes.size), Some(index))
-          case _ => (Option.empty, Option.empty)
+          case _                   => (Option.empty, Option.empty)
         }
     )
 
   @VisibleForTesting
-  private def pickParticipantsForNode(participants: List[Participant], nodesSize: Int, nodeIndex: Int): List[Participant] =
+  private def pickParticipantsForNode(
+      participants: List[Participant],
+      nodesSize: Int,
+      nodeIndex: Int
+  ): List[Participant] =
     participants.filter(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % nodesSize == nodeIndex)
 
   private def performHealthcheckCallAndReturnResult(participant: Participant): Task[Boolean] =
-    client.run(
-      Request[Task]().withUri(
-        Uri(
-          authority = Some(Authority(
-            host = RegName(participant.host),
-            port = Some(participant.port)
-          )),
-          path = Path.unsafeFromString(participant.healthcheckInfo.path)
-        )
-      ).withHeaders(Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString)) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
-    ).use(Task.eval(_))
+    client
+      .run(
+        Request[Task]()
+          .withUri(
+            Uri(
+              authority = Some(
+                Authority(
+                  host = RegName(participant.host),
+                  port = Some(participant.port)
+                )
+              ),
+              path = Path.unsafeFromString(participant.healthcheckInfo.path)
+            )
+          )
+          .withHeaders(
+            Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString)
+          ) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+      )
+      .use(Task.eval(_))
       .map(_.status.isSuccess)
       .onErrorRecoverWith { _ => Task.now(false) }
 
@@ -181,7 +234,9 @@ final class DistributedHealthCheckServiceImpl(private val participantEventServic
   // Even if there will be some race (cache refresh is quite expensive) and we will clear too early - this is ok
   // because in the worst scenario there will be a second event inserted (the default logic
   // saves an event if eventsEmittedSinceLastCacheRefresh does not contain the identifier that was asked)
-  override def notifyAboutAdd(items: immutable.Iterable[Participant]): Task[Unit] = Task.eval(eventsEmittedSinceLastCacheRefresh.clear())
+  override def notifyAboutAdd(items: immutable.Iterable[Participant]): Task[Unit] =
+    Task.eval(eventsEmittedSinceLastCacheRefresh.clear())
 
-  override def notifyAboutRemove(items: immutable.Iterable[Participant]): Task[Unit] = Task.unit // no action needs to be taken
+  override def notifyAboutRemove(items: immutable.Iterable[Participant]): Task[Unit] =
+    Task.unit // no action needs to be taken
 }

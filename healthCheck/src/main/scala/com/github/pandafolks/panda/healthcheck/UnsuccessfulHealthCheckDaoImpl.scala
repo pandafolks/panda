@@ -7,24 +7,27 @@ import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, Updates}
 
-final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]]
-                                          ) extends UnsuccessfulHealthCheckDao {
+final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]])
+    extends UnsuccessfulHealthCheckDao {
 
   override def incrementCounter(identifier: String): Task[Either[PersistenceError, Long]] = c.use { op =>
     val filter = Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier)
     val update = Updates.inc(UnsuccessfulHealthCheck.COUNTER_PROPERTY_NAME, 1L)
     val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
 
-    op.source.findOneAndUpdate(
-      filter = filter,
-      update = update,
-      findOneAndUpdateOptions = options
-    ).map(_.map(_.counter))
+    op.source
+      .findOneAndUpdate(
+        filter = filter,
+        update = update,
+        findOneAndUpdateOptions = options
+      )
+      .map(_.map(_.counter))
       .map(_.toRight(UnsuccessfulUpdateOperation("No update performed")))
   }
 
   override def clear(identifier: String): Task[Either[PersistenceError, Unit]] = c.use(op =>
-    op.single.deleteOne(Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier))
+    op.single
+      .deleteOne(Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier))
       .map(_ => Right(()))
       .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
   )

@@ -12,7 +12,13 @@ import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
-class UserServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
+class UserServiceItTest
+    extends AsyncFlatSpec
+    with UserTokenFixture
+    with Matchers
+    with ScalaFutures
+    with EitherValues
+    with BeforeAndAfterAll {
   implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
@@ -31,15 +37,21 @@ class UserServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matcher
 
   "getById" should "find created users" in {
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
-    val f = Task.traverse(randomNames)(u => userService.create(u, randomString("password")))
-      .flatMap(ids => ids.map(id => userService.getById(id.getOrElse(tagUUIDAsUserId(UUID.randomUUID())))).toList.sequence).runToFuture // kinda hack with the getOrElse
+    val f = Task
+      .traverse(randomNames)(u => userService.create(u, randomString("password")))
+      .flatMap(ids =>
+        ids.map(id => userService.getById(id.getOrElse(tagUUIDAsUserId(UUID.randomUUID())))).toList.sequence
+      )
+      .runToFuture // kinda hack with the getOrElse
 
     whenReady(f) { res =>
-      randomNames.zip(res).foreach(r => {
-        r._2.isDefined should be(true)
-        r._1 should be(r._2.get.username)
-        r._2.get.password should contain noneOf ("password", r._1)
-      })
+      randomNames
+        .zip(res)
+        .foreach(r => {
+          r._2.isDefined should be(true)
+          r._1 should be(r._2.get.username)
+          r._2.get.password should contain noneOf ("password", r._1)
+        })
       succeed
     }
   }
@@ -57,49 +69,71 @@ class UserServiceItTest extends AsyncFlatSpec with UserTokenFixture with Matcher
   "delete" should "remove from db user with delivered credentials" in {
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
     val f1 = Task.traverse(randomNames)(u => userService.create(u, "password")).runToFuture
-    val f2 = f1.flatMap(res => userService.delete(UserCredentials(randomNames.head, "password")).runToFuture.map((_, res)))
+    val f2 =
+      f1.flatMap(res => userService.delete(UserCredentials(randomNames.head, "password")).runToFuture.map((_, res)))
 
-    whenReady(f2) { res => {
-      res._1 should be(true)
-      whenReady(res._2.map(
-        userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
-        .toList.sequence.runToFuture) { res2 =>
-        res2.head should be(None)
-        res2.tail.foreach(user => { user.isDefined should be(true) })
-        succeed
+    whenReady(f2) { res =>
+      {
+        res._1 should be(true)
+        whenReady(
+          res._2
+            .map(userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
+            .toList
+            .sequence
+            .runToFuture
+        ) { res2 =>
+          res2.head should be(None)
+          res2.tail.foreach(user => { user.isDefined should be(true) })
+          succeed
+        }
       }
-    }}
+    }
   }
 
   it should "not remove if there is no user with delivered credentials (username mismatch)" in {
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
     val f1 = Task.traverse(randomNames)(u => userService.create(u, "password")).runToFuture
-    val f2 = f1.flatMap(res => userService.delete(UserCredentials("radnomUsername", "password")).runToFuture.map((_, res)))
+    val f2 =
+      f1.flatMap(res => userService.delete(UserCredentials("radnomUsername", "password")).runToFuture.map((_, res)))
 
-    whenReady(f2) { res => {
-      res._1 should be(false)
-      whenReady(res._2.map(
-        userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
-        .toList.sequence.runToFuture) { res2 =>
-        res2.foreach(user => { user.isDefined should be(true) })
-        succeed
+    whenReady(f2) { res =>
+      {
+        res._1 should be(false)
+        whenReady(
+          res._2
+            .map(userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
+            .toList
+            .sequence
+            .runToFuture
+        ) { res2 =>
+          res2.foreach(user => { user.isDefined should be(true) })
+          succeed
+        }
       }
-    }}
+    }
   }
 
   it should "not remove if there is no user with delivered credentials (password mismatch)" in {
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
     val f1 = Task.traverse(randomNames)(u => userService.create(u, "password")).runToFuture
-    val f2 = f1.flatMap(res => userService.delete(UserCredentials(randomNames.head, "notMatchingPassword")).runToFuture.map((_, res)))
+    val f2 = f1.flatMap(res =>
+      userService.delete(UserCredentials(randomNames.head, "notMatchingPassword")).runToFuture.map((_, res))
+    )
 
-    whenReady(f2) { res => {
-      res._1 should be(false)
-      whenReady(res._2.map(
-        userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
-        .toList.sequence.runToFuture) { res2 =>
-        res2.foreach(user => { user.isDefined should be(true) })
-        succeed
+    whenReady(f2) { res =>
+      {
+        res._1 should be(false)
+        whenReady(
+          res._2
+            .map(userId => userService.getById(userId.getOrElse(tagUUIDAsUserId(UUID.randomUUID()))))
+            .toList
+            .sequence
+            .runToFuture
+        ) { res2 =>
+          res2.foreach(user => { user.isDefined should be(true) })
+          succeed
+        }
       }
-    }}
+    }
   }
 }
