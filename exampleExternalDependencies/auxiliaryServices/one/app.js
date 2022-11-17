@@ -27,6 +27,7 @@ app.get('/api/v1/cars', (req, res) => {
 })
 
 app.get('/api/v1/cars/rent/', (req, res) => {
+    jsonExample2[0]["email"] = req.query;
     res.send(jsonExample2);
 })
 

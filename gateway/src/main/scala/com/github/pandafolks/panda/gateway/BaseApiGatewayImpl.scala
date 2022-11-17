@@ -31,14 +31,23 @@ final class BaseApiGatewayImpl(
             .tapEval(message => Task.eval(logger.info(message)))
             .flatMap(message => Responses.badRequestWithInfo(message))
         case Some((routeInfo, _)) =>
-          Task.now(Group(routeInfo.mappingContent.left.get)).flatMap { relatedGroup =>
-            treesService.findPrefix(relatedGroup).flatMap { prefix =>
-              loadBalancer.route(
-                request = request,
-                requestedPath = prefix.addSegments(requestedPath.segments),
-                group = relatedGroup
-              )
+          Task
+            .now(routeInfo.mappingContent.left)
+            .map(_.map(Group(_)))
+            .flatMap {
+              case Some(relatedGroup) =>
+                treesService.findPrefix(relatedGroup).flatMap { prefix =>
+                  loadBalancer.route(
+                    request = request,
+                    requestedPath = prefix.addSegments(requestedPath.segments),
+                    group = relatedGroup
+                  )
+                }
+              case Option.empty =>
+                Task
+                  .now(s"There is no mapping for the route ${request.pathInfo}")
+                  .tapEval(message => Task.eval(logger.info(message)))
+                  .flatMap(message => Responses.notFoundWithInfo(message))
             }
-          }
       }
 }
