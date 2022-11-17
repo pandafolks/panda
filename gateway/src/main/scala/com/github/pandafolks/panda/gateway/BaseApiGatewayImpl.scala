@@ -43,7 +43,7 @@ final class BaseApiGatewayImpl(
                     group = relatedGroup
                   )
                 }
-              case Option.empty =>
+              case None =>
                 Task
                   .now(s"There is no mapping for the route ${request.pathInfo}")
                   .tapEval(message => Task.eval(logger.info(message)))
