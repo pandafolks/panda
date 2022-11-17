@@ -24,7 +24,7 @@ object RoutesTree {
 
   final case class RouteInfo(
       mappingContent: MappingContent,
-      // Example: "cars/supercars/**" will catch "cars/supercars/ferrari", "cars/supercars/audi/r8", etc.
+      // Pocket Example: "cars/supercars/**" will catch "cars/supercars/ferrari", "cars/supercars/audi/r8", etc.
       isPocket: Boolean = false,
       isStandalone: Boolean = true
   )
