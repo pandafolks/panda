@@ -21,19 +21,19 @@ jobs:
         run: sbt doc
       - name: Move generated resources to /docs/panda
         run: |
-          cp -R ./backgroundJobsRegistry/target/scala-2.13/api/. ./docs/panda/docs/backgroundJobsRegistry-api
-          cp -R ./bootstrap/target/scala-2.13/api/. ./docs/panda/docs/bootstrap-api
-          cp -R ./db/target/scala-2.13/api/. ./docs/panda/docs/db-api
-          cp -R ./gateway/target/scala-2.13/api/. ./docs/panda/docs/gateway-api
-          cp -R ./healthCheck/target/scala-2.13/api/. ./docs/panda/docs/healthCheck-api
-          cp -R ./httpClient/target/scala-2.13/api/. ./docs/panda/docs/httpClient-api
-          cp -R ./loadBalancer/target/scala-2.13/api/. ./docs/panda/docs/loadBalancer-api
-          cp -R ./nodesTracker/target/scala-2.13/api/. ./docs/panda/docs/nodesTracker-api
-          cp -R ./participant/target/scala-2.13/api/. ./docs/panda/docs/participant-api
-          cp -R ./routes/target/scala-2.13/api/. ./docs/panda/docs/routes-api
-          cp -R ./sequence/target/scala-2.13/api/. ./docs/panda/docs/sequence-api
-          cp -R ./user/target/scala-2.13/api/. ./docs/panda/docs/user-api
-          cp -R ./utils/target/scala-2.13/api/. ./docs/panda/docs/utils-api
+          cp -R ./backgroundJobsRegistry/target/scala-2.13/api/. ./docs/panda/docs/backgroundJobsRegistry-api \
+          cp -R ./bootstrap/target/scala-2.13/api/. ./docs/panda/docs/bootstrap-api \
+          cp -R ./db/target/scala-2.13/api/. ./docs/panda/docs/db-api \
+          cp -R ./gateway/target/scala-2.13/api/. ./docs/panda/docs/gateway-api \
+          cp -R ./healthCheck/target/scala-2.13/api/. ./docs/panda/docs/healthCheck-api \
+          cp -R ./httpClient/target/scala-2.13/api/. ./docs/panda/docs/httpClient-api \
+          cp -R ./loadBalancer/target/scala-2.13/api/. ./docs/panda/docs/loadBalancer-api \
+          cp -R ./nodesTracker/target/scala-2.13/api/. ./docs/panda/docs/nodesTracker-api \
+          cp -R ./participant/target/scala-2.13/api/. ./docs/panda/docs/participant-api \
+          cp -R ./routes/target/scala-2.13/api/. ./docs/panda/docs/routes-api \
+          cp -R ./sequence/target/scala-2.13/api/. ./docs/panda/docs/sequence-api \
+          cp -R ./user/target/scala-2.13/api/. ./docs/panda/docs/user-api \
+          cp -R ./utils/target/scala-2.13/api/. ./docs/panda/docs/utils-api \
       - name: Deploy docs
         working-directory: ./docs/panda
         run: mkdocs gh-deploy --force --clean --verbose
