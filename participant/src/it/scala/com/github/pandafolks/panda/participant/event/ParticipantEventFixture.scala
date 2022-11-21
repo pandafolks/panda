@@ -1,7 +1,7 @@
 package com.github.pandafolks.panda.participant.event
 
 import cats.effect.Resource
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
+import com.github.pandafolks.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}

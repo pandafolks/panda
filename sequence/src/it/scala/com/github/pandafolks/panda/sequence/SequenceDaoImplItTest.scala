@@ -2,7 +2,6 @@ package com.github.pandafolks.panda.sequence
 
 import com.github.pandafolks.panda.utils.PersistenceError
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl, SequenceKey}
 import monix.connect.mongodb.client.{CollectionCodecRef, MongoConnection}
 import monix.eval.Task
 import monix.execution.{CancelableFuture, Scheduler}

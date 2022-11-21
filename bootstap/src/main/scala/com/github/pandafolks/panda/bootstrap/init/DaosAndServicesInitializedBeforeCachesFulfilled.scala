@@ -20,9 +20,9 @@ import com.github.pandafolks.panda.routes.{
   TreesService,
   TreesServiceImpl
 }
+import com.github.pandafolks.panda.sequence.{SequenceDao, SequenceDaoImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
-import com.pandafolks.mattszm.panda.sequence.{SequenceDao, SequenceDaoImpl}
 import monix.eval.Task
 
 /** These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.

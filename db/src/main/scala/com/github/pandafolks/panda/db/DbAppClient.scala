@@ -5,9 +5,9 @@ import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
 import com.github.pandafolks.panda.nodestracker.Node
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.routes.entity.{Mapper, Prefix}
+import com.github.pandafolks.panda.sequence.Sequence
 import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.token.Token
-import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 

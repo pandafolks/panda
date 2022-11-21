@@ -23,8 +23,8 @@ import com.github.pandafolks.panda.participant.event.{
   ParticipantEventService,
   ParticipantEventServiceImpl
 }
+import com.github.pandafolks.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler
