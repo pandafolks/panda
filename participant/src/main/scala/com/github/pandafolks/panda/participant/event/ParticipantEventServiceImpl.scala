@@ -140,7 +140,14 @@ final class ParticipantEventServiceImpl(
   }
 
   override def constructAllParticipants(): Task[(List[Participant], Long)] = {
-    val dumbParticipant: Participant = Participant("", -1, Group(""), "", HealthcheckInfo(""), NotWorking)
+    val dumbParticipant: Participant = Participant(
+      host = "",
+      port = -1,
+      group = Group(""),
+      identifier = "",
+      healthcheckInfo = HealthcheckInfo(""),
+      status = NotWorking
+    )
     val lastSeenEventId: AtomicLong = AtomicLong(-1)
 
     c.use { case (participantEventOperator, _) =>
