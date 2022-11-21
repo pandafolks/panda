@@ -34,6 +34,7 @@ jobs:
           cp -R ./sequence/target/scala-2.13/api/. ./docs/panda/docs/sequence-api \
           cp -R ./user/target/scala-2.13/api/. ./docs/panda/docs/user-api \
           cp -R ./utils/target/scala-2.13/api/. ./docs/panda/docs/utils-api \
+          ls -l
       - name: Deploy docs
         working-directory: ./docs/panda
         run: mkdocs gh-deploy --force --clean --verbose
