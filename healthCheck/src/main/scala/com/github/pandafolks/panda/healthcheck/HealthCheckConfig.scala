@@ -5,7 +5,7 @@ final case class HealthCheckConfig(
     numberOfFailuresNeededToReact: Int,
     participantIsMarkedAsNotWorkingDelay: Option[Int], // in seconds
     participantIsMarkedAsRemovedDelay: Option[Int], // in seconds
-    markedAsJobInterval: Option[Int] // in seconds
+    markedAsNotWorkingJobInterval: Option[Int] // in seconds
 ) {
   def getParticipantIsMarkedAsNotWorkingDelay: Option[Int] =
     participantIsMarkedAsNotWorkingDelay.flatMap(mapSmallerThanOneToEmpty)
@@ -18,11 +18,11 @@ final case class HealthCheckConfig(
         else getParticipantIsMarkedAsNotWorkingDelay.getOrElse(1)
       )
 
-  def getMarkedAsJobInterval: Option[Int] = {
+  def getMarkedAsNotWorkingJobInterval: Option[Int] = {
     val DEFAULT_VALUE = 30
     if (getParticipantIsMarkedAsNotWorkingDelay.isEmpty && getParticipantIsMarkedAsRemovedDelay.isEmpty) Option.empty
     else
-      markedAsJobInterval match {
+      markedAsNotWorkingJobInterval match {
         case None                     => Some(DEFAULT_VALUE)
         case Some(value) if value < 1 => Some(DEFAULT_VALUE)
         case Some(value)              => Some(value)

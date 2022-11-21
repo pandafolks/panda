@@ -17,7 +17,7 @@ class HealthCheckConfigTest extends AnyFlatSpec {
 
     underTest.getParticipantIsMarkedAsNotWorkingDelay should be(Some(10))
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Some(20))
-    underTest.getMarkedAsJobInterval should be(Some(40))
+    underTest.getMarkedAsNotWorkingJobInterval should be(Some(40))
   }
 
   "HealthCheckConfig#getParticipantIsMarkedAsNotWorkingDelay" should "return empty when smaller than 1" in {
@@ -115,7 +115,7 @@ class HealthCheckConfigTest extends AnyFlatSpec {
 
     underTest.getParticipantIsMarkedAsNotWorkingDelay should be(Some(10))
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Some(20))
-    underTest.getMarkedAsJobInterval should be(Some(30))
+    underTest.getMarkedAsNotWorkingJobInterval should be(Some(30))
   }
 
   it should "use default value when smaller than 1" in {
@@ -129,7 +129,7 @@ class HealthCheckConfigTest extends AnyFlatSpec {
 
     underTest.getParticipantIsMarkedAsNotWorkingDelay should be(Some(10))
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Some(20))
-    underTest.getMarkedAsJobInterval should be(Some(30))
+    underTest.getMarkedAsNotWorkingJobInterval should be(Some(30))
   }
 
   it should "return empty if both participantIsMarkedAsNotWorkingDelay and participantIsMarkedAsRemovedDelay are not present" in {
@@ -143,6 +143,6 @@ class HealthCheckConfigTest extends AnyFlatSpec {
 
     underTest.getParticipantIsMarkedAsNotWorkingDelay should be(Option.empty)
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Option.empty)
-    underTest.getMarkedAsJobInterval should be(Option.empty)
+    underTest.getMarkedAsNotWorkingJobInterval should be(Option.empty)
   }
 }
