@@ -21,7 +21,7 @@ jobs:
         run: sbt doc
       - name: Move generated resources to /docs/panda
         run: |
-          cp -R ./utils/target/scala-2.13/api/. ./docs/panda/utils-api
+          cp -R ./utils/target/scala-2.13/api/. ./docs/panda/docs/utils-api
       - name: Deploy docs
         working-directory: ./docs/panda
         run: mkdocs gh-deploy --force --clean --verbose
