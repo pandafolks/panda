@@ -13,8 +13,8 @@ import com.github.pandafolks.panda.participant.{
   Unhealthy
 }
 import com.github.pandafolks.panda.routes.Group
+import com.github.pandafolks.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists, PersistenceError, UnsuccessfulSaveOperation}
-import com.pandafolks.mattszm.panda.sequence.{Sequence, SequenceDao, SequenceKey}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.execution.atomic.AtomicLong
