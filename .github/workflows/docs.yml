@@ -21,7 +21,7 @@ jobs:
         run: sbt doc
       - name: ls
         run: |
-          ls -l
+          ls -l ./backgroundJobsRegistry
       - name: Move backgroundJobsRegistry resources to /docs/panda
         run: |
           cp -R ./backgroundJobsRegistry/target/scala-2.13/api/. ./docs/panda/docs/backgroundJobsRegistry-api
