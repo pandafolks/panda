@@ -19,6 +19,9 @@ jobs:
         run: pip install mkdocs-material
       - name: Generate Scala API Docs
         run: sbt doc
+      - name: ls
+        run: |
+          ls -l
       - name: Move backgroundJobsRegistry resources to /docs/panda
         run: |
           cp -R ./backgroundJobsRegistry/target/scala-2.13/api/. ./docs/panda/docs/backgroundJobsRegistry-api
