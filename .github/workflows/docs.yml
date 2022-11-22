@@ -17,12 +17,10 @@ jobs:
       - name: Install mkdocs-material
         working-directory: ./docs/panda
         run: pip install mkdocs-material
+      - name: Clean and Compile
+        run: sbt clean compile
       - name: Generate Scala API Docs
         run: sbt doc
-      - name: Sleep for 10s
-        uses: juliangruber/sleep-action@v1
-        with:
-          time: 10s
       - name: Move backgroundJobsRegistry resources to /docs/panda
         run: |
           cp -R ./backgroundJobsRegistry/target/scala-2.13/api/. ./docs/panda/docs/backgroundJobsRegistry-api
