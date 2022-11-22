@@ -85,10 +85,10 @@ lazy val panda = (project in file("."))
     assembly / mainClass := Some("com.github.pandafolks.panda.bootstrap.App"),
     assembly / assemblyJarName := "panda.jar",
   )
-  .aggregate(bootstap, db, gateway, loadBalancer, healthCheck, participant, routes, sequence, user, nodesTracker, utils)
-  .dependsOn(bootstap, db, gateway, loadBalancer, healthCheck, participant, routes, sequence, user, nodesTracker, utils)
+  .aggregate(bootstrap, db, gateway, loadBalancer, healthCheck, participant, routes, sequence, user, nodesTracker, httpClient, backgroundJobsRegistry, utils)
+  .dependsOn(bootstrap, db, gateway, loadBalancer, healthCheck, participant, routes, sequence, user, nodesTracker, httpClient, backgroundJobsRegistry, utils)
 
-lazy val bootstap = pandaConnector("bootstap", Dependencies.bootstapDependencies, Seq(db, gateway))
+lazy val bootstrap = pandaConnector("bootstrap", Dependencies.bootstapDependencies, Seq(db, gateway))
 lazy val db = pandaConnector("db", Dependencies.dbDependencies, Seq(user, healthCheck, participant, sequence, nodesTracker))
 lazy val gateway = pandaConnector("gateway", Dependencies.gatewayDependencies, Seq(loadBalancer, routes, utils))
 lazy val loadBalancer = pandaConnector("loadBalancer", Dependencies.loadBalancerDependencies, Seq(participant, utils, httpClient, backgroundJobsRegistry))

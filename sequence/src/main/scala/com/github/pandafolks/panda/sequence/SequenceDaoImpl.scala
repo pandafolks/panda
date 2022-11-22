@@ -1,4 +1,4 @@
-package com.pandafolks.mattszm.panda.sequence
+package com.github.pandafolks.panda.sequence
 
 import com.github.pandafolks.panda.utils.{PersistenceError, UnsuccessfulUpdateOperation}
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}

@@ -3,9 +3,9 @@ package com.github.pandafolks.panda.participant.event
 import cats.data.OptionT
 import cats.effect.Resource
 import ParticipantEventType.{Created, Removed}
+import com.github.pandafolks.panda.sequence.Sequence
 import com.github.pandafolks.panda.utils.{PersistenceError, UndefinedPersistenceError, UnsuccessfulSaveOperation}
 import com.mongodb.client.model.Filters
-import com.pandafolks.mattszm.panda.sequence.Sequence
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import monix.reactive.Observable

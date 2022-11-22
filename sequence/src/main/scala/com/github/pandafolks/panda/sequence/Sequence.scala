@@ -1,4 +1,4 @@
-package com.pandafolks.mattszm.panda.sequence
+package com.github.pandafolks.panda.sequence
 
 import monix.connect.mongodb.client.CollectionCodecRef
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}

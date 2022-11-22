@@ -4,6 +4,7 @@ nav:
   - Home: index.md
   - Rest: rest.md
   - Documentation: documentation.md
+  - Scala API: api.md
   - Config: config.md
   - Contributing: contributing.md
 
