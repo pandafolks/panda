@@ -138,6 +138,10 @@ class DistributedHealthCheckServiceImplItTest
           )
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // fifth background job run
+          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
+          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
+          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
+
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res => fifthParticipantsCacheCheck.set(res); () }
           >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL).map { res =>

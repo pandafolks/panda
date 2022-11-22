@@ -1,7 +1,6 @@
 package com.gitgub.pandafolks.panda.healthcheck
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -70,6 +69,9 @@ class UnsuccessfulHealthCheckDaoItTest
     val identifier1 = randomString("w1")
     val identifier2 = randomString("w2")
 
+    val clock = java.time.Clock.systemUTC
+    val startTimestamp = clock.millis()
+
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1)
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
@@ -79,7 +81,9 @@ class UnsuccessfulHealthCheckDaoItTest
 
     whenReady(f) { res =>
       res.size should be(1)
-      res should contain theSameElementsAs List(UnsuccessfulHealthCheck(identifier2, 1))
+      res.head.identifier should be(identifier2)
+      res.head.counter should be(1)
+      res.head.lastUpdateTimestamp should be > startTimestamp
     }
   }
 
@@ -87,6 +91,9 @@ class UnsuccessfulHealthCheckDaoItTest
     val identifier1 = randomString("c1")
     val identifier2 = randomString("c2")
     val identifier3 = randomString("c3")
+
+    val clock = java.time.Clock.systemUTC
+    val startTimestamp = clock.millis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1)
@@ -97,10 +104,16 @@ class UnsuccessfulHealthCheckDaoItTest
 
     whenReady(f) { res =>
       res.size should be(2)
-      res should contain theSameElementsAs List(
-        UnsuccessfulHealthCheck(identifier2, 1),
-        UnsuccessfulHealthCheck(identifier1, 1)
-      )
+
+      List(identifier1, identifier2) should contain(res.head.identifier)
+      res.head.counter should be(1)
+      List(identifier1, identifier2) should contain(res(1).identifier)
+      res(1).counter should be(1)
+
+      res.head.identifier should not be res(1).identifier
+
+      res.head.lastUpdateTimestamp should be > startTimestamp
+      res(1).lastUpdateTimestamp should be > startTimestamp
     }
   }
 }
