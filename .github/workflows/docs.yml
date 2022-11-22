@@ -17,6 +17,8 @@ jobs:
       - name: Install mkdocs-material
         working-directory: ./docs/panda
         run: pip install mkdocs-material
+      - name: Clean and Compile
+        run: sbt clean compile
       - name: Generate Scala API Docs
         run: sbt doc
       - name: Move backgroundJobsRegistry resources to /docs/panda
