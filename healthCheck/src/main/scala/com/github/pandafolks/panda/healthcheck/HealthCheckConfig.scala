@@ -3,24 +3,21 @@ package com.github.pandafolks.panda.healthcheck
 final case class HealthCheckConfig(
     callsInterval: Int, // in seconds
     numberOfFailuresNeededToReact: Int,
-    participantIsMarkedAsNotWorkingDelay: Option[Int], // in seconds
+    participantIsMarkedAsTurnedOffDelay: Option[Int], // in seconds
     participantIsMarkedAsRemovedDelay: Option[Int], // in seconds
     markedAsNotWorkingJobInterval: Option[Int] // in seconds
 ) {
-  def getParticipantIsMarkedAsNotWorkingDelay: Option[Int] =
-    participantIsMarkedAsNotWorkingDelay.flatMap(mapSmallerThanOneToEmpty)
+  def getParticipantIsMarkedAsTurnedOffDelay: Option[Int] =
+    participantIsMarkedAsTurnedOffDelay.flatMap(mapSmallerThanOneToEmpty)
+      // if there is participantIsMarkedAsTurnedOffDelay bigger or equal to participantIsMarkedAsRemovedDelay, there should be just participantIsMarkedAsRemovedDelay
+      .filter(_ < getParticipantIsMarkedAsRemovedDelay.getOrElse(Int.MaxValue))
 
   def getParticipantIsMarkedAsRemovedDelay: Option[Int] =
-    participantIsMarkedAsRemovedDelay
-      .flatMap(mapSmallerThanOneToEmpty)
-      .map(value =>
-        if (value >= getParticipantIsMarkedAsNotWorkingDelay.getOrElse(-1)) value
-        else getParticipantIsMarkedAsNotWorkingDelay.getOrElse(1)
-      )
+    participantIsMarkedAsRemovedDelay.flatMap(mapSmallerThanOneToEmpty)
 
   def getMarkedAsNotWorkingJobInterval: Option[Int] = {
     val DEFAULT_VALUE = 30
-    if (getParticipantIsMarkedAsNotWorkingDelay.isEmpty && getParticipantIsMarkedAsRemovedDelay.isEmpty) Option.empty
+    if (getParticipantIsMarkedAsTurnedOffDelay.isEmpty && getParticipantIsMarkedAsRemovedDelay.isEmpty) Option.empty
     else
       markedAsNotWorkingJobInterval match {
         case None                     => Some(DEFAULT_VALUE)

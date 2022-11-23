@@ -41,7 +41,7 @@ class DistributedHealthCheckServiceImplItTest
     ()
   }
 
-  "DistributedHealthCheckServiceImplItTest#backgroundJob" should "handle typical health check scenario" in {
+  "DistributedHealthCheckServiceImplItTest#healthCheckBackgroundJob" should "handle typical health check scenario" in {
     // numberOfFailuresNeededToReact equal 2
 
     val identifier1Healthy = randomString("identifier1")
@@ -90,7 +90,7 @@ class DistributedHealthCheckServiceImplItTest
             )
           )
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // first background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // first background job run
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res => firstParticipantsCacheCheck.set(res); () }
 
@@ -102,7 +102,7 @@ class DistributedHealthCheckServiceImplItTest
             )
           )
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // second background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // second background job run
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res => secondParticipantsCacheCheck.set(res); () }
 
@@ -114,13 +114,13 @@ class DistributedHealthCheckServiceImplItTest
             )
           )
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // third background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // third background job run
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res =>
             thirdParticipantsCacheCheck.set(res); ()
           } // identifier1Healthy still marked as healthy, because we specified we need two failed healthchecks
 
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // fourth background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // fourth background job run
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res =>
             fourthParticipantsCacheCheck.set(res); ()
@@ -137,10 +137,10 @@ class DistributedHealthCheckServiceImplItTest
             )
           )
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // fifth background job run
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
-          >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // redundant background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // fifth background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // redundant background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // redundant background job run
+          >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // redundant background job run
 
           >> participantsCache.invokePrivate(refreshCachePrivateMethod())
           >> participantsCache.getAllHealthyParticipants.map { res => fifthParticipantsCacheCheck.set(res); () }
@@ -211,10 +211,10 @@ class DistributedHealthCheckServiceImplItTest
         ) // in order to pre-initialize collection and remove flakes
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(
-          backgroundJobPrivateMethod()
+          healthCheckBackgroundJobPrivateMethod()
         ) // first background job - both participants got marked as healthy
-        >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // second background job right after
-        >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // and third ...
+        >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // second background job right after
+        >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // and third ...
         >> participantEventsAndSequencesConnection.use { case (p, _) => p.source.findAll.toListL }.map { res =>
           firstParticipantEventsRetrieve.set(res); ()
         }
@@ -224,14 +224,14 @@ class DistributedHealthCheckServiceImplItTest
         )
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(
-          backgroundJobPrivateMethod()
+          healthCheckBackgroundJobPrivateMethod()
         ) // counter for identifier2 increased, but no event emitted yet
         >> serviceUnderTest.invokePrivate(
-          backgroundJobPrivateMethod()
+          healthCheckBackgroundJobPrivateMethod()
         ) // counter for identifier2 equal 2 and event about being `Unhealthy` emitted
-        >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // first redundant ...
-        >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // second redundant ...
-        >> serviceUnderTest.invokePrivate(backgroundJobPrivateMethod()) // third redundant ...
+        >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // first redundant ...
+        >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // second redundant ...
+        >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod()) // third redundant ...
         >> participantEventService.modifyParticipant(
           ParticipantModificationPayload(identifier = Some(identifier2), healthcheckRoute = Some("healthcheck"))
         ) // fixing healthcheck route
@@ -239,7 +239,7 @@ class DistributedHealthCheckServiceImplItTest
           refreshCachePrivateMethod()
         ) // refreshing cache in order to get a new, fixed healthcheck route for identifier2
         >> serviceUnderTest.invokePrivate(
-          backgroundJobPrivateMethod()
+          healthCheckBackgroundJobPrivateMethod()
         ) // this recognized that identifier2 is up and emits `Healthy` event for it
         >> participantEventsAndSequencesConnection.use { case (p, _) => p.source.findAll.toListL }.map { res =>
           secondParticipantEventsRetrieve.set(res); ()

@@ -60,7 +60,7 @@ final class DistributedHealthCheckServiceImpl(
     if (healthCheckConfig.callsInterval > 0 && healthCheckConfig.numberOfFailuresNeededToReact > 0) {
       backgroundJobsRegistry.addJobAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds)(
         () =>
-          backgroundJob()
+          healthCheckBackgroundJob()
             .onErrorRecover { e: Throwable =>
               logger
                 .error(s"Cannot perform healthcheck job on this node. [Node ID: ${nodeTrackerService.getNodeId}]", e)
@@ -70,8 +70,8 @@ final class DistributedHealthCheckServiceImpl(
     }
   }
 
-  private def backgroundJob(): Task[Unit] =
-    Task.eval(logger.debug("Starting DistributedHealthCheckServiceImpl#backgroundJob job")) >>
+  private def healthCheckBackgroundJob(): Task[Unit] =
+    Task.eval(logger.debug("Starting DistributedHealthCheckServiceImpl#healthCheckBackgroundJob job")) >>
       Task
         .parZip2(
           getNodesSizeWithCurrentNodePosition,

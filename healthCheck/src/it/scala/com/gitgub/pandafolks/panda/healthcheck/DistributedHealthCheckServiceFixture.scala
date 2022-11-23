@@ -110,8 +110,8 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
     new InMemoryBackgroundJobsRegistryImpl(scheduler)
   )(HealthCheckConfig(-1, 2, Option.empty, Option.empty, Option.empty)) // scheduler turned off
 
-  protected val backgroundJobPrivateMethod: PrivateMethod[Task[Unit]] =
-    PrivateMethod[Task[Unit]](Symbol("backgroundJob"))
+  protected val healthCheckBackgroundJobPrivateMethod: PrivateMethod[Task[Unit]] =
+    PrivateMethod[Task[Unit]](Symbol("healthCheckBackgroundJob"))
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }
