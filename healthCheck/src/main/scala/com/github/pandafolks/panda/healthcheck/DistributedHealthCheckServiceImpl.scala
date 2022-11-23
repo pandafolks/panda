@@ -68,6 +68,21 @@ final class DistributedHealthCheckServiceImpl(
         "DistributedHealthCheck"
       )
     }
+
+    healthCheckConfig.getMarkedAsNotWorkingJobInterval.foreach { jobInterval =>
+      backgroundJobsRegistry.addJobAtFixedRate(jobInterval.seconds, jobInterval.seconds)(
+        () =>
+          Task.unit // placeholder
+            .onErrorRecover { e: Throwable =>
+              logger
+                .error(
+                  s"Cannot mark participants as either turned off or removed on this node. [Node ID: ${nodeTrackerService.getNodeId}]",
+                  e
+                )
+            },
+        "MarkingParticipantsAsEitherTurnedOffOrRemoved"
+      )
+    }
   }
 
   private def healthCheckBackgroundJob(): Task[Unit] =

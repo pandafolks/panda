@@ -8,7 +8,8 @@ final case class HealthCheckConfig(
     markedAsNotWorkingJobInterval: Option[Int] // in seconds
 ) {
   def getParticipantIsMarkedAsTurnedOffDelay: Option[Int] =
-    participantIsMarkedAsTurnedOffDelay.flatMap(mapSmallerThanOneToEmpty)
+    participantIsMarkedAsTurnedOffDelay
+      .flatMap(mapSmallerThanOneToEmpty)
       // if there is participantIsMarkedAsTurnedOffDelay bigger or equal to participantIsMarkedAsRemovedDelay, there should be just participantIsMarkedAsRemovedDelay
       .filter(_ < getParticipantIsMarkedAsRemovedDelay.getOrElse(Int.MaxValue))
 
