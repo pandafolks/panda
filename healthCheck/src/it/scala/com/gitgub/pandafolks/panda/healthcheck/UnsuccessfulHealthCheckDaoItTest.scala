@@ -1,6 +1,7 @@
 package com.gitgub.pandafolks.panda.healthcheck
 
 import cats.implicits.toTraverseOps
+import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -13,7 +14,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UnsuccessfulHealthCheckDaoItTest
-    extends AsyncFlatSpec
+  extends AsyncFlatSpec
     with UnsuccessfulHealthCheckFixture
     with Matchers
     with ScalaFutures
@@ -37,7 +38,6 @@ class UnsuccessfulHealthCheckDaoItTest
 
     whenReady(f) { res =>
       res should contain theSameElementsInOrderAs (for (i <- 1 to 4) yield Right(i)).toList
-
     }
   }
 
@@ -55,7 +55,7 @@ class UnsuccessfulHealthCheckDaoItTest
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier3))),
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier4)))
         )
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res._1 should contain theSameElementsInOrderAs (for (i <- 2 to 51) yield Right(i)).toList
@@ -77,7 +77,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier1)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(1)
@@ -100,7 +100,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier3)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(2)
@@ -114,6 +114,119 @@ class UnsuccessfulHealthCheckDaoItTest
 
       res.head.lastUpdateTimestamp should be > startTimestamp
       res(1).lastUpdateTimestamp should be > startTimestamp
+    }
+  }
+
+  "UnsuccessfulHealthCheckDao#markAsTurnedOff" should "set turnedOff property to true" in {
+    val clock = java.time.Clock.systemUTC
+
+    val identifier1 = randomString("1")
+    val identifier2 = randomString("2")
+    val identifier3 = randomString("3")
+
+    val beforeTimestamp = clock.millis()
+
+    val f = (
+      unsuccessfulHealthCheckDao.incrementCounter(identifier1) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3)) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
+
+      ).runToFuture
+
+    whenReady(f) { res =>
+      val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
+
+      val ide1 = m(identifier1)
+      ide1.counter should be(1L)
+      ide1.lastUpdateTimestamp should be > beforeTimestamp
+      ide1.turnedOff should be(true)
+
+      val ide2 = m(identifier2)
+      ide2.counter should be(1L)
+      ide2.lastUpdateTimestamp should be > beforeTimestamp
+      ide2.turnedOff should be(false)
+
+      val ide3 = m(identifier3)
+      ide3.counter should be(2L)
+      ide3.lastUpdateTimestamp should be > beforeTimestamp
+      ide3.turnedOff should be(true)
+    }
+  }
+
+  it should "handle case when there are multiple same identifiers" in {
+    val clock = java.time.Clock.systemUTC
+
+    val identifier1 = randomString("1")
+    val identifier2 = randomString("2")
+    val identifier3 = randomString("3")
+
+    val beforeTimestamp = clock.millis()
+
+    val f = (
+      unsuccessfulHealthCheckDao.incrementCounter(identifier1) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
+
+      ).runToFuture
+
+    whenReady(f) { res =>
+      val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
+
+      val ide1 = m(identifier1)
+      ide1.counter should be(1L)
+      ide1.lastUpdateTimestamp should be > beforeTimestamp
+      ide1.turnedOff should be(true)
+
+      val ide2 = m(identifier2)
+      ide2.counter should be(1L)
+      ide2.lastUpdateTimestamp should be > beforeTimestamp
+      ide2.turnedOff should be(false)
+
+      val ide3 = m(identifier3)
+      ide3.counter should be(2L)
+      ide3.lastUpdateTimestamp should be > beforeTimestamp
+      ide3.turnedOff should be(true)
+    }
+  }
+
+  it should "handle case when the item with requested identifier does not exist" in {
+    val clock = java.time.Clock.systemUTC
+
+    val identifier1 = randomString("1")
+    val identifier2 = randomString("2")
+    val identifier3 = randomString("3")
+
+    val beforeTimestamp = clock.millis()
+
+    val f = (
+        unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
+        unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
+        unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
+
+      ).runToFuture
+
+    whenReady(f) { res =>
+      val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
+
+      m.size should be(2)
+
+      val ide2 = m(identifier2)
+      ide2.counter should be(1L)
+      ide2.lastUpdateTimestamp should be > beforeTimestamp
+      ide2.turnedOff should be(false)
+
+      val ide3 = m(identifier3)
+      ide3.counter should be(2L)
+      ide3.lastUpdateTimestamp should be > beforeTimestamp
+      ide3.turnedOff should be(true)
     }
   }
 }

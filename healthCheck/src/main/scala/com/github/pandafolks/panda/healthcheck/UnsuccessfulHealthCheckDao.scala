@@ -22,4 +22,13 @@ trait UnsuccessfulHealthCheckDao {
     *   Either empty if successful or [[PersistenceError]] if the error occurred
     */
   def clear(identifier: String): Task[Either[PersistenceError, Unit]]
+
+  /** Marks elements with associated identifiers as turned off.
+   *
+   * @param identifiers
+   * A list of unique identifiers
+   * @return
+   * Either empty if successful or [[PersistenceError]] if the error occurred
+   */
+ def markAsTurnedOff(identifiers: List[String]): Task[Either[PersistenceError, Unit]]
 }
