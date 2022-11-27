@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.loadbalancer
 
 import cats.data.Kleisli
 import cats.effect.Resource
+import com.github.pandafolks.panda.utils.EscapeUtils
 import monix.eval.Task
 import org.http4s.{EntityDecoder, Header, HttpApp, Request, Response, Status, Uri}
 import org.http4s.client.Client
@@ -11,7 +12,7 @@ final class ClientStub extends Client[Task] {
   override def run(req: Request[Task]): Resource[Task, Response[Task]] =
     Resource.eval(
       Task.eval(
-        req.uri.toString.dropWhile(_ == '/') match {
+        req.uri.toString.dropWhile(_ == EscapeUtils.PATH_SEPARATOR) match {
           case path if ClientStub.AVAILABLE_ROUTES.contains(path) =>
             Response[Task]().withHeaders(Header.Raw(CIString("from"), path))
           case _ => throw new Exception("Server Not accessible")
