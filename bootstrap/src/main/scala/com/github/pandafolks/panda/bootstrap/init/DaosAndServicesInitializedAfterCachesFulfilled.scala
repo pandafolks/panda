@@ -4,6 +4,8 @@ import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.nodestracker.{
+  JobDao,
+  JobDaoImpl,
   NodeTrackerDao,
   NodeTrackerDaoImpl,
   NodeTrackerService,
@@ -24,11 +26,10 @@ final class DaosAndServicesInitializedAfterCachesFulfilled(
 ) extends DaosAndServicesInitialization {
 
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(dbAppClient.getNodesConnection)
+  private val jobDao: JobDao = new JobDaoImpl(dbAppClient.getJobsConnection)
   private val nodeTrackerService: NodeTrackerService =
-    new NodeTrackerServiceImpl(nodeTrackerDao, backgroundJobsRegistry)(
+    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, backgroundJobsRegistry)(
       appConfiguration.consistency.getRealFullConsistencyMaxDelayInMillis
     )
-
   def getNodeTrackerService: NodeTrackerService = nodeTrackerService
-
 }

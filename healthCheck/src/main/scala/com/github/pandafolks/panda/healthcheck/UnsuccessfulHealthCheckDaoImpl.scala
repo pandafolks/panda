@@ -8,7 +8,7 @@ import monix.eval.Task
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, Updates}
 
 final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]])
-  extends UnsuccessfulHealthCheckDao {
+    extends UnsuccessfulHealthCheckDao {
 
   private final val clock = java.time.Clock.systemUTC
 
@@ -17,7 +17,7 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
     val update = Updates.combine(
       Updates.inc(UnsuccessfulHealthCheck.COUNTER_PROPERTY_NAME, 1L),
       Updates.set(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis()),
-      Updates.setOnInsert(UnsuccessfulHealthCheck.TURNED_OFF_PROPERTY_NAME, false),
+      Updates.setOnInsert(UnsuccessfulHealthCheck.TURNED_OFF_PROPERTY_NAME, false)
     )
     val options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true)
 
@@ -42,10 +42,11 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
     val filter = Filters.in(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifiers.toSet.toSeq: _*)
     val update = Updates.set(UnsuccessfulHealthCheck.TURNED_OFF_PROPERTY_NAME, true)
 
-    op.single.updateMany(
-      filter = filter,
-      update = update
-    )
+    op.single
+      .updateMany(
+        filter = filter,
+        update = update
+      )
       .map(_ => Right(()))
       .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulUpdateOperation(t.getMessage))) }
   }

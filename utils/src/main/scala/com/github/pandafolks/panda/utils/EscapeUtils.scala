@@ -11,5 +11,6 @@ object EscapeUtils {
     * @return
     *   Result
     */
-  def unifyFromSlashes(input: String): String = input.trim.dropWhile(_ == PATH_SEPARATOR).reverse.dropWhile(_ == PATH_SEPARATOR).reverse
+  def unifyFromSlashes(input: String): String =
+    input.trim.dropWhile(_ == PATH_SEPARATOR).reverse.dropWhile(_ == PATH_SEPARATOR).reverse
 }

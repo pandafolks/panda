@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.nodestracker
 
 import monix.eval.Task
+import org.bson.types.ObjectId
 
 trait NodeTrackerService {
 
@@ -19,4 +20,23 @@ trait NodeTrackerService {
     *   All found nodes that meet the criteria of working
     */
   def getWorkingNodes: Task[List[Node]]
+
+  /** Returns whether a node with the requested ID is a working one.
+    *
+    * @param nodeId
+    *   Node Identifier based on which nodes are recognized
+    * @return
+    *   True if the node is working, false otherwise
+    */
+  def isNodeWorking(nodeId: ObjectId): Task[Boolean]
+
+  /** Returns whether a current node (the node this code is executed on) is the one responsible for the job with
+    * requested job name.
+    *
+    * @param nodeId
+    *   Node Identifier based on which nodes are recognized
+    * @return
+    *   True if the node is working, false otherwise
+    */
+  def isCurrentNodeResponsibleForJob(jobName: String): Task[Boolean]
 }

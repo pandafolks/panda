@@ -72,7 +72,7 @@ final class DistributedHealthCheckServiceImpl(
     healthCheckConfig.getMarkedAsNotWorkingJobInterval.foreach { jobInterval =>
       backgroundJobsRegistry.addJobAtFixedRate(jobInterval.seconds, jobInterval.seconds)(
         () =>
-          Task.unit // placeholder
+          markAsNotWorkingBackgroundJob()
             .onErrorRecover { e: Throwable =>
               logger
                 .error(
@@ -202,6 +202,10 @@ final class DistributedHealthCheckServiceImpl(
                 .flatMap(_ => Task.unit)
           case ((_, _), _) => Task.unit
         }
+
+  private def markAsNotWorkingBackgroundJob(): Task[Unit] = {
+    Task.unit // todo mszmal: implement!
+  }
 
   @VisibleForTesting
   private def getNodesSizeWithCurrentNodePosition: Task[(Option[Int], Option[Int])] =

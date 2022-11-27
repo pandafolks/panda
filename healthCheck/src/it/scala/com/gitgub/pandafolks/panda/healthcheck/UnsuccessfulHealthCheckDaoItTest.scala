@@ -14,7 +14,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UnsuccessfulHealthCheckDaoItTest
-  extends AsyncFlatSpec
+    extends AsyncFlatSpec
     with UnsuccessfulHealthCheckFixture
     with Matchers
     with ScalaFutures
@@ -55,7 +55,7 @@ class UnsuccessfulHealthCheckDaoItTest
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier3))),
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier4)))
         )
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res._1 should contain theSameElementsInOrderAs (for (i <- 2 to 51) yield Right(i)).toList
@@ -77,7 +77,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier1)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(1)
@@ -100,7 +100,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier3)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(2)
@@ -133,8 +133,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -172,8 +171,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -205,13 +203,12 @@ class UnsuccessfulHealthCheckDaoItTest
     val beforeTimestamp = clock.millis()
 
     val f = (
-        unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>
+      unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))

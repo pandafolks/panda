@@ -9,6 +9,7 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.time.Clock
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.DurationInt
 
 class NodeTrackerServiceItTest
@@ -97,6 +98,131 @@ class NodeTrackerServiceItTest
     whenReady(f) { res =>
       val filterOut = res.map(_.filter(addedNodes.contains(_)))
       filterOut.forall(_ == filterOut.head) should be(true) // all nested lists are the same
+    }
+  }
+
+  "isNodeWorking" should "determinate either node is working" in {
+    val clock: Clock = java.time.Clock.systemUTC
+    val validId1 = new ObjectId()
+    val validId2 = new ObjectId()
+    val validId3 = new ObjectId()
+    val notValidId1 = new ObjectId()
+    val notValidId2 = new ObjectId()
+    val notValidId3 = new ObjectId()
+
+    val validNode1 = Node(validId1, clock.millis() + 10250)
+    val validNode2 = Node(validId2, clock.millis() + 15101)
+    val validNode3 = Node(validId3, clock.millis() + 15111)
+    val notValidNode1 = Node(notValidId1, clock.millis() - 501)
+    val notValidNode2 = Node(notValidId2, clock.millis() - 999)
+
+    val f = (
+      nodesConnection.use(c =>
+        for {
+          _ <- c.single.insertMany(List(validNode3, validNode1, notValidNode1, validNode2, notValidNode2))
+        } yield ()
+      ) >>
+        Task.parZip6(
+          nodeTrackerService.isNodeWorking(validId1),
+          nodeTrackerService.isNodeWorking(notValidId2),
+          nodeTrackerService.isNodeWorking(validId3),
+          nodeTrackerService.isNodeWorking(notValidId1),
+          nodeTrackerService.isNodeWorking(validId2),
+          nodeTrackerService.isNodeWorking(notValidId3)
+        )
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res._1 should be(true)
+      res._2 should be(false)
+      res._3 should be(true)
+      res._4 should be(false)
+      res._5 should be(true)
+      res._6 should be(false)
+    }
+  }
+
+  "isCurrentNodeResponsibleForJob" should "assign current node and as it is working currently always return true" in {
+    val jobName1 = randomString("jobName1")
+    val jobName2 = randomString("jobName2")
+
+    val jobs: ConcurrentLinkedQueue[Boolean] = new ConcurrentLinkedQueue[Boolean]()
+
+    val f = (
+      nodeTrackerService.isCurrentNodeResponsibleForJob(jobName1).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName1).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName2).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName1).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName2).map(r => jobs.add(r)) >>
+        Task.sleep(1.seconds) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName1).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName2).map(r => jobs.add(r)) >>
+        Task.sleep(3.seconds) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName1).map(r => jobs.add(r)) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName2).map(r => jobs.add(r)) >>
+        jobsConnection.use(c =>
+          for {
+            res <- c.source.find(Filters.in(Job.NAME_PROPERTY_NAME, List(jobName1, jobName2): _*)).toListL
+          } yield res
+        )
+    ).runToFuture
+
+    whenReady(f) { res =>
+      jobs.forEach(el => {
+        el should be(true)
+        ()
+      })
+
+      res.size should be(2)
+      res.head.nodeId should be(res.last.nodeId)
+    }
+  }
+
+  it should "return false if other working node owns the job" in {
+    val clock: Clock = java.time.Clock.systemUTC
+    val jobName = randomString("jobName3")
+    val otherNodeId = new ObjectId()
+
+    val f = (
+      nodesConnection.use(c =>
+        for {
+          _ <- c.single.insertOne(Node(otherNodeId, clock.millis() + 10250))
+        } yield ()
+      ) >>
+        jobsConnection.use(c =>
+          for {
+            _ <- c.single.insertOne(Job(jobName, otherNodeId))
+          } yield ()
+        ) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName)
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res should be(false)
+    }
+  }
+
+  it should "return true if another node owned the job, but the service detected the node may be down and assigned itself to the job" in {
+    val clock: Clock = java.time.Clock.systemUTC
+    val jobName = randomString("jobName4")
+    val otherNodeId = new ObjectId()
+
+    val f = (
+      nodesConnection.use(c =>
+        for {
+          _ <- c.single.insertOne(Node(otherNodeId, clock.millis() - 502))
+        } yield ()
+      ) >>
+        jobsConnection.use(c =>
+          for {
+            _ <- c.single.insertOne(Job(jobName, otherNodeId))
+          } yield ()
+        ) >>
+        nodeTrackerService.isCurrentNodeResponsibleForJob(jobName)
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res should be(true)
     }
   }
 

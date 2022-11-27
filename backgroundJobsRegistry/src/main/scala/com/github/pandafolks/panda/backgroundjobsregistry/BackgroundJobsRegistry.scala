@@ -1,6 +1,7 @@
 package com.github.pandafolks.panda.backgroundjobsregistry
 
 import monix.eval.Task
+import monix.execution.Cancelable
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -24,4 +25,9 @@ trait BackgroundJobsRegistry {
       action: () => Task[Unit],
       name: String
   ): Unit
+}
+
+object BackgroundJobsRegistry {
+
+  final case class JobEntry(job: Cancelable, name: String)
 }

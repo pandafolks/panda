@@ -9,6 +9,9 @@ import com.github.pandafolks.panda.healthcheck.{
   UnsuccessfulHealthCheckDaoImpl
 }
 import com.github.pandafolks.panda.nodestracker.{
+  Job,
+  JobDao,
+  JobDaoImpl,
   Node,
   NodeTrackerDao,
   NodeTrackerDaoImpl,
@@ -86,9 +89,15 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
   private val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
+
+  protected val jobsColName: String = randomString(Job.JOBS_COLLECTION_NAME)
+  protected val jobsCol: CollectionCodecRef[Job] = Job.getCollection(dbName, jobsColName)
+  protected val jobsConnection: Resource[Task, CollectionOperator[Job]] = MongoConnection.create1(settings, jobsCol)
+
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
+  private val jobDao: JobDao = new JobDaoImpl(jobsConnection)
   private val nodeTrackerService: NodeTrackerService =
-    new NodeTrackerServiceImpl(nodeTrackerDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
+    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
 
   protected val unsuccessfulHealthCheckColName: String = randomString(
     UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME
