@@ -6,9 +6,12 @@ import com.mongodb.client.model.{Filters, ReturnDocument}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, Updates}
+import org.slf4j.LoggerFactory
 
 final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]])
     extends UnsuccessfulHealthCheckDao {
+
+  private val logger = LoggerFactory.getLogger(getClass.getName)
 
   override def incrementCounter(identifier: String): Task[Either[PersistenceError, Long]] = c.use { op =>
     val filter = Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier)
@@ -48,4 +51,23 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
       .map(_ => Right(()))
       .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulUpdateOperation(t.getMessage))) }
   }
+
+  override def getStaleEntries(deviation: Long, minimumFailedCounters: Int): Task[List[UnsuccessfulHealthCheck]] =
+    c.use { op =>
+      val filter = Filters.and(
+        Filters
+          .lte(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation),
+        Filters.gte(UnsuccessfulHealthCheck.COUNTER_PROPERTY_NAME, minimumFailedCounters)
+      )
+
+      // todo: mszmal start here and add tests!
+
+      op.source
+        .find(filter)
+        .toListL
+        .onErrorRecover(e => {
+          logger.error("Unable to get stale entries", e)
+          List.empty
+        })
+    }
 }

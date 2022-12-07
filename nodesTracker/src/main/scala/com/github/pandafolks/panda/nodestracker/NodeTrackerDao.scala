@@ -26,7 +26,7 @@ trait NodeTrackerDao {
     * ID in ascending order.
     *
     * @param deviation
-    *   deviation expressed in milliseconds based on which the filtration of working nodes is carried out
+    *   deviation expressed in milliseconds based on which the filtration of working [[Node]]s is carried out
     * @return
     *   All found nodes
     */

@@ -169,6 +169,10 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
                 IndexModel(
                   Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
                   IndexOptions().background(false).unique(true)
+                ),
+                IndexModel(
+                  Indexes.descending(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                  IndexOptions().background(true).unique(false)
                 )
               )
             )

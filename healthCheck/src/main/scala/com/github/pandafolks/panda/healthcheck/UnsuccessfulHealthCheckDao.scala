@@ -31,4 +31,19 @@ trait UnsuccessfulHealthCheckDao {
     *   Either empty if successful or [[PersistenceError]] if the error occurred
     */
   def markAsTurnedOff(identifiers: List[String]): Task[Either[PersistenceError, Unit]]
+
+  /** Get [[UnsuccessfulHealthCheck]] entries that are stale. Stale recognition is based on the last update timestamp
+    * and counter. There need to be entries with the last update timestamp smaller or equal to the current Time -
+    * deviation. The entry counter needs to reach at least the minimum failed counter.
+    *
+    * @param deviation
+    *   deviation expressed in milliseconds based on which the filtration of stale [[UnsuccessfulHealthCheck]]s is
+    *   carried out.
+    * @param minimumFailedCounters
+    *   specified the minimum value of the counters we are looking for
+    *
+    * @return
+    *   List of the [[UnsuccessfulHealthCheck]] that meet the filtering criteria.
+    */
+  def getStaleEntries(deviation: Long, minimumFailedCounters: Int): Task[List[UnsuccessfulHealthCheck]]
 }

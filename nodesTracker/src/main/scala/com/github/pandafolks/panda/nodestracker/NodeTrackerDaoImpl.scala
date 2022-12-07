@@ -12,8 +12,11 @@ import monix.connect.mongodb.domain.{RetryStrategy, UpdateResult}
 import monix.eval.Task
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.{Aggregates, Filters, Sorts, UpdateOptions, Updates}
+import org.slf4j.LoggerFactory
 
 final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
+
+  private val logger = LoggerFactory.getLogger(getClass.getName)
 
   override def register(): Task[Either[PersistenceError, String]] = c.use(nodeOperator =>
     nodeOperator.single
@@ -48,13 +51,18 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
     nodeOperator.source
       .aggregate(
         List(
-          Aggregates.filter(Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation)),
+          Aggregates.filter(
+            Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation)
+          ),
           Aggregates.sort(Sorts.ascending(Node.ID_PROPERTY_NAME))
         ),
         classOf[Node]
       )
       .toListL
-      .onErrorRecover(_ => List.empty)
+      .onErrorRecover(e => {
+        logger.error(s"Unable to get nodes", e)
+        List.empty
+      })
   }
 
   override def isNodeWorking(nodeId: ObjectId, deviation: Long): Task[Boolean] = c.use { nodeOperator =>
