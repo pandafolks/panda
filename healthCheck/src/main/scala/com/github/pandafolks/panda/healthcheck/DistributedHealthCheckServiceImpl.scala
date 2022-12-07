@@ -21,23 +21,24 @@ import scala.concurrent.duration.DurationInt
 import scala.util.hashing.MurmurHash3
 
 /** This is a distributed implementation of [[HealthCheckService]]. Distributed in this scenario means it supports by
-  * default multi-node Panda configurations and makes use of such configurations in terms of efficiency and splitting
-  * health check calls across multiple nodes.
-  */
+ * default multi-node Panda configurations and makes use of such configurations in terms of efficiency and splitting
+ * health check calls across multiple nodes.
+ */
 final class DistributedHealthCheckServiceImpl(
-    private val participantEventService: ParticipantEventService,
-    private val participantsCache: ParticipantsCache,
-    private val nodeTrackerService: NodeTrackerService,
-    private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
-    private val client: Client[Task],
-    private val backgroundJobsRegistry: BackgroundJobsRegistry
-)(private val healthCheckConfig: HealthCheckConfig)
-    extends HealthCheckService
+                                               private val participantEventService: ParticipantEventService,
+                                               private val participantsCache: ParticipantsCache,
+                                               private val nodeTrackerService: NodeTrackerService,
+                                               private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
+                                               private val client: Client[Task],
+                                               private val backgroundJobsRegistry: BackgroundJobsRegistry
+                                             )(private val healthCheckConfig: HealthCheckConfig)
+  extends HealthCheckService
     with ChangeListener[Participant] {
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val HOST_NAME: String = "Host"
+  private val MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME = "MarkingParticipantsAsEitherTurnedOffOrRemoved"
 
   private sealed trait EmittedEventType
 
@@ -80,7 +81,7 @@ final class DistributedHealthCheckServiceImpl(
                   e
                 )
             },
-        "MarkingParticipantsAsEitherTurnedOffOrRemoved"
+        MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME
       )
     }
   }
@@ -108,7 +109,7 @@ final class DistributedHealthCheckServiceImpl(
                       .flatMap {
                         // Healthcheck successful, but the latest participant state inside cache was not healthy, so we are marking participant as healthy one and resetting related failed healthchecks counter.
                         case true
-                            if !participant.isHealthy => // we are iterating through working participants only, so the `isHealthy` check is enough
+                          if !participant.isHealthy => // we are iterating through working participants only, so the `isHealthy` check is enough
                           unsuccessfulHealthCheckDao
                             .clear(participant.identifier)
                             .map {
@@ -155,10 +156,10 @@ final class DistributedHealthCheckServiceImpl(
                             .incrementCounter(participant.identifier)
                             .map {
                               case Right(counter)
-                                  if counter >= healthCheckConfig.numberOfFailuresNeededToReact
-                                    && eventEmittedSinceLastCacheRefresh.fold(true)(
-                                      _ != EmittedEventType.MarkedParticipantAsUnhealthy
-                                    ) =>
+                                if counter >= healthCheckConfig.numberOfFailuresNeededToReact
+                                  && eventEmittedSinceLastCacheRefresh.fold(true)(
+                                  _ != EmittedEventType.MarkedParticipantAsUnhealthy
+                                ) =>
                                 true
                               case Right(_) => false
                               case Left(error) =>
@@ -214,16 +215,16 @@ final class DistributedHealthCheckServiceImpl(
         .eval(nodes.map(_._id.toString).indexOf(nodeTrackerService.getNodeId))
         .map {
           case index if index >= 0 => (Some(nodes.size), Some(index))
-          case _                   => (Option.empty, Option.empty)
+          case _ => (Option.empty, Option.empty)
         }
     )
 
   @VisibleForTesting
   private def pickParticipantsForNode(
-      participants: List[Participant],
-      nodesSize: Int,
-      nodeIndex: Int
-  ): List[Participant] =
+                                       participants: List[Participant],
+                                       nodesSize: Int,
+                                       nodeIndex: Int
+                                     ): List[Participant] =
     participants.filter(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % nodesSize == nodeIndex)
 
   private def performHealthcheckCallAndReturnResult(participant: Participant): Task[Boolean] =

@@ -15,12 +15,10 @@ import org.mongodb.scala.model.{Aggregates, Filters, Sorts, UpdateOptions, Updat
 
 final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
 
-  private final val clock = java.time.Clock.systemUTC
-
   override def register(): Task[Either[PersistenceError, String]] = c.use(nodeOperator =>
     nodeOperator.single
       .insertOne(
-        document = Node(new ObjectId(), clock.millis()),
+        document = Node(new ObjectId(), System.currentTimeMillis()),
         retryStrategy = RetryStrategy(5)
       )
       .map(_.insertedId)
@@ -35,7 +33,7 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
     nodeOperator.single
       .updateOne(
         filter = Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId(nodeId)),
-        update = Updates.set(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis()),
+        update = Updates.set(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis()),
         updateOptions = UpdateOptions().upsert(true),
         retryStrategy = RetryStrategy(3)
       )
@@ -50,7 +48,7 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
     nodeOperator.source
       .aggregate(
         List(
-          Aggregates.filter(Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis() - deviation)),
+          Aggregates.filter(Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation)),
           Aggregates.sort(Sorts.ascending(Node.ID_PROPERTY_NAME))
         ),
         classOf[Node]
@@ -63,7 +61,7 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
     nodeOperator.source
       .count(
         filter = Filters.and(
-          Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis() - deviation),
+          Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation),
           Filters.eq(Node.ID_PROPERTY_NAME, nodeId)
         )
       )

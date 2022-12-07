@@ -69,8 +69,7 @@ class UnsuccessfulHealthCheckDaoItTest
     val identifier1 = randomString("w1")
     val identifier2 = randomString("w2")
 
-    val clock = java.time.Clock.systemUTC
-    val startTimestamp = clock.millis()
+    val startTimestamp = System.currentTimeMillis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1)
@@ -92,8 +91,7 @@ class UnsuccessfulHealthCheckDaoItTest
     val identifier2 = randomString("c2")
     val identifier3 = randomString("c3")
 
-    val clock = java.time.Clock.systemUTC
-    val startTimestamp = clock.millis()
+    val startTimestamp = System.currentTimeMillis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1)
@@ -118,13 +116,12 @@ class UnsuccessfulHealthCheckDaoItTest
   }
 
   "UnsuccessfulHealthCheckDao#markAsTurnedOff" should "set turnedOff property to true" in {
-    val clock = java.time.Clock.systemUTC
 
     val identifier1 = randomString("1")
     val identifier2 = randomString("2")
     val identifier3 = randomString("3")
 
-    val beforeTimestamp = clock.millis()
+    val beforeTimestamp = System.currentTimeMillis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1) >>
@@ -156,13 +153,11 @@ class UnsuccessfulHealthCheckDaoItTest
   }
 
   it should "handle case when there are multiple same identifiers" in {
-    val clock = java.time.Clock.systemUTC
-
     val identifier1 = randomString("1")
     val identifier2 = randomString("2")
     val identifier3 = randomString("3")
 
-    val beforeTimestamp = clock.millis()
+    val beforeTimestamp = System.currentTimeMillis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier1) >>
@@ -194,13 +189,11 @@ class UnsuccessfulHealthCheckDaoItTest
   }
 
   it should "handle case when the item with requested identifier does not exist" in {
-    val clock = java.time.Clock.systemUTC
-
     val identifier1 = randomString("1")
     val identifier2 = randomString("2")
     val identifier3 = randomString("3")
 
-    val beforeTimestamp = clock.millis()
+    val beforeTimestamp = System.currentTimeMillis()
 
     val f = (
       unsuccessfulHealthCheckDao.incrementCounter(identifier2) >>

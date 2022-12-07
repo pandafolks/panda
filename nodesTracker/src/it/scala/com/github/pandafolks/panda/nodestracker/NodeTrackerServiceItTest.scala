@@ -8,7 +8,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.time.Clock
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.DurationInt
 
@@ -46,12 +45,12 @@ class NodeTrackerServiceItTest
   }
 
   "getWorkingNodes" should "return all working nodes that notified tracker about itself no earlier than fullConsistencyMaxDelay / 2 seconds ago" in {
-    val clock: Clock = java.time.Clock.systemUTC
-    val validNode1 = Node(new ObjectId(), clock.millis() - 250)
-    val validNode2 = Node(new ObjectId(), clock.millis() - 101)
-    val validNode3 = Node(new ObjectId(), clock.millis() - 111)
-    val notValidNode1 = Node(new ObjectId(), clock.millis() - 501)
-    val notValidNode2 = Node(new ObjectId(), clock.millis() - 999)
+    val timestamp = System.currentTimeMillis()
+    val validNode1 = Node(new ObjectId(), timestamp - 250)
+    val validNode2 = Node(new ObjectId(), timestamp - 101)
+    val validNode3 = Node(new ObjectId(), timestamp - 111)
+    val notValidNode1 = Node(new ObjectId(), timestamp - 501)
+    val notValidNode2 = Node(new ObjectId(), timestamp - 999)
     val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
 
     val f = (nodesConnection.use(c =>
@@ -75,13 +74,13 @@ class NodeTrackerServiceItTest
   }
 
   it should "always return nodes in the same order" in {
-    val clock: Clock = java.time.Clock.systemUTC
+    val timestamp = System.currentTimeMillis()
     //  In this test case we are not checking the filtering property, but sorting, so in order to remove flakiness the creation timestamp of a node is in future
-    val validNode1 = Node(new ObjectId(), clock.millis() + 10250)
-    val validNode2 = Node(new ObjectId(), clock.millis() + 15101)
-    val validNode3 = Node(new ObjectId(), clock.millis() + 15111)
-    val notValidNode1 = Node(new ObjectId(), clock.millis() - 501)
-    val notValidNode2 = Node(new ObjectId(), clock.millis() - 999)
+    val validNode1 = Node(new ObjectId(), timestamp + 10250)
+    val validNode2 = Node(new ObjectId(), timestamp + 15101)
+    val validNode3 = Node(new ObjectId(), timestamp + 15111)
+    val notValidNode1 = Node(new ObjectId(), timestamp - 501)
+    val notValidNode2 = Node(new ObjectId(), timestamp - 999)
     val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
 
     val f = (nodesConnection.use(c =>
@@ -102,7 +101,6 @@ class NodeTrackerServiceItTest
   }
 
   "isNodeWorking" should "determinate either node is working" in {
-    val clock: Clock = java.time.Clock.systemUTC
     val validId1 = new ObjectId()
     val validId2 = new ObjectId()
     val validId3 = new ObjectId()
@@ -110,11 +108,12 @@ class NodeTrackerServiceItTest
     val notValidId2 = new ObjectId()
     val notValidId3 = new ObjectId()
 
-    val validNode1 = Node(validId1, clock.millis() + 10250)
-    val validNode2 = Node(validId2, clock.millis() + 15101)
-    val validNode3 = Node(validId3, clock.millis() + 15111)
-    val notValidNode1 = Node(notValidId1, clock.millis() - 501)
-    val notValidNode2 = Node(notValidId2, clock.millis() - 999)
+    val timestamp = System.currentTimeMillis()
+    val validNode1 = Node(validId1, timestamp + 10250)
+    val validNode2 = Node(validId2, timestamp + 15101)
+    val validNode3 = Node(validId3, timestamp + 15111)
+    val notValidNode1 = Node(notValidId1, timestamp - 501)
+    val notValidNode2 = Node(notValidId2, timestamp - 999)
 
     val f = (
       nodesConnection.use(c =>
@@ -179,14 +178,13 @@ class NodeTrackerServiceItTest
   }
 
   it should "return false if other working node owns the job" in {
-    val clock: Clock = java.time.Clock.systemUTC
     val jobName = randomString("jobName3")
     val otherNodeId = new ObjectId()
 
     val f = (
       nodesConnection.use(c =>
         for {
-          _ <- c.single.insertOne(Node(otherNodeId, clock.millis() + 10250))
+          _ <- c.single.insertOne(Node(otherNodeId, System.currentTimeMillis() + 10250))
         } yield ()
       ) >>
         jobsConnection.use(c =>
@@ -203,14 +201,13 @@ class NodeTrackerServiceItTest
   }
 
   it should "return true if another node owned the job, but the service detected the node may be down and assigned itself to the job" in {
-    val clock: Clock = java.time.Clock.systemUTC
     val jobName = randomString("jobName4")
     val otherNodeId = new ObjectId()
 
     val f = (
       nodesConnection.use(c =>
         for {
-          _ <- c.single.insertOne(Node(otherNodeId, clock.millis() - 502))
+          _ <- c.single.insertOne(Node(otherNodeId, System.currentTimeMillis() - 502))
         } yield ()
       ) >>
         jobsConnection.use(c =>
