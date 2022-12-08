@@ -133,4 +133,48 @@ class HealthCheckConfigTest extends AnyFlatSpec {
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Option.empty)
     underTest.getMarkedAsNotWorkingJobInterval should be(Option.empty)
   }
+
+  "HealthCheckConfig#getSmallerMarkedAsDelay" should "always pick the smaller value" in {
+    val underTest1 = HealthCheckConfig(
+      2,
+      10,
+      Some(10),
+      Some(20),
+      Option.empty
+    )
+
+    underTest1.getSmallerMarkedAsDelay should be(Some(10))
+
+    val underTest2 = HealthCheckConfig(
+      2,
+      10,
+      Some(10),
+      Option.empty,
+      Option.empty
+    )
+
+    underTest2.getSmallerMarkedAsDelay should be(Some(10))
+
+    val underTest3 = HealthCheckConfig(
+      2,
+      10,
+      Option.empty,
+      Some(20),
+      Option.empty
+    )
+
+    underTest3.getSmallerMarkedAsDelay should be(Some(20))
+  }
+
+  it should "return empty if both values are not present" in {
+    val underTest = HealthCheckConfig(
+      2,
+      10,
+      Option.empty,
+      Option.empty,
+      Some(123)
+    )
+
+    underTest.getSmallerMarkedAsDelay should be(None)
+  }
 }

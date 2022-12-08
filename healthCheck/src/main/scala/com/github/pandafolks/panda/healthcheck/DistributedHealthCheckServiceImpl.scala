@@ -41,6 +41,9 @@ final class DistributedHealthCheckServiceImpl(
   private val MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME =
     "MarkingParticipantsAsEitherTurnedOffOrRemoved"
 
+  private val markAsNotWorkingDeviationInMillis: Option[Long] =
+    healthCheckConfig.getSmallerMarkedAsDelay.map(_ * 1000L) // the original value is in seconds
+
   private sealed trait EmittedEventType
 
   private object EmittedEventType {
@@ -209,7 +212,12 @@ final class DistributedHealthCheckServiceImpl(
     nodeTrackerService
       .isCurrentNodeResponsibleForJob(MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME)
       .flatMap {
-        case true => Task.unit // ???
+        case true =>
+          markAsNotWorkingDeviationInMillis.map(deviation =>
+            unsuccessfulHealthCheckDao.getStaleEntries(deviation, healthCheckConfig.numberOfFailuresNeededToReact)
+          )
+          // todo mszmal: start here
+          Task.unit
         case false =>
           logger.debug(
             s"Not executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the node (${nodeTrackerService.getNodeId}) is not responsible for it"

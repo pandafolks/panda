@@ -16,6 +16,15 @@ final case class HealthCheckConfig(
   def getParticipantIsMarkedAsRemovedDelay: Option[Int] =
     participantIsMarkedAsRemovedDelay.flatMap(mapSmallerThanOneToEmpty)
 
+  def getSmallerMarkedAsDelay: Option[Int] =
+    (getParticipantIsMarkedAsTurnedOffDelay, getParticipantIsMarkedAsRemovedDelay) match {
+      case (Some(turnedOffDelay), Some(removedDelay)) =>
+        if (turnedOffDelay < removedDelay) Some(turnedOffDelay) else Some(removedDelay)
+      case (Some(turnedOffDelay), None) => Some(turnedOffDelay)
+      case (None, Some(removedDelay))   => Some(removedDelay)
+      case (None, None)                 => Option.empty
+    }
+
   def getMarkedAsNotWorkingJobInterval: Option[Int] = {
     val DEFAULT_VALUE = 30
     if (getParticipantIsMarkedAsTurnedOffDelay.isEmpty && getParticipantIsMarkedAsRemovedDelay.isEmpty) Option.empty
