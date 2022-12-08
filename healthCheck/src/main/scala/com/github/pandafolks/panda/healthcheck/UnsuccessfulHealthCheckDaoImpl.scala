@@ -60,8 +60,6 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
         Filters.gte(UnsuccessfulHealthCheck.COUNTER_PROPERTY_NAME, minimumFailedCounters)
       )
 
-      // todo: mszmal start here and add tests!
-
       op.source
         .find(filter)
         .toListL

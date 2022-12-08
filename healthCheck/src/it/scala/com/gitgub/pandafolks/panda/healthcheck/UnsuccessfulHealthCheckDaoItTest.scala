@@ -14,7 +14,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UnsuccessfulHealthCheckDaoItTest
-    extends AsyncFlatSpec
+  extends AsyncFlatSpec
     with UnsuccessfulHealthCheckFixture
     with Matchers
     with ScalaFutures
@@ -55,7 +55,7 @@ class UnsuccessfulHealthCheckDaoItTest
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier3))),
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier4)))
         )
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res._1 should contain theSameElementsInOrderAs (for (i <- 2 to 51) yield Right(i)).toList
@@ -76,7 +76,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier1)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(1)
@@ -98,7 +98,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier3)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(2)
@@ -130,7 +130,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -166,7 +166,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -201,7 +201,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-    ).runToFuture
+      ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -217,6 +217,57 @@ class UnsuccessfulHealthCheckDaoItTest
       ide3.counter should be(2L)
       ide3.lastUpdateTimestamp should be > beforeTimestamp
       ide3.turnedOff should be(true)
+    }
+  }
+
+  "UnsuccessfulHealthCheckDao#getStaleEntries" should "return results according to applied arguments" in {
+    val identifier1 = randomString("getStaleEntries1")
+    val identifier2 = randomString("getStaleEntries2")
+    val identifier3 = randomString("getStaleEntries3")
+    val identifier4 = randomString("getStaleEntries4")
+
+    val beforeTimestamp = System.currentTimeMillis()
+
+    val f = (
+      unsuccessfulHealthCheckConnection.use { op =>
+        op.single.insertMany(
+          Seq(
+            UnsuccessfulHealthCheck(identifier1, 4, beforeTimestamp - 1000L, turnedOff = false), // 1 second old - invalid because the timestamp is too fresh
+            UnsuccessfulHealthCheck(identifier2, 4, beforeTimestamp - 6000L, turnedOff = false), // 5 second old - valid because the entry id old enough and the counter is 4
+            UnsuccessfulHealthCheck(identifier3, 3, beforeTimestamp, turnedOff = false), // invalid because counter is too small
+            UnsuccessfulHealthCheck(identifier4, 5, beforeTimestamp - 5000L, turnedOff = false), // valid because the entry id old enough and the counter is 5
+          )
+        )
+      } >>
+        unsuccessfulHealthCheckDao.getStaleEntries(4000L, 4)).runToFuture
+
+    whenReady(f) { res =>
+      res.size should be(2)
+      res.map(_.identifier) should contain theSameElementsAs List(identifier2, identifier4)
+    }
+  }
+
+  it should "return empty list if no results for applied arguments exists" in {
+    val identifier1 = randomString("getStaleEntries5")
+    val identifier2 = randomString("getStaleEntries6")
+    val identifier3 = randomString("getStaleEntries7")
+
+    val beforeTimestamp = System.currentTimeMillis()
+    val f = (
+      unsuccessfulHealthCheckConnection.use { op =>
+        op.single.insertMany(
+          Seq(
+            UnsuccessfulHealthCheck(identifier1, 76, beforeTimestamp - 1000L, turnedOff = false),
+            UnsuccessfulHealthCheck(identifier2, 4, beforeTimestamp - 5000L, turnedOff = false),
+            UnsuccessfulHealthCheck(identifier3, 3, beforeTimestamp - 10000L, turnedOff = false),
+          )
+        )
+      } >>
+        unsuccessfulHealthCheckDao.getStaleEntries(6010, 4)
+      ).runToFuture
+
+    whenReady(f) { res =>
+      res.size should be(0)
     }
   }
 }
