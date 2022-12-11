@@ -177,4 +177,46 @@ class HealthCheckConfigTest extends AnyFlatSpec {
 
     underTest.getSmallerMarkedAsDelay should be(None)
   }
+
+  "HealthCheckConfig#healthCheckEnabled" should "determinate either healthcheck should be enabled or disabled" in {
+    HealthCheckConfig(
+      2,
+      10,
+      Option.empty,
+      Some(20),
+      Option.empty
+    ).healthCheckEnabled should be(true)
+
+    HealthCheckConfig(
+      0,
+      10,
+      Option.empty,
+      Some(20),
+      Option.empty
+    ).healthCheckEnabled should be(false)
+
+    HealthCheckConfig(
+      11,
+      0,
+      Option.empty,
+      Some(20),
+      Option.empty
+    ).healthCheckEnabled should be(false)
+
+    HealthCheckConfig(
+      0,
+      0,
+      Option.empty,
+      Some(20),
+      Option.empty
+    ).healthCheckEnabled should be(false)
+
+    HealthCheckConfig(
+      11,
+      -1,
+      Option.empty,
+      Some(20),
+      Option.empty
+    ).healthCheckEnabled should be(false)
+  }
 }

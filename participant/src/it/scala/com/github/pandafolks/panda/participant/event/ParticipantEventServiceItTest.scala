@@ -636,6 +636,66 @@ class ParticipantEventServiceItTest
     }
   }
 
+  "ParticipantEventService#markParticipantAsTurnedOff" should "insert TurnedOff event if the participant with requested identifier exists" in {
+    val identifier = randomString("markParticipantAsTurnedOff")
+
+    val f = (
+      participantEventService.createParticipant(
+        ParticipantModificationPayload(
+          host = Some("127.1.1.4"),
+          port = Some(1026),
+          groupName = Some("ships"),
+          identifier = Some(identifier),
+          healthcheckRoute = Some("api/hb"),
+          working = Some(true)
+        )
+      )
+        >> participantEventService
+          .markParticipantAsTurnedOff(identifier)
+          .flatMap(res =>
+            participantEventsAndSequencesConnection
+              .use(p => p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL)
+              .map(events => (res, events))
+          )
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res._1.toOption.get should be(())
+      res._2.size should be(3)
+      res._2.maxBy(_.eventId).eventType should be(ParticipantEventType.TurnedOff())
+    }
+  }
+
+  it should "return NotExists if there is not participant with requested identifier" in {
+    val identifier = randomString("markParticipantAsTurnedOff")
+    val anotherIdentifier = randomString("SomeRandomIdentifier")
+
+    val f = (
+      participantEventService.createParticipant(
+        ParticipantModificationPayload(
+          host = Some("127.1.1.4"),
+          port = Some(1026),
+          groupName = Some("ships"),
+          identifier = Some(anotherIdentifier),
+          healthcheckRoute = Some("api/hb"),
+          working = Some(true)
+        )
+      )
+        >> participantEventService
+          .markParticipantAsTurnedOff(identifier)
+          .flatMap(res =>
+            participantEventsAndSequencesConnection
+              .use(p => p._1.source.find(Filters.eq("participantIdentifier", identifier)).toListL)
+              .map(events => (res, events))
+          )
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res._1 should be(Left(NotExists(s"Participant with identifier \"$identifier\" does not exists")))
+      res._2.size should be(0)
+    }
+  }
+
   "ParticipantEventService#checkIfThereAreNewerEvents" should "return true if there was newer event inserted" in {
     val identifier = randomString("checkIfThereAreNewerEvents")
 

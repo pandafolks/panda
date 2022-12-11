@@ -14,7 +14,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UnsuccessfulHealthCheckDaoItTest
-  extends AsyncFlatSpec
+    extends AsyncFlatSpec
     with UnsuccessfulHealthCheckFixture
     with Matchers
     with ScalaFutures
@@ -55,7 +55,7 @@ class UnsuccessfulHealthCheckDaoItTest
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier3))),
           Task.sequence(List.fill(50)(unsuccessfulHealthCheckDao.incrementCounter(identifier4)))
         )
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res._1 should contain theSameElementsInOrderAs (for (i <- 2 to 51) yield Right(i)).toList
@@ -76,7 +76,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier1)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(1)
@@ -98,7 +98,7 @@ class UnsuccessfulHealthCheckDaoItTest
         >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
         >> unsuccessfulHealthCheckDao.clear(identifier3)
         >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(2)
@@ -112,6 +112,45 @@ class UnsuccessfulHealthCheckDaoItTest
 
       res.head.lastUpdateTimestamp should be > startTimestamp
       res(1).lastUpdateTimestamp should be > startTimestamp
+    }
+  }
+
+  "UnsuccessfulHealthCheckDao#clear(many identifiers)" should "remove entries corresponding to the requested identifiers" in {
+    val identifier1 = randomString("w3")
+    val identifier2 = randomString("w4")
+    val identifier3 = randomString("w5")
+    val identifierNotExisting = randomString("w6")
+
+    val f = (
+      unsuccessfulHealthCheckDao.incrementCounter(identifier1)
+        >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
+        >> unsuccessfulHealthCheckDao.incrementCounter(identifier3)
+        >> unsuccessfulHealthCheckDao.clear(List(identifier1, identifier2, identifierNotExisting))
+        >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res.size should be(1)
+      res.head.identifier should be(identifier3)
+      res.head.counter should be(1)
+    }
+  }
+
+  it should "not remove anything when the input list is empty" in {
+    val identifier1 = randomString("w7")
+    val identifier2 = randomString("w8")
+    val identifier3 = randomString("w9")
+
+    val f = (
+      unsuccessfulHealthCheckDao.incrementCounter(identifier1)
+        >> unsuccessfulHealthCheckDao.incrementCounter(identifier2)
+        >> unsuccessfulHealthCheckDao.incrementCounter(identifier3)
+        >> unsuccessfulHealthCheckDao.clear(List.empty)
+        >> unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
+    ).runToFuture
+
+    whenReady(f) { res =>
+      res.size should be(3)
     }
   }
 
@@ -130,7 +169,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -166,7 +205,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -201,7 +240,7 @@ class UnsuccessfulHealthCheckDaoItTest
         unsuccessfulHealthCheckDao.markAsTurnedOff(List(identifier1, identifier3, identifier1, identifier1)) >>
         unsuccessfulHealthCheckDao.incrementCounter(identifier3) >>
         unsuccessfulHealthCheckConnection.use(c => c.source.findAll.toListL)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       val m = res.foldLeft(Map.empty[String, UnsuccessfulHealthCheck])((prev, el) => prev + (el.identifier -> el))
@@ -228,18 +267,37 @@ class UnsuccessfulHealthCheckDaoItTest
 
     val beforeTimestamp = System.currentTimeMillis()
 
-    val f = (
-      unsuccessfulHealthCheckConnection.use { op =>
-        op.single.insertMany(
-          Seq(
-            UnsuccessfulHealthCheck(identifier1, 4, beforeTimestamp - 1000L, turnedOff = false), // 1 second old - invalid because the timestamp is too fresh
-            UnsuccessfulHealthCheck(identifier2, 4, beforeTimestamp - 6000L, turnedOff = false), // 5 second old - valid because the entry id old enough and the counter is 4
-            UnsuccessfulHealthCheck(identifier3, 3, beforeTimestamp, turnedOff = false), // invalid because counter is too small
-            UnsuccessfulHealthCheck(identifier4, 5, beforeTimestamp - 5000L, turnedOff = false), // valid because the entry id old enough and the counter is 5
-          )
+    val f = (unsuccessfulHealthCheckConnection.use { op =>
+      op.single.insertMany(
+        Seq(
+          UnsuccessfulHealthCheck(
+            identifier1,
+            4,
+            beforeTimestamp - 1000L,
+            turnedOff = false
+          ), // 1 second old - invalid because the timestamp is too fresh
+          UnsuccessfulHealthCheck(
+            identifier2,
+            4,
+            beforeTimestamp - 6000L,
+            turnedOff = false
+          ), // 5 second old - valid because the entry id old enough and the counter is 4
+          UnsuccessfulHealthCheck(
+            identifier3,
+            3,
+            beforeTimestamp,
+            turnedOff = false
+          ), // invalid because counter is too small
+          UnsuccessfulHealthCheck(
+            identifier4,
+            5,
+            beforeTimestamp - 5000L,
+            turnedOff = false
+          ) // valid because the entry id old enough and the counter is 5
         )
-      } >>
-        unsuccessfulHealthCheckDao.getStaleEntries(4000L, 4)).runToFuture
+      )
+    } >>
+      unsuccessfulHealthCheckDao.getStaleEntries(4000L, 4)).runToFuture
 
     whenReady(f) { res =>
       res.size should be(2)
@@ -259,12 +317,12 @@ class UnsuccessfulHealthCheckDaoItTest
           Seq(
             UnsuccessfulHealthCheck(identifier1, 76, beforeTimestamp - 1000L, turnedOff = false),
             UnsuccessfulHealthCheck(identifier2, 4, beforeTimestamp - 5000L, turnedOff = false),
-            UnsuccessfulHealthCheck(identifier3, 3, beforeTimestamp - 10000L, turnedOff = false),
+            UnsuccessfulHealthCheck(identifier3, 3, beforeTimestamp - 10000L, turnedOff = false)
           )
         )
       } >>
         unsuccessfulHealthCheckDao.getStaleEntries(6010, 4)
-      ).runToFuture
+    ).runToFuture
 
     whenReady(f) { res =>
       res.size should be(0)

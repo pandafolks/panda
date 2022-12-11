@@ -7,6 +7,9 @@ final case class HealthCheckConfig(
     participantIsMarkedAsRemovedDelay: Option[Int], // in seconds
     markedAsNotWorkingJobInterval: Option[Int] // in seconds
 ) {
+
+  def healthCheckEnabled: Boolean = callsInterval > 0 && numberOfFailuresNeededToReact > 0
+
   def getParticipantIsMarkedAsTurnedOffDelay: Option[Int] =
     participantIsMarkedAsTurnedOffDelay
       .flatMap(mapSmallerThanOneToEmpty)

@@ -177,6 +177,27 @@ final class ParticipantEventServiceImpl(
   override def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean] =
     participantEventDao.checkIfThereAreNewerEvents(eventId)
 
+  override def markParticipantAsTurnedOff(
+      participantIdentifier: String
+  ): Task[Either[PersistenceError, Unit]] =
+    c.use { case (participantEventOperator, sequenceOperator) =>
+      for {
+        exists <- participantEventDao.exists(participantIdentifier, participantEventOperator)
+
+        res <- exists match {
+          case Right(false) =>
+            Task.now(Left(NotExists("Participant with identifier \"" + participantIdentifier + "\" does not exists")))
+          case Right(true) =>
+            insertEvent(
+              participantIdentifier,
+              ParticipantEventDataModification.empty,
+              ParticipantEventType.TurnedOff()
+            )(sequenceOperator, participantEventOperator).map(_.map(_ => ()))
+          case Left(value) => Task.now(Left(value))
+        }
+      } yield res
+    }
+
   private def markParticipantHealth(
       participantIdentifier: String,
       health: ParticipantHealth

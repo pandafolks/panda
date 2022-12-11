@@ -34,10 +34,19 @@ final class UnsuccessfulHealthCheckDaoImpl(private val c: Resource[Task, Collect
 
   override def clear(identifier: String): Task[Either[PersistenceError, Unit]] = c.use(op =>
     op.single
-      .deleteOne(Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier))
+      .deleteOne(filter = Filters.eq(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifier))
       .map(_ => Right(()))
       .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
   )
+
+  override def clear(identifiers: List[String]): Task[Either[PersistenceError, Unit]] = c.use { op =>
+    val filter = Filters.in(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifiers.toSet.toSeq: _*)
+
+    op.single
+      .deleteMany(filter = filter)
+      .map(_ => Right(()))
+      .onErrorRecoverWith { t: Throwable => Task.now(Left(UnsuccessfulDeleteOperation(t.getMessage))) }
+  }
 
   override def markAsTurnedOff(identifiers: List[String]): Task[Either[PersistenceError, Unit]] = c.use { op =>
     val filter = Filters.in(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME, identifiers.toSet.toSeq: _*)

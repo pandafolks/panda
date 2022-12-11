@@ -23,6 +23,15 @@ trait UnsuccessfulHealthCheckDao {
     */
   def clear(identifier: String): Task[Either[PersistenceError, Unit]]
 
+  /** Removes entries from a collection with the requested identifiers.
+    *
+    * @param identifiers
+    *   Unique identifiers
+    * @return
+    *   Either empty if successful or [[PersistenceError]] if the error occurred
+    */
+  def clear(identifiers: List[String]): Task[Either[PersistenceError, Unit]]
+
   /** Marks elements with associated identifiers as turned off.
     *
     * @param identifiers
@@ -34,7 +43,7 @@ trait UnsuccessfulHealthCheckDao {
 
   /** Get [[UnsuccessfulHealthCheck]] entries that are stale. Stale recognition is based on the last update timestamp
     * and counter. There need to be entries with the last update timestamp smaller or equal to the current Time -
-    * deviation. The entry counter needs to reach at least the minimum failed counter.
+    * deviation. The counter needs to reach at least the minimum failed counter.
     *
     * @param deviation
     *   deviation expressed in milliseconds based on which the filtration of stale [[UnsuccessfulHealthCheck]]s is
