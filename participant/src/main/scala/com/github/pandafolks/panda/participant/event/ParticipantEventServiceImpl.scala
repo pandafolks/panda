@@ -38,9 +38,7 @@ final class ParticipantEventServiceImpl(
       return Task.now(Left(UnsuccessfulSaveOperation("host, port and groupName have to be defined")))
 
     val participantIdentifier = participantModificationPayload.getIdentifier
-    if (
-      participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank)
-    )
+    if (participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank))
       return identifierCannotBeBlankError
 
     c.use { case (participantEventOperator, sequenceOperator) =>
@@ -57,9 +55,7 @@ final class ParticipantEventServiceImpl(
               participantIdentifier.get,
               ParticipantEventDataModification
                 .of(participantModificationPayload)
-                .copy(healthcheckRoute =
-                  participantModificationPayload.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))
-                ),
+                .copy(healthcheckRoute = participantModificationPayload.healthcheckRoute.orElse(Some(HEALTHCHECK_DEFAULT_ROUTE))),
               ParticipantEventType.Created()
             )(sequenceOperator, participantEventOperator)
           case Left(value) => Task.now(Left(value))
@@ -81,9 +77,7 @@ final class ParticipantEventServiceImpl(
       participantModificationPayload: ParticipantModificationPayload
   ): Task[Either[PersistenceError, String]] = {
     val participantIdentifier = participantModificationPayload.getIdentifier
-    if (
-      participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank)
-    )
+    if (participantIdentifier.isEmpty || (participantIdentifier.isDefined && participantIdentifier.getOrElse("").isBlank))
       return identifierCannotBeBlankError
 
     c.use { case (participantEventOperator, sequenceOperator) =>

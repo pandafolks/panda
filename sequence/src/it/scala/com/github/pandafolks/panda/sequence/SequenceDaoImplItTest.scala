@@ -17,12 +17,7 @@ import org.testcontainers.utility.DockerImageName
 
 import scala.concurrent.duration.DurationInt
 
-class SequenceDaoImplItTest
-    extends AsyncFlatSpec
-    with Matchers
-    with ScalaFutures
-    with EitherValues
-    with BeforeAndAfterAll {
+class SequenceDaoImplItTest extends AsyncFlatSpec with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
   implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)

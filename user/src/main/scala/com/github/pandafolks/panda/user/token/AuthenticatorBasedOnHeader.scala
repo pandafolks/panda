@@ -13,9 +13,8 @@ final class AuthenticatorBasedOnHeader(private val tokenService: TokenService, p
     private val cacheTtlInMillis: Int
 ) extends Authenticator {
 
-  private val cache: CustomCache[UserId, Option[User]] = new CustomCacheImpl[UserId, Option[User]](id =>
-    userService.getById(id)
-  )(maximumSize = 50L, ttl = cacheTtlInMillis.millisecond)
+  private val cache: CustomCache[UserId, Option[User]] =
+    new CustomCacheImpl[UserId, Option[User]](id => userService.getById(id))(maximumSize = 50L, ttl = cacheTtlInMillis.millisecond)
 
   override def authUser: Kleisli[Task, Request[Task], Either[String, User]] = Kleisli({ request =>
     (for {

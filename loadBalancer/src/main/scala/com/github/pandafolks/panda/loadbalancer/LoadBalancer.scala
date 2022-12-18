@@ -11,8 +11,8 @@ import org.typelevel.ci.CIString
 
 trait LoadBalancer {
 
-  /** Routes request to one of the participants belonging to a related group. The participant choice depends on the type
-    * of the implemented load balancer.
+  /** Routes request to one of the participants belonging to a related group. The participant choice depends on the type of the implemented
+    * load balancer.
     *
     * @param request
     *   Received request that needs to be forwarded

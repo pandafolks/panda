@@ -8,12 +8,7 @@ import com.github.pandafolks.panda.routes.RoutesRouting.{
   RoutesAndPrefixesModificationResultPayload
 }
 import com.github.pandafolks.panda.routes.filter.StandaloneFilter
-import com.github.pandafolks.panda.routes.payload.{
-  MapperRecordPayload,
-  MappingPayload,
-  RoutesRemovePayload,
-  RoutesResourcePayload
-}
+import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
 import com.github.pandafolks.panda.utils.PersistenceError
 import com.github.pandafolks.panda.utils.routing.RoutesResultParser.{parseErrors, parseSuccessfulResults}
@@ -92,8 +87,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
       .map(v => MappingPayload(Left(v)))
       .or(Decoder[Map[String, MappingPayload]].map(v => MappingPayload(Right(v))))
 
-  implicit val routesAndPrefixesModificationResultPayloadEncoder
-      : EntityEncoder[Task, RoutesAndPrefixesModificationResultPayload] =
+  implicit val routesAndPrefixesModificationResultPayloadEncoder: EntityEncoder[Task, RoutesAndPrefixesModificationResultPayload] =
     jsonEncoderOf[Task, RoutesAndPrefixesModificationResultPayload]
   implicit val routesRemovePayloadDecoder: EntityDecoder[Task, RoutesRemovePayload] = jsonOf[Task, RoutesRemovePayload]
 
@@ -105,8 +99,7 @@ final class RoutesRouting(private val routesService: RoutesService) extends Http
     case false => StandaloneFilter.NonStandaloneOnly
   }
 
-  object OptionalStandaloneFilterQueryParamMatcher
-      extends OptionalQueryParamDecoderMatcher[StandaloneFilter]("standalone")
+  object OptionalStandaloneFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[StandaloneFilter]("standalone")
 
 }
 
@@ -133,9 +126,8 @@ object RoutesRouting {
       val groupPrefixesSuccessfullySaved = parseSuccessfulResults(saveResults._2)
 
       RoutesAndPrefixesModificationResultPayload(
-        message =
-          s"Created successfully ${routesSuccessfullySaved.size} routes out of ${saveResults._1.size} requested " +
-            s"and ${groupPrefixesSuccessfullySaved.size} prefixes out of ${saveResults._2.size} requested",
+        message = s"Created successfully ${routesSuccessfullySaved.size} routes out of ${saveResults._1.size} requested " +
+          s"and ${groupPrefixesSuccessfullySaved.size} prefixes out of ${saveResults._2.size} requested",
         successfulRoutes = routesSuccessfullySaved,
         successfulGroupPrefixes = groupPrefixesSuccessfullySaved,
         routesErrors = parseErrors(saveResults._1),
@@ -150,9 +142,8 @@ object RoutesRouting {
       val groupPrefixesSuccessfullyRemoved = parseSuccessfulResults(deletionResults._2)
 
       RoutesAndPrefixesModificationResultPayload(
-        message =
-          s"Removed successfully ${routesSuccessfullyRemoved.size} routes out of ${deletionResults._1.size} requested " +
-            s"and ${groupPrefixesSuccessfullyRemoved.size} prefixes out of ${deletionResults._2.size} requested",
+        message = s"Removed successfully ${routesSuccessfullyRemoved.size} routes out of ${deletionResults._1.size} requested " +
+          s"and ${groupPrefixesSuccessfullyRemoved.size} prefixes out of ${deletionResults._2.size} requested",
         successfulRoutes = routesSuccessfullyRemoved,
         successfulGroupPrefixes = groupPrefixesSuccessfullyRemoved,
         routesErrors = parseErrors(deletionResults._1),

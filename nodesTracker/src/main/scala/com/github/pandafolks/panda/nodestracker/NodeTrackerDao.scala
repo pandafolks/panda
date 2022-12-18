@@ -22,8 +22,8 @@ trait NodeTrackerDao {
     */
   def notify(nodeId: String): Task[Either[PersistenceError, Unit]]
 
-  /** Get all [[Node]] with the timestamp field higher or equal to the current time minus deviation. Nodes are sorted by
-    * ID in ascending order.
+  /** Get all [[Node]] with the timestamp field higher or equal to the current time minus deviation. Nodes are sorted by ID in ascending
+    * order.
     *
     * @param deviation
     *   deviation expressed in milliseconds based on which the filtration of working [[Node]]s is carried out

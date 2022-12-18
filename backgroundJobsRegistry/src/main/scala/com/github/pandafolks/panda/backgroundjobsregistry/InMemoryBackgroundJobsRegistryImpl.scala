@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 
-/** This registry is a per-node one. The job is executed on the node without any synchronization with other panda nodes.
-  * It should be used with jobs that need to be run on every node - no matter how many there are.
+/** This registry is a per-node one. The job is executed on the node without any synchronization with other panda nodes. It should be used
+  * with jobs that need to be run on every node - no matter how many there are.
   */
 final class InMemoryBackgroundJobsRegistryImpl(private val scheduler: Scheduler) extends BackgroundJobsRegistry {
   import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry.JobEntry

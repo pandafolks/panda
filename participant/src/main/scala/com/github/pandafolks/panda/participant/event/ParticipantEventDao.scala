@@ -7,8 +7,8 @@ import monix.reactive.Observable
 
 trait ParticipantEventDao {
 
-  /** Checks whether participant with requested identifier exists. If there was a Removed item emitted and there was no
-    * Created event after it - the identifier is recognized as not exist.
+  /** Checks whether participant with requested identifier exists. If there was a Removed item emitted and there was no Created event after
+    * it - the identifier is recognized as not exist.
     *
     * @param identifier
     *   Participant unique identifier

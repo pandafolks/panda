@@ -54,8 +54,7 @@ trait ParticipantsCache {
     */
   def getWorkingParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
-  /** Returns all participants present inside the cache with both `Working` status and `Healthy` health state for the
-    * requested group
+  /** Returns all participants present inside the cache with both `Working` status and `Healthy` health state for the requested group
     *
     * @param group
     *   Requested group
@@ -65,8 +64,8 @@ trait ParticipantsCache {
     */
   def getHealthyParticipantsAssociatedWithGroup(group: Group): Task[Vector[Participant]]
 
-  /** Register listener which will be notified about all participants taken from the persistence layer and participants
-    * that were present in cache but are no more. Listeners are invoked on every cache refresh.
+  /** Register listener which will be notified about all participants taken from the persistence layer and participants that were present in
+    * cache but are no more. Listeners are invoked on every cache refresh.
     *
     * @param listener
     *   [[ChangeListener]] that expects participants

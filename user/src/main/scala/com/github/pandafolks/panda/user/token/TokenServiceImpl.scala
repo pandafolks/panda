@@ -63,9 +63,7 @@ final class TokenServiceImpl(private val config: TokensConfig)(
         .flatMap(validatedSignedToken => OptionT(cache.get(validatedSignedToken)))
         .value
       tokenEntityWithExpiryCheck <- Task.eval(
-        tokenEntity.filter(t =>
-          Instant.ofEpochMilli(t.creationTimeStamp).plusSeconds(tokenTimeToLive).isAfter(clock.instant())
-        )
+        tokenEntity.filter(t => Instant.ofEpochMilli(t.creationTimeStamp).plusSeconds(tokenTimeToLive).isAfter(clock.instant()))
       )
     } yield tokenEntityWithExpiryCheck.map(_.userId)
 

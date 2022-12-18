@@ -10,8 +10,7 @@ import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.Try
 
-final class UserDaoImpl(private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])])
-    extends UserDao {
+final class UserDaoImpl(private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]) extends UserDao {
 
   override def byId(id: UserId): Task[Option[User]] =
     c.use { case (userOperator, _) => userOperator.source.find(Filters.eq(User.ID_PROPERTY_NAME, id)).firstOptionL }

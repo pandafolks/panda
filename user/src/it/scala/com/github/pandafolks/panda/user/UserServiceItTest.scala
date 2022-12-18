@@ -39,9 +39,7 @@ class UserServiceItTest
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
     val f = Task
       .traverse(randomNames)(u => userService.create(u, randomString("password")))
-      .flatMap(ids =>
-        ids.map(id => userService.getById(id.getOrElse(tagUUIDAsUserId(UUID.randomUUID())))).toList.sequence
-      )
+      .flatMap(ids => ids.map(id => userService.getById(id.getOrElse(tagUUIDAsUserId(UUID.randomUUID())))).toList.sequence)
       .runToFuture // kinda hack with the getOrElse
 
     whenReady(f) { res =>
@@ -116,9 +114,7 @@ class UserServiceItTest
   it should "not remove if there is no user with delivered credentials (password mismatch)" in {
     val randomNames = for (_ <- 0 until 5) yield randomString("username")
     val f1 = Task.traverse(randomNames)(u => userService.create(u, "password")).runToFuture
-    val f2 = f1.flatMap(res =>
-      userService.delete(UserCredentials(randomNames.head, "notMatchingPassword")).runToFuture.map((_, res))
-    )
+    val f2 = f1.flatMap(res => userService.delete(UserCredentials(randomNames.head, "notMatchingPassword")).runToFuture.map((_, res)))
 
     whenReady(f2) { res =>
       {

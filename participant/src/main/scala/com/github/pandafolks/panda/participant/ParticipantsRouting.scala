@@ -1,11 +1,7 @@
 package com.github.pandafolks.panda.participant
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.participant.ParticipantsRouting.{
-  GROUPS_NAME,
-  PARTICIPANTS_NAME,
-  ParticipantsModificationResultPayload
-}
+import com.github.pandafolks.panda.participant.ParticipantsRouting.{GROUPS_NAME, PARTICIPANTS_NAME, ParticipantsModificationResultPayload}
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.user.{SubRoutingWithAuth, User}
@@ -56,8 +52,7 @@ final class ParticipantsRouting(
         successfullySaved = parseSuccessfulResults(saveResults)
         response <- Ok(
           ParticipantsModificationResultPayload(
-            message =
-              s"Created successfully ${successfullySaved.size} participants out of ${saveResults.size} requested",
+            message = s"Created successfully ${successfullySaved.size} participants out of ${saveResults.size} requested",
             successfulParticipantIdentifiers = successfullySaved,
             errors = parseErrors(saveResults)
           )
@@ -71,8 +66,7 @@ final class ParticipantsRouting(
         successfullyModified = parseSuccessfulResults(modifyResults)
         response <- Ok(
           ParticipantsModificationResultPayload(
-            message =
-              s"Modified successfully ${successfullyModified.size} participants out of ${modifyResults.size} requested",
+            message = s"Modified successfully ${successfullyModified.size} participants out of ${modifyResults.size} requested",
             successfulParticipantIdentifiers = successfullyModified,
             errors = parseErrors(modifyResults)
           )
@@ -86,8 +80,7 @@ final class ParticipantsRouting(
         successfullyRemoved = parseSuccessfulResults(removeResults)
         response <- Ok(
           ParticipantsModificationResultPayload(
-            message =
-              s"Removed successfully ${successfullyRemoved.size} participants out of ${removeResults.size} requested",
+            message = s"Removed successfully ${successfullyRemoved.size} participants out of ${removeResults.size} requested",
             successfulParticipantIdentifiers = successfullyRemoved,
             errors = parseErrors(removeResults)
           )
@@ -151,8 +144,7 @@ final class ParticipantsRouting(
       case _         => ParticipantsFilter.AllParticipantsFilter
     })
 
-  object OptionalFilterQueryParamMatcher
-      extends OptionalQueryParamDecoderMatcher[ParticipantsFilter.ParticipantsFilter]("filter")
+  object OptionalFilterQueryParamMatcher extends OptionalQueryParamDecoderMatcher[ParticipantsFilter.ParticipantsFilter]("filter")
 
 }
 

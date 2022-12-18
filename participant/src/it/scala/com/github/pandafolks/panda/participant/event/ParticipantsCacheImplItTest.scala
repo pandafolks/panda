@@ -1,12 +1,7 @@
 package com.github.pandafolks.panda.participant.event
 
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
-import com.github.pandafolks.panda.participant.{
-  Participant,
-  ParticipantModificationPayload,
-  ParticipantsCache,
-  ParticipantsCacheImpl
-}
+import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.ChangeListener
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler

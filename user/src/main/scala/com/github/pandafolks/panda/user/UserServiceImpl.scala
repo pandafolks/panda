@@ -4,12 +4,7 @@ import cats.data.OptionT
 import cats.effect.Resource
 import cats.implicits.toTraverseOps
 import com.github.pandafolks.panda.user.token.Token
-import com.github.pandafolks.panda.utils.{
-  AlreadyExists,
-  PandaStartupException,
-  PersistenceError,
-  UndefinedPersistenceError
-}
+import com.github.pandafolks.panda.utils.{AlreadyExists, PandaStartupException, PersistenceError, UndefinedPersistenceError}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler

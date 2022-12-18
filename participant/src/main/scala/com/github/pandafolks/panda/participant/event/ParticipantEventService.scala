@@ -73,9 +73,8 @@ trait ParticipantEventService {
     */
   def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean]
 
-  /** Marks a participant with a specified identifier as
-    * [[com.github.pandafolks.panda.participant.event.ParticipantEventType.TurnedOff]], which will end up with
-    * participant with [[com.github.pandafolks.panda.participant.NotWorking]] status.
+  /** Marks a participant with a specified identifier as [[com.github.pandafolks.panda.participant.event.ParticipantEventType.TurnedOff]],
+    * which will end up with participant with [[com.github.pandafolks.panda.participant.NotWorking]] status.
     *
     * @param participantIdentifier
     *   A unique across all groups identifier

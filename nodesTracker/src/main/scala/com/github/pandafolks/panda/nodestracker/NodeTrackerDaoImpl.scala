@@ -1,12 +1,7 @@
 package com.github.pandafolks.panda.nodestracker
 
 import cats.effect.Resource
-import com.github.pandafolks.panda.utils.{
-  NotExists,
-  PersistenceError,
-  UnsuccessfulSaveOperation,
-  UnsuccessfulUpdateOperation
-}
+import com.github.pandafolks.panda.utils.{NotExists, PersistenceError, UnsuccessfulSaveOperation, UnsuccessfulUpdateOperation}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.connect.mongodb.domain.{RetryStrategy, UpdateResult}
 import monix.eval.Task

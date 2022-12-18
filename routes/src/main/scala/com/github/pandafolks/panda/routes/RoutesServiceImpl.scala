@@ -3,12 +3,7 @@ package com.github.pandafolks.panda.routes
 import cats.effect.Resource
 import com.github.pandafolks.panda.routes.entity.{Mapper, MappingContent, Prefix}
 import com.github.pandafolks.panda.routes.filter.StandaloneFilter
-import com.github.pandafolks.panda.routes.payload.{
-  MapperRecordPayload,
-  MappingPayload,
-  RoutesRemovePayload,
-  RoutesResourcePayload
-}
+import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesRemovePayload, RoutesResourcePayload}
 import com.github.pandafolks.panda.utils.PersistenceError
 import com.github.pandafolks.panda.utils.cache.{CustomCache, CustomCacheImpl}
 import monix.connect.mongodb.client.CollectionOperator
@@ -85,13 +80,12 @@ final class RoutesServiceImpl(
         )
       )
 
-  private def findByGroupInternal(groupName: String): Task[RoutesResourcePayload] = c.use {
-    case (mapperOperator, prefixesOperator) =>
-      Task.parMap2(
-        findAllMappersInternal(mapperOperator).map(mappers => searchMappers2point0(mappers, groupName)),
-        findAllPrefixesInternal(prefixesOperator)
-          .map(_.get(groupName).map(prefix => Map.from(List((groupName, prefix)))).getOrElse(Map.empty))
-      )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
+  private def findByGroupInternal(groupName: String): Task[RoutesResourcePayload] = c.use { case (mapperOperator, prefixesOperator) =>
+    Task.parMap2(
+      findAllMappersInternal(mapperOperator).map(mappers => searchMappers2point0(mappers, groupName)),
+      findAllPrefixesInternal(prefixesOperator)
+        .map(_.get(groupName).map(prefix => Map.from(List((groupName, prefix)))).getOrElse(Map.empty))
+    )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
   }
 
   @Deprecated // Cannot handle composition routes with depth bigger than 1
@@ -153,9 +147,7 @@ final class RoutesServiceImpl(
       mappingPayload.value match {
         case Left(route) => List(escape(route))
         case Right(map) =>
-          map.foldLeft(List.empty[String])((prevState, el) =>
-            prevState ::: returnAllEscapedRoutesForMappingPayload(el._2)
-          )
+          map.foldLeft(List.empty[String])((prevState, el) => prevState ::: returnAllEscapedRoutesForMappingPayload(el._2))
       }
 
     val dataSetToSearchThrough: Map[Boolean, List[(String, MapperRecordPayload)]] = data
@@ -216,11 +208,9 @@ final class RoutesServiceImpl(
 
     direct.concat(
       whileFunc(
-        direct.map(entry =>
-          (escape(entry._1), entry._2.method)
-        ), // cuz two routes with different methods can point to different groups
-        compositionMappers.foldLeft(Map.empty[(String, Option[String]), (String, MapperRecordPayload)])(
-          (prevState, entry) => prevState + ((escape(entry._1), entry._2.method) -> entry)
+        direct.map(entry => (escape(entry._1), entry._2.method)), // cuz two routes with different methods can point to different groups
+        compositionMappers.foldLeft(Map.empty[(String, Option[String]), (String, MapperRecordPayload)])((prevState, entry) =>
+          prevState + ((escape(entry._1), entry._2.method) -> entry)
         )
       )
     )
