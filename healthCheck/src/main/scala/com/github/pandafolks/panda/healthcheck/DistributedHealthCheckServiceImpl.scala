@@ -78,7 +78,7 @@ final class DistributedHealthCheckServiceImpl(
 
     participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 
-    if (healthCheckConfig.healthCheckEnabled) {
+    if (healthCheckConfig.healthCheckEnabled) { // if the healthcheck job is disabled, there is no reason to run job MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED
       backgroundJobsRegistry.addJobAtFixedRate(0.seconds, healthCheckConfig.callsInterval.seconds)(
         () =>
           healthCheckBackgroundJob()
@@ -88,21 +88,21 @@ final class DistributedHealthCheckServiceImpl(
             },
         "DistributedHealthCheck"
       )
-    }
 
-    healthCheckConfig.getMarkedAsNotWorkingJobInterval.foreach { jobInterval =>
-      backgroundJobsRegistry.addJobAtFixedRate(jobInterval.seconds, jobInterval.seconds)(
-        () =>
-          markAsNotWorkingBackgroundJob()
-            .onErrorRecover { e: Throwable =>
-              logger
-                .error(
-                  s"Cannot mark participants as either turned off or removed on this node. [Node ID: ${nodeTrackerService.getNodeId}]",
-                  e
-                )
-            },
-        MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME
-      )
+      healthCheckConfig.getMarkedAsNotWorkingJobInterval.foreach { jobInterval =>
+        backgroundJobsRegistry.addJobAtFixedRate(jobInterval.seconds, jobInterval.seconds)(
+          () =>
+            markAsNotWorkingBackgroundJob()
+              .onErrorRecover { e: Throwable =>
+                logger
+                  .error(
+                    s"Cannot mark participants as either turned off or removed on this node. [Node ID: ${nodeTrackerService.getNodeId}]",
+                    e
+                  )
+              },
+          MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME
+        )
+      }
     }
   }
 
@@ -224,123 +224,120 @@ final class DistributedHealthCheckServiceImpl(
           case ((_, _), _) => Task.unit
         }
 
-  private def markAsNotWorkingBackgroundJob(): Task[Unit] = {
-    // todo mszmal: test it!!!!
-    nodeTrackerService
-      .isCurrentNodeResponsibleForJob(MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME)
-      .flatMap {
-        case true =>
-          markAsNotWorkingDeviationInMillis match {
-            case Some(deviation) =>
-              logger.debug(
-                s"Executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the node (${nodeTrackerService.getNodeId}) is responsible for it"
-              )
-              val comparisonStartingPoint: Long = System.currentTimeMillis()
+  private def markAsNotWorkingBackgroundJob(): Task[Unit] = nodeTrackerService
+    .isCurrentNodeResponsibleForJob(MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME)
+    .flatMap {
+      case true =>
+        markAsNotWorkingDeviationInMillis match {
+          case Some(deviation) =>
+            logger.debug(
+              s"Executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the node (${nodeTrackerService.getNodeId}) is responsible for it"
+            )
+            val comparisonStartingPoint: Long = System.currentTimeMillis()
 
-              unsuccessfulHealthCheckDao
-                .getStaleEntries(deviation, healthCheckConfig.numberOfFailuresNeededToReact)
-                .flatMap { staleEntries =>
-                  Task
-                    .parTraverseUnordered(staleEntries) { staleEntry =>
-                      OptionT(Task.now(healthCheckConfig.getParticipantIsMarkedAsRemovedDelay))
-                        .flatMap { markedAsRemovedDelay =>
-                          // Firstly, we are trying to determine whether the participant should be marked as removed - if yes, there is no need to check whether should be marked as turned off, as this is one step earlier in the participant life cycle.
-                          if (staleEntry.lastUpdateTimestamp <= comparisonStartingPoint - markedAsRemovedDelay) {
-                            // Very important is the order of execution. Always send an event with the participantEventService firstly! Sending multiple same events is OK, but clearing the collection too early can cause really bad effects.
-                            OptionT(
-                              participantEventService
-                                .removeParticipant(staleEntry.identifier)
-                                .map {
-                                  case Right(_) => Right(())
-                                  case Left(NotExists(_)) =>
-                                    Right(()) // This is ok! Something else already removed the participant.
-                                  case Left(error) => logger.error(error.getMessage); Left(error)
-                                }
-                                .map {
-                                  case Right(_) =>
-                                    Some(MarkAsNotWorkingResult.MarkedAsRemoved(staleEntry.identifier)): Some[
-                                      MarkAsNotWorkingResult
-                                    ]
-                                  case Left(_) =>
-                                    Option.empty[MarkAsNotWorkingResult] // We cannot clear the unsuccessfulHealthCheck if we are not sure the participant is marked as removed.
-                                }
-                            )
-                          } else OptionT(Task.now(Option.empty[MarkAsNotWorkingResult]))
-                        }
-                        .orElse {
-                          OptionT(Task.now(healthCheckConfig.getParticipantIsMarkedAsTurnedOffDelay))
-                            .flatMap(markedAsTurnedOffDelay =>
-                              if (staleEntry.lastUpdateTimestamp <= comparisonStartingPoint - markedAsTurnedOffDelay) {
-                                OptionT(
-                                  participantEventService
-                                    .markParticipantAsTurnedOff(staleEntry.identifier)
-                                    .map {
-                                      case Right(_)           => Right(())
-                                      case Left(NotExists(_)) => Right(())
-                                      case Left(error)        => logger.error(error.getMessage); Left(error)
-                                    }
-                                    .map {
-                                      case Right(_) =>
-                                        healthCheckConfig.getParticipantIsMarkedAsRemovedDelay match {
-                                          case Some(_) =>
-                                            Some(MarkAsNotWorkingResult.MarkedAsTurnedOff(staleEntry.identifier))
-                                          case None =>
-                                            Some(
-                                              MarkAsNotWorkingResult.MarkedAsRemoved(staleEntry.identifier)
-                                            ) // If the IsMarkedAsRemovedDelay is not set, we can mark it as removed straight away (so basically clear away the UnsuccessfulHealthCheck collection) without setting the turnedOff flag, because there is nothing to wait for.
-                                        }
-                                      case Left(_) =>
-                                        Option.empty // We cannot mark as turnedOff inside UnsuccessfulHealthCheck, if we are not sure the participant is marked as turnedOff.
-                                    }
-                                )
-                              } else OptionT(Task.now(Option.empty))
-                            )
-                        }
-                        .value
-                    }
-                    .flatMap { entriesToProcess => // Making at most 2 calls to unsuccessfulHealthCheckDao, instead of N
-                      Task
-                        .eval(entriesToProcess.foldLeft((List.empty[String], List.empty[String])) {
-                          (prev, markAsResult) =>
-                            markAsResult match {
-                              case Some(MarkAsNotWorkingResult.MarkedAsRemoved(identifier)) =>
-                                (identifier :: prev._1, prev._2)
-                              case Some(MarkAsNotWorkingResult.MarkedAsTurnedOff(identifier)) =>
-                                (prev._1, identifier :: prev._2)
-                              case None => prev
-                            }
-                        })
-                        .flatMap { data =>
-                          val (toRemove, toTurnOff) = data
-                          Task.parZip2(
-                            if (toRemove.nonEmpty) unsuccessfulHealthCheckDao.clear(toRemove).map {
-                              case Right(_)    => ()
-                              case Left(error) => logger.error(error.getMessage); ()
-                            }
-                            else Task.unit,
-                            if (toTurnOff.nonEmpty) unsuccessfulHealthCheckDao.markAsTurnedOff(toTurnOff).map {
-                              case Right(_)    => ()
-                              case Left(error) => logger.error(error.getMessage); ()
-                            }
-                            else Task.unit
+            unsuccessfulHealthCheckDao
+              .getStaleEntries(deviation, healthCheckConfig.numberOfFailuresNeededToReact)
+              .flatMap { staleEntries =>
+                Task
+                  .parTraverseUnordered(staleEntries) { staleEntry =>
+                    OptionT(Task.now(healthCheckConfig.getParticipantIsMarkedAsRemovedDelayInMillis))
+                      .flatMap { markedAsRemovedDelay =>
+                        // Firstly, we are trying to determine whether the participant should be marked as removed - if yes, there is no need to check whether should be marked as turned off, as this is one step earlier in the participant life cycle.
+                        if (staleEntry.lastUpdateTimestamp <= comparisonStartingPoint - markedAsRemovedDelay) {
+                          // Very important is the order of execution. Always send an event with the participantEventService firstly! Sending multiple same events is OK, but clearing the collection too early can cause really bad effects.
+                          OptionT(
+                            participantEventService
+                              .removeParticipant(staleEntry.identifier)
+                              .map {
+                                case Right(_) => Right(())
+                                case Left(NotExists(_)) =>
+                                  Right(()) // This is ok! Something else already removed the participant.
+                                case Left(error) => logger.error(error.getMessage); Left(error)
+                              }
+                              .map {
+                                case Right(_) =>
+                                  Some(MarkAsNotWorkingResult.MarkedAsRemoved(staleEntry.identifier)): Some[
+                                    MarkAsNotWorkingResult
+                                  ]
+                                case Left(_) =>
+                                  Option.empty[MarkAsNotWorkingResult] // We cannot clear the unsuccessfulHealthCheck if we are not sure the participant is marked as removed.
+                              }
                           )
-                        }
-                    }
-                }
-                .void
-            case None =>
-              logger.debug(
-                s"Not executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the job is disabled by the configuration"
-              )
-              Task.unit
-          }
-        case false =>
-          logger.debug(
-            s"Not executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the node (${nodeTrackerService.getNodeId}) is NOT responsible for it"
-          )
-          Task.unit
-      }
-  }
+                        } else OptionT(Task.now(Option.empty[MarkAsNotWorkingResult]))
+                      }
+                      .orElse {
+                        OptionT(Task.now(healthCheckConfig.getParticipantIsMarkedAsTurnedOffDelayInMillis))
+                          .flatMap { markedAsTurnedOffDelay =>
+                            if (staleEntry.lastUpdateTimestamp <= comparisonStartingPoint - markedAsTurnedOffDelay) {
+                              OptionT(
+                                participantEventService
+                                  .markParticipantAsTurnedOff(staleEntry.identifier)
+                                  .map {
+                                    case Right(_)           => Right(())
+                                    case Left(NotExists(_)) => Right(())
+                                    case Left(error)        => logger.error(error.getMessage); Left(error)
+                                  }
+                                  .map {
+                                    case Right(_) =>
+                                      healthCheckConfig.getParticipantIsMarkedAsRemovedDelay match {
+                                        case Some(_) =>
+                                          Some(MarkAsNotWorkingResult.MarkedAsTurnedOff(staleEntry.identifier))
+                                        case None =>
+                                          Some(
+                                            MarkAsNotWorkingResult.MarkedAsRemoved(staleEntry.identifier)
+                                          ) // If the IsMarkedAsRemovedDelay is not set, we can mark it as removed straight away (so basically clear away the UnsuccessfulHealthCheck collection) without setting the turnedOff flag, because there is nothing to wait for.
+                                      }
+                                    case Left(_) =>
+                                      Option.empty // We cannot mark as turnedOff inside UnsuccessfulHealthCheck, if we are not sure the participant is marked as turnedOff (the event has been fired).
+                                  }
+                              )
+                            } else OptionT(Task.now(Option.empty))
+                          }
+                      }
+                      .value
+                  }
+                  .flatMap { entriesToProcess => // Making at most 2 calls to unsuccessfulHealthCheckDao, instead of N
+                    Task
+                      .eval(entriesToProcess.foldLeft((List.empty[String], List.empty[String])) {
+                        (prev, markAsResult) =>
+                          markAsResult match {
+                            case Some(MarkAsNotWorkingResult.MarkedAsRemoved(identifier)) =>
+                              (identifier :: prev._1, prev._2)
+                            case Some(MarkAsNotWorkingResult.MarkedAsTurnedOff(identifier)) =>
+                              (prev._1, identifier :: prev._2)
+                            case None => prev
+                          }
+                      })
+                      .flatMap { data =>
+                        val (toRemove, toTurnOff) = data
+                        Task.parZip2(
+                          if (toRemove.nonEmpty) unsuccessfulHealthCheckDao.clear(toRemove).map {
+                            case Right(_)    => ()
+                            case Left(error) => logger.error(error.getMessage); ()
+                          }
+                          else Task.unit,
+                          if (toTurnOff.nonEmpty) unsuccessfulHealthCheckDao.markAsTurnedOff(toTurnOff).map {
+                            case Right(_)    => ()
+                            case Left(error) => logger.error(error.getMessage); ()
+                          }
+                          else Task.unit
+                        )
+                      }
+                  }
+              }
+              .void
+          case None =>
+            logger.debug(
+              s"Not executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the job is disabled by the configuration"
+            )
+            Task.unit
+        }
+      case false =>
+        logger.debug(
+          s"Not executing the job $MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME, as the node (${nodeTrackerService.getNodeId}) is NOT responsible for it"
+        )
+        Task.unit
+    }
 
   @VisibleForTesting
   private def getNodesSizeWithCurrentNodePosition: Task[(Option[Int], Option[Int])] =

@@ -79,5 +79,4 @@ init-user {                                         # If there is no user in the
     password = "admin"
 }
 
-
 ``` 

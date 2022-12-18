@@ -86,9 +86,9 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   )
   protected val refreshCachePrivateMethod: PrivateMethod[Task[Unit]] = PrivateMethod[Task[Unit]](Symbol("refreshCache"))
 
-  private val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
+  protected val nodesColName: String = randomString(Node.NODES_COLLECTION_NAME)
   private val nodesCol: CollectionCodecRef[Node] = Node.getCollection(dbName, nodesColName)
-  private val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
+  protected val nodesConnection: Resource[Task, CollectionOperator[Node]] = MongoConnection.create1(settings, nodesCol)
 
   protected val jobsColName: String = randomString(Job.JOBS_COLLECTION_NAME)
   protected val jobsCol: CollectionCodecRef[Job] = Job.getCollection(dbName, jobsColName)
@@ -96,7 +96,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
 
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
   private val jobDao: JobDao = new JobDaoImpl(jobsConnection)
-  private val nodeTrackerService: NodeTrackerService =
+  protected val nodeTrackerService: NodeTrackerService =
     new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
 
   protected val unsuccessfulHealthCheckColName: String = randomString(
@@ -106,7 +106,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
     UnsuccessfulHealthCheck.getCollection(dbName, unsuccessfulHealthCheckColName)
   protected val unsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] =
     MongoConnection.create1(settings, unsuccessfulHealthCheckCol)
-  private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDaoImpl = new UnsuccessfulHealthCheckDaoImpl(
+  protected val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDaoImpl = new UnsuccessfulHealthCheckDaoImpl(
     unsuccessfulHealthCheckConnection
   )
 
@@ -117,10 +117,13 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
     unsuccessfulHealthCheckDao,
     new ClientStub(),
     new InMemoryBackgroundJobsRegistryImpl(scheduler)
-  )(HealthCheckConfig(-1, 2, Option.empty, Option.empty, Option.empty)) // scheduler turned off
+  )(HealthCheckConfig(-1, 2, Some(5), Some(10), Option.empty)) // schedulers turned off
 
   protected val healthCheckBackgroundJobPrivateMethod: PrivateMethod[Task[Unit]] =
     PrivateMethod[Task[Unit]](Symbol("healthCheckBackgroundJob"))
+
+  protected val markAsNotWorkingBackgroundJobPrivateMethod: PrivateMethod[Task[Unit]] =
+    PrivateMethod[Task[Unit]](Symbol("markAsNotWorkingBackgroundJob"))
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }

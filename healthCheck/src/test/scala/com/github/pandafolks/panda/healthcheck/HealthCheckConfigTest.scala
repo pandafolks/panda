@@ -68,6 +68,18 @@ class HealthCheckConfigTest extends AnyFlatSpec {
     underTest.getParticipantIsMarkedAsTurnedOffDelay should be(Option.empty)
   }
 
+  "HealthCheckConfig#getParticipantIsMarkedAsTurnedOffDelayInMillis" should "return scaled result" in {
+    val underTest = HealthCheckConfig(
+      2,
+      10,
+      Some(18),
+      Some(20),
+      Some(40)
+    )
+
+    underTest.getParticipantIsMarkedAsTurnedOffDelayInMillis.get should be(18000)
+  }
+
   "HealthCheckConfig#getParticipantIsMarkedAsRemovedDelay" should "return empty when smaller than 1" in {
     val underTest = HealthCheckConfig(
       2,
@@ -132,6 +144,18 @@ class HealthCheckConfigTest extends AnyFlatSpec {
     underTest.getParticipantIsMarkedAsTurnedOffDelay should be(Option.empty)
     underTest.getParticipantIsMarkedAsRemovedDelay should be(Option.empty)
     underTest.getMarkedAsNotWorkingJobInterval should be(Option.empty)
+  }
+
+  "HealthCheckConfig#getParticipantIsMarkedAsRemovedDelayInMillis" should "return scaled result" in {
+    val underTest = HealthCheckConfig(
+      2,
+      10,
+      Some(18),
+      Some(20),
+      Some(40)
+    )
+
+    underTest.getParticipantIsMarkedAsRemovedDelayInMillis.get should be(20000)
   }
 
   "HealthCheckConfig#getSmallerMarkedAsDelay" should "always pick the smaller value" in {

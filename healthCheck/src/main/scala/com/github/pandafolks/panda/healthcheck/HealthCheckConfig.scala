@@ -16,8 +16,12 @@ final case class HealthCheckConfig(
       // if there is participantIsMarkedAsTurnedOffDelay bigger or equal to participantIsMarkedAsRemovedDelay, there should be just participantIsMarkedAsRemovedDelay
       .filter(_ < getParticipantIsMarkedAsRemovedDelay.getOrElse(Int.MaxValue))
 
+  def getParticipantIsMarkedAsTurnedOffDelayInMillis: Option[Int] = getParticipantIsMarkedAsTurnedOffDelay.map(_ * 1000)
+
   def getParticipantIsMarkedAsRemovedDelay: Option[Int] =
     participantIsMarkedAsRemovedDelay.flatMap(mapSmallerThanOneToEmpty)
+
+  def getParticipantIsMarkedAsRemovedDelayInMillis: Option[Int] = getParticipantIsMarkedAsRemovedDelay.map(_ * 1000)
 
   def getSmallerMarkedAsDelay: Option[Int] =
     (getParticipantIsMarkedAsTurnedOffDelay, getParticipantIsMarkedAsRemovedDelay) match {
