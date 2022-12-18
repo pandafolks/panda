@@ -11,7 +11,7 @@ import scala.concurrent.duration.Duration
 final class CustomCacheImpl[K, V](loader: K => Task[V])(private val maximumSize: Long, private val ttl: Duration)
     extends CustomCache[K, V] {
 
-  private val underlyingGuavaCache: Cache[String, Entry[V]] = CacheBuilder
+  val underlyingGuavaCache: Cache[String, Entry[V]] = CacheBuilder
     .newBuilder()
     .maximumSize(maximumSize)
     .build[String, Entry[V]]
