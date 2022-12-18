@@ -2,6 +2,7 @@ package com.gitgub.pandafolks.panda.healthcheck
 
 import cats.data.Kleisli
 import cats.effect.Resource
+import com.github.pandafolks.panda.utils.EscapeUtils
 import monix.eval.Task
 import org.http4s.client.Client
 import org.http4s._
@@ -10,7 +11,7 @@ final class ClientStub extends Client[Task] {
   override def run(req: Request[Task]): Resource[Task, Response[Task]] =
     Resource.eval(
       Task.eval(
-        req.uri.toString.dropWhile(_ == '/') match {
+        req.uri.toString.dropWhile(_ == EscapeUtils.PATH_SEPARATOR) match {
           case path if ClientStub.AVAILABLE_WORKING_ROUTES.contains(path) =>
             Response[Task](Status.Ok)
           case _ => Response[Task](Status.ServiceUnavailable)

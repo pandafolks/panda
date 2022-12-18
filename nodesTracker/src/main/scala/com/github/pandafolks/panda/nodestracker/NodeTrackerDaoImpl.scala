@@ -12,15 +12,16 @@ import monix.connect.mongodb.domain.{RetryStrategy, UpdateResult}
 import monix.eval.Task
 import org.bson.types.ObjectId
 import org.mongodb.scala.model.{Aggregates, Filters, Sorts, UpdateOptions, Updates}
+import org.slf4j.LoggerFactory
 
 final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[Node]]) extends NodeTrackerDao {
 
-  private final val clock = java.time.Clock.systemUTC
+  private val logger = LoggerFactory.getLogger(getClass.getName)
 
   override def register(): Task[Either[PersistenceError, String]] = c.use(nodeOperator =>
     nodeOperator.single
       .insertOne(
-        Node(new ObjectId(), clock.millis()),
+        document = Node(new ObjectId(), System.currentTimeMillis()),
         retryStrategy = RetryStrategy(5)
       )
       .map(_.insertedId)
@@ -34,8 +35,8 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
   override def notify(nodeId: String): Task[Either[PersistenceError, Unit]] = c.use(nodeOperator =>
     nodeOperator.single
       .updateOne(
-        Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId(nodeId)),
-        Updates.set(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis()),
+        filter = Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId(nodeId)),
+        update = Updates.set(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis()),
         updateOptions = UpdateOptions().upsert(true),
         retryStrategy = RetryStrategy(3)
       )
@@ -46,15 +47,33 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulUpdateOperation(t.getMessage))) }
   )
 
-  override def getNodes(deviation: Long): Task[List[Node]] = c.use(nodeOperator =>
+  override def getNodes(deviation: Long): Task[List[Node]] = c.use { nodeOperator =>
     nodeOperator.source
       .aggregate(
         List(
-          Aggregates.filter(Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, clock.millis() - deviation)),
+          Aggregates.filter(
+            Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation)
+          ),
           Aggregates.sort(Sorts.ascending(Node.ID_PROPERTY_NAME))
         ),
         classOf[Node]
       )
       .toListL
-  )
+      .onErrorRecover(e => {
+        logger.error(s"Unable to get nodes", e)
+        List.empty
+      })
+  }
+
+  override def isNodeWorking(nodeId: ObjectId, deviation: Long): Task[Boolean] = c.use { nodeOperator =>
+    nodeOperator.source
+      .count(
+        filter = Filters.and(
+          Filters.gte(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, System.currentTimeMillis() - deviation),
+          Filters.eq(Node.ID_PROPERTY_NAME, nodeId)
+        )
+      )
+      .map(_ > 0)
+      .onErrorRecover(_ => false)
+  }
 }

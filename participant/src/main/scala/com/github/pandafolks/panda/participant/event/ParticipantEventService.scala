@@ -44,7 +44,8 @@ trait ParticipantEventService {
     */
   def constructAllParticipants(): Task[(List[Participant], Long)]
 
-  /** Marks a participant with a specified identifier as connected, in other words healthy.
+  /** Marks a participant with a specified identifier as connected
+    * [[com.github.pandafolks.panda.participant.event.ParticipantEventType.Joined]], in other words healthy.
     *
     * @param participantIdentifier
     *   A unique across all groups identifier
@@ -53,7 +54,8 @@ trait ParticipantEventService {
     */
   def markParticipantAsHealthy(participantIdentifier: String): Task[Either[PersistenceError, Unit]]
 
-  /** Marks a participant with a specified identifier as disconnected, in other words unhealthy.
+  /** Marks a participant with a specified identifier as
+    * [[com.github.pandafolks.panda.participant.event.ParticipantEventType.Disconnected]], in other words unhealthy.
     *
     * @param participantIdentifier
     *   A unique across all groups identifier
@@ -70,4 +72,15 @@ trait ParticipantEventService {
     *   True if there are events with higher ID, false otherwise
     */
   def checkIfThereAreNewerEvents(eventId: Long): Task[Boolean]
+
+  /** Marks a participant with a specified identifier as
+    * [[com.github.pandafolks.panda.participant.event.ParticipantEventType.TurnedOff]], which will end up with
+    * participant with [[com.github.pandafolks.panda.participant.NotWorking]] status.
+    *
+    * @param participantIdentifier
+    *   A unique across all groups identifier
+    * @return
+    *   Either empty if marked successfully or PersistenceError if the error occurred
+    */
+  def markParticipantAsTurnedOff(participantIdentifier: String): Task[Either[PersistenceError, Unit]]
 }

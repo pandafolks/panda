@@ -40,7 +40,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, -1))
+    )(HealthCheckConfig(-1, -1, Option.empty, Option.empty, Option.empty))
     val underTestMethod = PrivateMethod[Task[(Option[Int], Option[Int])]](Symbol("getNodesSizeWithCurrentNodePosition"))
     val f = distributedHealthCheckServiceImpl.invokePrivate(underTestMethod()).runToFuture
 
@@ -64,7 +64,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, -1))
+    )(HealthCheckConfig(-1, -1, Option.empty, Option.empty, Option.empty))
     val underTestMethod = PrivateMethod[Task[(Option[Int], Option[Int])]](Symbol("getNodesSizeWithCurrentNodePosition"))
     val f = distributedHealthCheckServiceImpl.invokePrivate(underTestMethod()).runToFuture
 
@@ -89,7 +89,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, -1))
+    )(HealthCheckConfig(-1, -1, Option.empty, Option.empty, Option.empty))
     val underTestMethod = PrivateMethod[Task[(Option[Int], Option[Int])]](Symbol("getNodesSizeWithCurrentNodePosition"))
     val f = distributedHealthCheckServiceImpl.invokePrivate(underTestMethod()).runToFuture
 
@@ -111,7 +111,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, -1))
+    )(HealthCheckConfig(-1, -1, Option.empty, Option.empty, Option.empty))
     val underTestMethod = PrivateMethod[List[Participant]](Symbol("pickParticipantsForNode"))
 
     val result =
@@ -140,7 +140,7 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
       mock(classOf[UnsuccessfulHealthCheckDao]),
       mock(classOf[Client[Task]]),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, -1))
+    )(HealthCheckConfig(-1, -1, Option.empty, Option.empty, Option.empty))
     val underTestMethod = PrivateMethod[List[Participant]](Symbol("pickParticipantsForNode"))
 
     val result =
