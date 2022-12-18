@@ -64,6 +64,7 @@ consistency {
 health-check-config {
     calls-interval = 5                              # The interval between two health checks in seconds
     number-of-failures-needed-to-react = 3          # The number of allowed failed health checks. After reaching the specified number of fails, the participant will be marked as `Disconnected` and will become `Unhealthy`.
+   # Both of the above values have to be bigger than 0, otherwise, the healthcheck functionality will be turned off.
 
     participant-is-marked-as-turned-off-delay = 120 # The number of seconds the participant is in the `Unhealthy` state after which the participant will be marked as not working by emitting `TurnedOff` event. If the value is not present or is smaller than 1 the feature is turned off. If turned on, the value is required to be smaller than participant-is-marked-as-removed-delay, otherwise, this setting will be discarded.
     participant-is-marked-as-removed-delay = 180    # The number of seconds the participant is in the `Unhealthy` state after which the participant will be marked as not working by emitting `Removed` event. If the value is not present or is smaller than 1 the feature is turned off.
