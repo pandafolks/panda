@@ -11,12 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.DurationInt
 
-class NodeTrackerServiceItTest
-    extends AsyncFlatSpec
-    with NodeTrackerFixture
-    with Matchers
-    with ScalaFutures
-    with BeforeAndAfterAll {
+class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture with Matchers with ScalaFutures with BeforeAndAfterAll {
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

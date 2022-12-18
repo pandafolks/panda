@@ -90,8 +90,8 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
   override def getUnsuccessfulHealthCheckConnection: Resource[Task, CollectionOperator[UnsuccessfulHealthCheck]] =
     unsuccessfulHealthCheckConnection
 
-  override def getMappersAndPrefixesConnection
-      : Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] = mappersAndPrefixesConnection
+  override def getMappersAndPrefixesConnection: Resource[Task, (CollectionOperator[Mapper], CollectionOperator[Prefix])] =
+    mappersAndPrefixesConnection
 
   locally {
     //    creating indexes

@@ -714,9 +714,7 @@ class ParticipantEventServiceItTest
           .use(p => p._1.source.findAll.toListL)
           .map(_.sortBy(_.eventId))
           .map(_.last.eventId)
-          .flatMap(lastSeenEventId =>
-            participantEventService.markParticipantAsUnhealthy(identifier).map(_ => lastSeenEventId)
-          )
+          .flatMap(lastSeenEventId => participantEventService.markParticipantAsUnhealthy(identifier).map(_ => lastSeenEventId))
           .flatMap(lastSeenEventId => participantEventService.checkIfThereAreNewerEvents(lastSeenEventId.getValue))
     ).runToFuture
 

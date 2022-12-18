@@ -1,11 +1,7 @@
 package com.github.pandafolks.panda.routes
 
 import com.github.pandafolks.panda.routes.entity.Prefix
-import com.github.pandafolks.panda.routes.entity.Prefix.{
-  GROUP_NAME_PROPERTY_NAME,
-  LAST_UPDATE_TIMESTAMP_PROPERTY_NAME,
-  VALUE_PROPERTY_NAME
-}
+import com.github.pandafolks.panda.routes.entity.Prefix.{GROUP_NAME_PROPERTY_NAME, LAST_UPDATE_TIMESTAMP_PROPERTY_NAME, VALUE_PROPERTY_NAME}
 import com.github.pandafolks.panda.utils.EscapeUtils.unifyFromSlashes
 import com.github.pandafolks.panda.utils._
 import monix.connect.mongodb.client.CollectionOperator

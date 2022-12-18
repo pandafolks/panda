@@ -21,9 +21,7 @@ object MappingContent {
           MappingContent(
             left = Option.empty,
             right = Some(
-              map.iterator.foldLeft(Map.empty[String, MappingContent])((prev, item) =>
-                prev + (item._1 -> rc(item._2, initial = false))
-              )
+              map.iterator.foldLeft(Map.empty[String, MappingContent])((prev, item) => prev + (item._1 -> rc(item._2, initial = false)))
             )
           )
       }

@@ -8,8 +8,8 @@ import monix.reactive.Observable
 
 trait PrefixDao {
 
-  /** Saves in the persistence layer the [[Prefix]] with the requested group name and prefix if the one for the
-    * specified group name does not exist.
+  /** Saves in the persistence layer the [[Prefix]] with the requested group name and prefix if the one for the specified group name does
+    * not exist.
     *
     * @param groupName
     * @param prefix
@@ -23,9 +23,8 @@ trait PrefixDao {
       prefixOperator: CollectionOperator[Prefix]
   ): Task[Either[PersistenceError, String]]
 
-  /** Saves in the persistence layer the [[Prefix]] with the requested group name and prefix if the one for the
-    * specified group name does not exist. If exists the update is performed. The Prefix recognition is made based on
-    * the group name.
+  /** Saves in the persistence layer the [[Prefix]] with the requested group name and prefix if the one for the specified group name does
+    * not exist. If exists the update is performed. The Prefix recognition is made based on the group name.
     *
     * @param groupName
     * @param prefix

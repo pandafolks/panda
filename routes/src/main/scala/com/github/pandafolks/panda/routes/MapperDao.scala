@@ -9,8 +9,8 @@ import monix.reactive.Observable
 
 trait MapperDao {
 
-  /** Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]] if the one for
-    * specified route and method does not exist.
+  /** Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]] if the one for specified route and
+    * method does not exist.
     *
     * @param route
     * @param mapperRecordDto
@@ -23,9 +23,8 @@ trait MapperDao {
       mapperOperator: CollectionOperator[Mapper]
   ): Task[Either[PersistenceError, String]]
 
-  /** Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]] if the one for
-    * specified route does not exist. If exists the update operation is performed. Mapper recognition is made based on
-    * the route.
+  /** Saves in the persistence layer the [[Mapper]] with the requested route and [[MapperRecordPayload]] if the one for specified route does
+    * not exist. If exists the update operation is performed. Mapper recognition is made based on the route.
     *
     * @param route
     * @param mapperRecordDto

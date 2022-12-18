@@ -1,11 +1,7 @@
 package com.gitgub.pandafolks.panda.healthcheck
 
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
-import com.github.pandafolks.panda.healthcheck.{
-  DistributedHealthCheckServiceImpl,
-  HealthCheckConfig,
-  UnsuccessfulHealthCheck
-}
+import com.github.pandafolks.panda.healthcheck.{DistributedHealthCheckServiceImpl, HealthCheckConfig, UnsuccessfulHealthCheck}
 import com.github.pandafolks.panda.nodestracker.{Job, Node}
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEventType.{Disconnected, Joined, ModifiedData}
@@ -214,9 +210,7 @@ class DistributedHealthCheckServiceImplItTest
           working = Some(true)
         )
       )
-        >> unsuccessfulHealthCheckConnection.use(p =>
-          p.source.findAll.toListL
-        ) // in order to pre-initialize collection and remove flakes
+        >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL) // in order to pre-initialize collection and remove flakes
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> serviceUnderTest.invokePrivate(
           healthCheckBackgroundJobPrivateMethod()
@@ -528,9 +522,7 @@ class DistributedHealthCheckServiceImplItTest
     val fakeNodeId = ObjectId.get()
 
     val f = (
-      nodesConnection.use(p =>
-        p.single.insertOne(Node(fakeNodeId, System.currentTimeMillis() + 10 * 1000))
-      ) // fake node
+      nodesConnection.use(p => p.single.insertOne(Node(fakeNodeId, System.currentTimeMillis() + 10 * 1000))) // fake node
         >> jobsConnection.use(p => p.single.insertOne(Job("MarkingParticipantsAsEitherTurnedOffOrRemoved", fakeNodeId)))
         >> participantEventService.createParticipant(
           ParticipantModificationPayload(

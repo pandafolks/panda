@@ -14,8 +14,8 @@ trait TokenService {
     */
   def signToken(user: User): Task[String]
 
-  /** Validates if the passed token is valid and if yes returns the user associated with the token. The validation may
-    * depend on various criteria that are specific for the particular implementation.
+  /** Validates if the passed token is valid and if yes returns the user associated with the token. The validation may depend on various
+    * criteria that are specific for the particular implementation.
     *
     * @param token
     *   Token represented as a string

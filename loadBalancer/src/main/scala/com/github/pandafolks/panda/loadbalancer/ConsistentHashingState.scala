@@ -18,8 +18,7 @@ final class ConsistentHashingState(
     private val backgroundJobsRegistry: BackgroundJobsRegistry
 )(
     private val positionsPerParticipant: Int = SystemProperties.consistentHashingStatePositionsPerParticipant,
-    private val clearEmptyGroupsIntervalInHours: Int =
-      SystemProperties.consistentHashingStateClearEmptyGroupsIntervalInHours
+    private val clearEmptyGroupsIntervalInHours: Int = SystemProperties.consistentHashingStateClearEmptyGroupsIntervalInHours
 ) extends QueueBasedChangeListener[Participant] {
   private val random = new Random(System.currentTimeMillis())
 

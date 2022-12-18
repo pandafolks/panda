@@ -120,9 +120,9 @@ class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutu
           underTestMethod(participants, 5, 2)
         ) // index 2 means third node out of 5
 
-    result.forall(chosenParticipants =>
-      chosenParticipants.forall(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % 5 == 2)
-    ) should be(true)
+    result.forall(chosenParticipants => chosenParticipants.forall(p => Math.abs(MurmurHash3.stringHash(p.identifier)) % 5 == 2)) should be(
+      true
+    )
     result.forall(_ == result.head) should be(true)
   }
 

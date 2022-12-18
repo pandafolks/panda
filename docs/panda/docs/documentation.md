@@ -27,7 +27,7 @@ health-check-config {
     marked-as-not-working-job-interval = 30         # The number of seconds between the background job calls. The background job is responsible for marking participants as not working in alignment with `participant-is-marked-as-not-working-delay` and `participant-is-marked-as-removed-delay` properties. If the value is not present or is smaller than 1 the default is 30 seconds.
 }
 ```
-<i>Check the whole [Panda config](/config).</i>
+<i>Check the whole [Panda config](/panda/config).</i>
 
 If the participant was marked as Unhealthy by the healthcheck functionality the specified number of seconds ago, it can be 
 automatically marked as either Removed or TurnedOff. This feature can be turned on only if the healthcheck functionality is also turned on 
