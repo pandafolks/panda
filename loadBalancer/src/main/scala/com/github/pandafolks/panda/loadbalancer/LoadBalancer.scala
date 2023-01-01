@@ -2,12 +2,11 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.http.Responses
+import com.github.pandafolks.panda.utils.http.{RequestUtils, Responses}
 import monix.eval.Task
-import org.http4s.{Header, Request, Response}
 import org.http4s.Uri.{Authority, Path, RegName}
+import org.http4s.{Request, Response}
 import org.slf4j.Logger
-import org.typelevel.ci.CIString
 
 trait LoadBalancer {
 
@@ -27,7 +26,6 @@ trait LoadBalancer {
 }
 
 object LoadBalancer {
-  private final val HOST_NAME: String = "Host"
 
   def fillRequestWithParticipant(request: Request[Task], participant: Participant, requestedPath: Path): Request[Task] =
     request
@@ -43,12 +41,12 @@ object LoadBalancer {
         )
       )
       .withHeaders(
-        request.headers.put(
-          Header.Raw(
-            CIString(HOST_NAME),
-            participant.host + ":" + participant.port.toString
-          ) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
-        )
+        request.headers
+          ++ RequestUtils.withHostHeader(participant.host, participant.port)
+          ++ RequestUtils.withUpdatedXForwardedForHeader(
+            request.headers,
+            request.remote.map(_.host.toUriString)
+          )
       )
 
   def notReachedAnyInstanceLog(requestedPath: Path, group: Group, logger: Logger): Task[Response[Task]] =

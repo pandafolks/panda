@@ -2,7 +2,10 @@
 <i>This page is incomplete - work in progress!</i>
 
 ---
-## Gateway traffic logging
+## <b>Gateway</b>
+
+---
+### Gateway traffic logging
 The full logging configuration can be found inside `bootstap/src/main/resources/logback.xml` file.
 
 By default, all gateway traffic is logged out to the `gateway_traffic.log`.
@@ -11,7 +14,29 @@ The logs contain both request and response headers. However, they do not contain
 If the Panda user wants to send the logs to some remote service, the `ch.qos.logback.classic.net.SocketAppender` appender can be used.
 More information can be found at this [link](https://logback.qos.ch/manual/appenders.html#SocketAppender).
 ---
-## Marking Participants as TurnedOff and/or Removed if they are Unhealthy for a while
+## <b>Load Balancing</b>
+
+---
+### X-Forwarded-For header
+Every Panda load balancer automatically adds the <b>X-Forwarded-For</b> header and helps you identify the IP address of a client. 
+Because load balancers intercept traffic between clients and servers, your server access logs contain only the IP address of the load balancer. 
+To see the IP address of the client, use the <b>X-Forwarded-For</b> request header. 
+Panda's Load Balancers store the IP address of the client in the <b>X-Forwarded-For</b> request header and passes the header to your server. 
+If the <b>X-Forwarded-For</b> request header is not included in the request, the load balancer creates one with the client IP address as the request value. 
+Otherwise, the load balancer appends the client IP address to the existing header and passes the header to your server. 
+The <b>X-Forwarded-For</b> request header may contain multiple IP addresses that are comma separated. 
+The left-most address is the client IP where the request was first made. This is followed by any subsequent proxy identifiers, in a chain.
+
+The <b>X-Forwarded-For</b> header takes the following form:
+```shell
+X-Forwarded-For: client-ip-address
+```
+
+---
+## <b>Participants maintaining (Health checks)</b>
+
+---
+### Marking Participants as TurnedOff and/or Removed if they are Unhealthy for a while
 
 This feature is part of the healthcheck functionality **(not documented yet)**.
 The healthcheck functionality maintains the operational state of configured participants.
