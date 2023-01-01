@@ -6,6 +6,7 @@ import com.github.pandafolks.panda.nodestracker.NodeTrackerService
 import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.participant.{Participant, ParticipantsCache}
 import com.github.pandafolks.panda.utils.NotExists
+import com.github.pandafolks.panda.utils.http.RequestUtils
 import com.github.pandafolks.panda.utils.listener.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
@@ -13,9 +14,8 @@ import monix.execution.schedulers.CanBlock
 import org.http4s.Uri.{Authority, RegName}
 import org.http4s.client.Client
 import org.http4s.dsl.io.Path
-import org.http4s.{Header, Request, Uri}
+import org.http4s.{Request, Uri}
 import org.slf4j.LoggerFactory
-import org.typelevel.ci.CIString
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable
@@ -38,7 +38,6 @@ final class DistributedHealthCheckServiceImpl(
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  private val HOST_NAME: String = "Host"
   private val MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED_JOB_NAME =
     "MarkingParticipantsAsEitherTurnedOffOrRemoved"
 
@@ -373,8 +372,8 @@ final class DistributedHealthCheckServiceImpl(
             )
           )
           .withHeaders(
-            Header.Raw(CIString(HOST_NAME), participant.host + ":" + participant.port.toString)
-          ) // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+            RequestUtils.withHostHeader(participant.host, participant.port)
+          )
       )
       .use(Task.eval(_))
       .map(_.status.isSuccess)

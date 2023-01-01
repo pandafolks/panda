@@ -17,10 +17,12 @@ const port = 3000;
 
 app.post('/api/v1/cars',(request, response) => {
     console.log(request.body);
+    console.log(request.headers)
     response.end('/api/v1/cars')
 });
 
 app.get('/api/v1/cars', (req, res) => {
+    console.log(req.headers)
     const waitTill = new Date(new Date().getTime() + 6 * 1000); // sleeping 6 seconds - simulating long running request
     while(waitTill > new Date()){}
     res.send(jsonExample1);

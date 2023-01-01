@@ -2,6 +2,7 @@ package com.github.pandafolks.panda.loadbalancer
 
 import com.github.pandafolks.panda.participant.ParticipantsCache
 import com.github.pandafolks.panda.routes.Group
+import com.github.pandafolks.panda.utils.http.RequestUtils
 import monix.eval.Task
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.http4s.client.Client
@@ -42,8 +43,8 @@ final class HashLoadBalancerImpl(
       }
 
     rc(
-      request.remote
-        .map(_.host.toUriString)
+      RequestUtils
+        .getRealHost(request)
         .map(h => Math.abs(MurmurHash3.stringHash(h)))
         .getOrElse(random.nextInt(Integer.MAX_VALUE))
         // If the connectionInfo is not accessible the value should be random in order to spread requests evenly instead of
