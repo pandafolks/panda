@@ -6,6 +6,7 @@ nav:
   - Documentation: documentation.md
   - Scala API: api.md
   - Config: config.md
+  - System Properties: system_properties.md
   - Contributing: contributing.md
 
 theme:
