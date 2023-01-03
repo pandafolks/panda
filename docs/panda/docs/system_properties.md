@@ -4,6 +4,11 @@
 ### panda.user.token.key
 A private key used to sign users' authentication tokens.
 
+If not present, the value present in tokenKey.txt from the user's module resources is taken.
+If the tokenKey.txt file does not exist, the random key is generated during Panda node startup.
+
+It is highly required to use the same private key value across all Panda nodes.
+
 <b>Example:</b>
 ```shell
 -Dpanda.user.token.key=5ck4kBO45606H25YUZ1f
