@@ -35,9 +35,9 @@ abstract class QueueBasedChangeListener[T] extends ChangeListener[T] {
     .doOnError(e => Task(logger.warn("removeQueuePollLoop stopped abnormally", e)))
     .subscribe()(scheduler)
 
-  def notifyAboutAddInternal(item: T): Task[Unit]
+  protected def notifyAboutAddInternal(item: T): Task[Unit]
 
-  def notifyAboutRemoveInternal(item: T): Task[Unit]
+  protected def notifyAboutRemoveInternal(item: T): Task[Unit]
 
   override def notifyAboutAdd(items: immutable.Iterable[T]): Task[Unit] = addQueue.offerMany(items).void
 
