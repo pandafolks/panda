@@ -651,7 +651,6 @@ class DistributedHealthCheckServiceImplItTest
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod())
-        >> Task.sleep(500.milliseconds)
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> participantsCache.getAllWorkingParticipants.map { r => firstParticipantsCacheCheck.set(r); () }
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL).map { r =>
@@ -791,7 +790,6 @@ class DistributedHealthCheckServiceImplItTest
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod())
-        >> Task.sleep(500.milliseconds)
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> participantsCache.getAllWorkingParticipants.map { r => firstParticipantsCacheCheck.set(r); () }
         >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL).map { r =>
