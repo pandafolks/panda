@@ -92,11 +92,11 @@ final class ConsistentHashingState(
       )
   }
 
-  override def notifyAboutAddInternal(item: Participant): Task[Unit] =
+  override protected def notifyAboutAddInternal(item: Participant): Task[Unit] =
     if (item.isWorkingAndHealthy) Task.eval(add(item)) else Task.eval(remove(item))
   // ConsistentHashingState should track only working and healthy participants (it is corresponding to getHealthyParticipantsAssociatedWithGroup)
 
-  override def notifyAboutRemoveInternal(item: Participant): Task[Unit] = Task.eval(remove(item))
+  override protected def notifyAboutRemoveInternal(item: Participant): Task[Unit] = Task.eval(remove(item))
 
   private def clearEmptyGroups(): Task[Unit] = {
     Task.eval(logger.debug("Clearing empty groups of ConsistentHashingState#usedPositionsGroupedByGroup")) >>
