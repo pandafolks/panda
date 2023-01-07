@@ -1,7 +1,6 @@
-package com.gitgub.pandafolks.panda.healthcheck
+package com.github.pandafolks.panda.healthcheck
 
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
-import com.github.pandafolks.panda.healthcheck.{DistributedHealthCheckServiceImpl, HealthCheckConfig, UnsuccessfulHealthCheck}
 import com.github.pandafolks.panda.nodestracker.{Job, Node}
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEventType.{Disconnected, Joined, ModifiedData}
@@ -649,8 +648,8 @@ class DistributedHealthCheckServiceImplItTest
             working = Some(true)
           )
         )
-        >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
+        >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod())
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> participantsCache.getAllWorkingParticipants.map { r => firstParticipantsCacheCheck.set(r); () }
@@ -788,8 +787,8 @@ class DistributedHealthCheckServiceImplItTest
             working = Some(true)
           )
         )
-        >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
+        >> unsuccessfulHealthCheckConnection.use(p => p.source.findAll.toListL)
         >> serviceUnderTest.invokePrivate(healthCheckBackgroundJobPrivateMethod())
         >> participantsCache.invokePrivate(refreshCachePrivateMethod())
         >> participantsCache.getAllWorkingParticipants.map { r => firstParticipantsCacheCheck.set(r); () }

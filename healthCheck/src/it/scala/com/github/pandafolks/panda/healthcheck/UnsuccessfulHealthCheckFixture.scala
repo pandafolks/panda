@@ -1,4 +1,4 @@
-package com.gitgub.pandafolks.panda.healthcheck
+package com.github.pandafolks.panda.healthcheck
 
 import cats.effect.Resource
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheck, UnsuccessfulHealthCheckDaoImpl}
