@@ -1,6 +1,5 @@
-package com.github.pandafolks.panda.utils.routing
+package com.github.pandafolks.panda.utils.http
 
-import com.github.pandafolks.panda.utils.http.RequestUtils
 import monix.eval.Task
 import org.http4s.{Header, Headers, Request}
 import org.scalatest.flatspec.AnyFlatSpec
