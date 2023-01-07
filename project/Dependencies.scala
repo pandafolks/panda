@@ -27,20 +27,20 @@ object Dependencies {
   val silencerLib = "com.github.ghik" % "silencer-lib" % Versions.silencer cross CrossVersion.full
 
   private object Versions {
-    val sst = "0.18.2" // http4s - 0.22.14
+    val sst = "0.18.3" // http4s - 0.22.14
     val silencer = "1.7.8"
-    val testContainers = "0.40.6"
-    val circe = "0.14.1"
+    val testContainers = "0.40.12"
+    val circe = "0.14.3"
     val scalaCache = "0.28.0"
-    val logback = "1.4.4"
-    val scalaTest = "3.2.3"
+    val logback = "1.4.5"
+    val scalaTest = "3.2.15"
     val mockito = "3.2.12.0"
     val collectionContrib = "0.2.2"
     val tsec = "0.2.0"
-    val cryptoBits = "1.3"
-    val scalaCheck = "1.16.0"
-    val scaluzzi = "0.1.15"
-    val sortImports = "0.5.5"
+    val cryptoBits = "1.3.1"
+    val scalaCheck = "1.17.0"
+    val scaluzzi = "0.1.23"
+    val sortImports = "0.6.1"
   }
 
   private val CommonTestDependencies = Seq(
