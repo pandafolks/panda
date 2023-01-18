@@ -30,7 +30,7 @@ final class BaseApiGatewayImpl(
             )
             .tapEval(message => Task.eval(logger.info(message)))
             .flatMap(message => Responses.badRequestWithInfo(message))
-        case Some((routeInfo, _)) =>
+        case Some((routeInfo, _)) => // Inside the BaseApiGateway, the wildcards' contents are not used.
           Task
             .now(routeInfo.mappingContent.left)
             .map(_.map(Group(_)))
