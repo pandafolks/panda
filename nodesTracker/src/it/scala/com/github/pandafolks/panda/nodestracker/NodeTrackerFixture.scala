@@ -16,7 +16,7 @@ trait NodeTrackerFixture {
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
-    DockerImageName.parse("mongo").withTag("4.0.10")
+    DockerImageName.parse("mongo").withTag("latest")
   )
   mongoContainer.start()
 
@@ -40,7 +40,7 @@ trait NodeTrackerFixture {
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
   private val jobDao: JobDao = new JobDaoImpl(jobsConnection)
   protected val nodeTrackerService: NodeTrackerService =
-    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
+    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(2000)
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }

@@ -21,14 +21,14 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     ObjectId.isValid(nodeTrackerService.getNodeId) should be(true)
   }
 
-  "background job" should "update timestamp every fullConsistencyMaxDelay / 4 seconds" in {
-    // We are sleeping fullConsistencyMaxDelay / 2 instead of / 4 in order to reduce flakiness.
+  "background job" should "update timestamp every fullConsistencyMaxDelay / 8 seconds" in {
+    // We are sleeping fullConsistencyMaxDelay / 2 instead of / 8 in order to reduce flakiness.
     val f = (
       for {
         firstTimeStamp <- getNode
-        _ <- Task.sleep(500.millisecond)
+        _ <- Task.sleep(1000.millisecond)
         secondsTimeStamp <- getNode
-        _ <- Task.sleep(500.millisecond)
+        _ <- Task.sleep(1000.millisecond)
         thirdTimeStamp <- getNode
       } yield List(firstTimeStamp, secondsTimeStamp, thirdTimeStamp)
     ).runToFuture
@@ -41,20 +41,16 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
 
   "getWorkingNodes" should "return all working nodes that notified tracker about itself no earlier than fullConsistencyMaxDelay / 2 seconds ago" in {
     val timestamp = System.currentTimeMillis()
-    val validNode1 = Node(new ObjectId(), timestamp - 250)
+    val validNode1 = Node(new ObjectId(), timestamp - 500)
     val validNode2 = Node(new ObjectId(), timestamp - 101)
-    val validNode3 = Node(new ObjectId(), timestamp - 111)
-    val notValidNode1 = Node(new ObjectId(), timestamp - 501)
-    val notValidNode2 = Node(new ObjectId(), timestamp - 999)
+    val validNode3 = Node(new ObjectId(), timestamp - 220)
+    val notValidNode1 = Node(new ObjectId(), timestamp - 1001)
+    val notValidNode2 = Node(new ObjectId(), timestamp - 1999)
     val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
 
     val f = (nodesConnection.use(c =>
       for {
-        _ <- c.single.insertOne(validNode3)
-        _ <- c.single.insertOne(validNode1)
-        _ <- c.single.insertOne(validNode2)
-        _ <- c.single.insertOne(notValidNode1)
-        _ <- c.single.insertOne(notValidNode2)
+        _ <- c.single.insertMany(Seq(validNode3, validNode1, validNode2, notValidNode1, notValidNode2))
       } yield ()
     ) >>
       nodeTrackerService.getWorkingNodes).runToFuture
@@ -74,17 +70,13 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     val validNode1 = Node(new ObjectId(), timestamp + 10250)
     val validNode2 = Node(new ObjectId(), timestamp + 15101)
     val validNode3 = Node(new ObjectId(), timestamp + 15111)
-    val notValidNode1 = Node(new ObjectId(), timestamp - 501)
-    val notValidNode2 = Node(new ObjectId(), timestamp - 999)
+    val notValidNode1 = Node(new ObjectId(), timestamp - 1001)
+    val notValidNode2 = Node(new ObjectId(), timestamp - 1999)
     val addedNodes = List(validNode1, validNode2, notValidNode1, notValidNode2, validNode3)
 
     val f = (nodesConnection.use(c =>
       for {
-        _ <- c.single.insertOne(validNode3)
-        _ <- c.single.insertOne(validNode1)
-        _ <- c.single.insertOne(validNode2)
-        _ <- c.single.insertOne(notValidNode1)
-        _ <- c.single.insertOne(notValidNode2)
+        _ <- c.single.insertMany(Seq(validNode3, validNode1, validNode2, notValidNode1, notValidNode2))
       } yield ()
     ) >>
       Task.sequence(List.fill(20)(nodeTrackerService.getWorkingNodes))).runToFuture
@@ -107,8 +99,8 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     val validNode1 = Node(validId1, timestamp + 10250)
     val validNode2 = Node(validId2, timestamp + 15101)
     val validNode3 = Node(validId3, timestamp + 15111)
-    val notValidNode1 = Node(notValidId1, timestamp - 501)
-    val notValidNode2 = Node(notValidId2, timestamp - 999)
+    val notValidNode1 = Node(notValidId1, timestamp - 1001)
+    val notValidNode2 = Node(notValidId2, timestamp - 1499)
 
     val f = (
       nodesConnection.use(c =>
@@ -202,7 +194,7 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
     val f = (
       nodesConnection.use(c =>
         for {
-          _ <- c.single.insertOne(Node(otherNodeId, System.currentTimeMillis() - 502))
+          _ <- c.single.insertOne(Node(otherNodeId, System.currentTimeMillis() - 1002))
         } yield ()
       ) >>
         jobsConnection.use(c =>
