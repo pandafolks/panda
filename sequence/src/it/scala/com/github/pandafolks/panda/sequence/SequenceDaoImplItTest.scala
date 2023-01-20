@@ -24,7 +24,7 @@ class SequenceDaoImplItTest extends AsyncFlatSpec with Matchers with ScalaFuture
 
   private val dbName: String = randomString("test")
   private val mongoContainer: MongoDBContainer = new MongoDBContainer(
-    DockerImageName.parse("mongo").withTag("4.0.10")
+    DockerImageName.parse("mongo").withTag("latest")
   )
   mongoContainer.start()
 
