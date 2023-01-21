@@ -3,10 +3,10 @@ package com.github.pandafolks.panda.participant.event
 import com.github.pandafolks.panda.participant.Participant.HEALTHCHECK_DEFAULT_ROUTE
 import com.github.pandafolks.panda.participant._
 import com.github.pandafolks.panda.routes.Group
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.github.pandafolks.panda.utils.{AlreadyExists, NotExists}
 import com.mongodb.client.model.Filters
 import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -23,7 +23,7 @@ class ParticipantEventServiceItTest
     with EitherValues
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

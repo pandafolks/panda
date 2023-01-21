@@ -1,9 +1,9 @@
 package com.github.pandafolks.panda.utils.queue
 
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import monix.eval.Task
-import monix.execution.BufferCapacity
+import monix.execution.{BufferCapacity, Scheduler}
 import monix.execution.ChannelType.MPMC
+import monix.execution.schedulers.SchedulerService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -12,6 +12,8 @@ import scala.concurrent.duration.DurationInt
 
 final class MonixQueueTest extends AsyncFlatSpec with Matchers with ScalaFutures {
   implicit val defaultConfig: PatienceConfig = PatienceConfig(5.seconds, 100.milliseconds)
+
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "offer and poll" should "collaborate" in {
     val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)

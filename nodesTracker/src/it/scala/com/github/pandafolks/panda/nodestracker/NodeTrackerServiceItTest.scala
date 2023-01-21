@@ -41,7 +41,7 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
 
   "getWorkingNodes" should "return all working nodes that notified tracker about itself no earlier than fullConsistencyMaxDelay / 2 seconds ago" in {
     val timestamp = System.currentTimeMillis()
-    val validNode1 = Node(new ObjectId(), timestamp - 500)
+    val validNode1 = Node(new ObjectId(), timestamp - 300)
     val validNode2 = Node(new ObjectId(), timestamp - 101)
     val validNode3 = Node(new ObjectId(), timestamp - 220)
     val notValidNode1 = Node(new ObjectId(), timestamp - 1001)

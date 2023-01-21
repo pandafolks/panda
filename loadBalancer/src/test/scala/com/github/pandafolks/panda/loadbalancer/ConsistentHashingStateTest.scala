@@ -6,7 +6,7 @@ import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
 import monix.execution.Scheduler
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
+import monix.execution.schedulers.SchedulerService
 import org.scalatest.PrivateMethodTester
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester with ScalaFutures {
-  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "get" should "always return appropriate identifier" in {
     val underTest =

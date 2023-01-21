@@ -4,8 +4,8 @@ import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobs
 import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload, ParticipantsCache, ParticipantsCacheImpl}
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.ChangeListener
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
+import monix.execution.schedulers.SchedulerService
 import monix.execution.{CancelableFuture, Scheduler}
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.Mockito.{clearInvocations, mock, never, times, verify, when}
@@ -28,7 +28,7 @@ class ParticipantsCacheImplItTest
     with BeforeAndAfterEach
     with PrivateMethodTester {
 
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

@@ -1,9 +1,9 @@
 package com.github.pandafolks.panda.healthcheck
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
@@ -19,7 +19,7 @@ class UnsuccessfulHealthCheckDaoItTest
     with ScalaFutures
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

@@ -1,9 +1,9 @@
 package com.github.pandafolks.panda.sequence
 
 import com.github.pandafolks.panda.utils.PersistenceError
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.connect.mongodb.client.{CollectionCodecRef, MongoConnection}
 import monix.eval.Task
+import monix.execution.schedulers.SchedulerService
 import monix.execution.{CancelableFuture, Scheduler}
 import org.mongodb.scala.bson.BsonInt64
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName
 import scala.concurrent.duration.DurationInt
 
 class SequenceDaoImplItTest extends AsyncFlatSpec with Matchers with ScalaFutures with EitherValues with BeforeAndAfterAll {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

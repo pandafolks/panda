@@ -6,7 +6,7 @@ import com.github.pandafolks.panda.participant.event.ParticipantEventService
 import com.github.pandafolks.panda.routes.Group
 import monix.eval.Task
 import monix.execution.Scheduler
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
+import monix.execution.schedulers.SchedulerService
 import org.http4s.Status
 import org.http4s.dsl.io.Path
 import org.mockito.Mockito.mock
@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
-  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 

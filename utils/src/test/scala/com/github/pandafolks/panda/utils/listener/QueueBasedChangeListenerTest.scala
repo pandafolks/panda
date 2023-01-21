@@ -1,14 +1,17 @@
 package com.github.pandafolks.panda.utils.listener
 
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import monix.eval.Task
+import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+
 import scala.jdk.CollectionConverters._
 
 
 final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers with ScalaFutures {
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
 
   "notifyAboutAdd" should "process the items by the overwritten notifyAboutAddInternal method" in {
     import java.util

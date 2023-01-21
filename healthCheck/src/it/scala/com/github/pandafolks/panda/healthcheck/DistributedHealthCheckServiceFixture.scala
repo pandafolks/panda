@@ -2,35 +2,14 @@ package com.github.pandafolks.panda.healthcheck
 
 import cats.effect.Resource
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
-import com.github.pandafolks.panda.healthcheck.{
-  DistributedHealthCheckServiceImpl,
-  HealthCheckConfig,
-  UnsuccessfulHealthCheck,
-  UnsuccessfulHealthCheckDaoImpl
-}
-import com.github.pandafolks.panda.nodestracker.{
-  Job,
-  JobDao,
-  JobDaoImpl,
-  Node,
-  NodeTrackerDao,
-  NodeTrackerDaoImpl,
-  NodeTrackerService,
-  NodeTrackerServiceImpl
-}
+import com.github.pandafolks.panda.nodestracker._
+import com.github.pandafolks.panda.participant.event._
 import com.github.pandafolks.panda.participant.{ParticipantsCache, ParticipantsCacheImpl}
-import com.github.pandafolks.panda.participant.event.{
-  ParticipantEvent,
-  ParticipantEventDao,
-  ParticipantEventDaoImpl,
-  ParticipantEventService,
-  ParticipantEventServiceImpl
-}
 import com.github.pandafolks.panda.sequence.{Sequence, SequenceDao, SequenceDaoImpl}
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.scalatest.PrivateMethodTester
@@ -41,7 +20,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
