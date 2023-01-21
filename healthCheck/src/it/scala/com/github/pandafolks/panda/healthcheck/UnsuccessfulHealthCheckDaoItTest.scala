@@ -1,7 +1,6 @@
 package com.github.pandafolks.panda.healthcheck
 
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.healthcheck.UnsuccessfulHealthCheck
 import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
