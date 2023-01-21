@@ -2,17 +2,17 @@ package com.github.pandafolks.panda.nodestracker
 
 import cats.effect.Resource
 import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobsRegistryImpl
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
 import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait NodeTrackerFixture {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(

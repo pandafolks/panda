@@ -7,7 +7,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import cats.implicits.toTraverseOps
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
+import monix.execution.schedulers.SchedulerService
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
@@ -19,7 +19,7 @@ class UserServiceItTest
     with ScalaFutures
     with EitherValues
     with BeforeAndAfterAll {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

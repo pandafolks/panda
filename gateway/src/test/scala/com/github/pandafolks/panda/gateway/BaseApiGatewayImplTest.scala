@@ -4,9 +4,9 @@ import com.github.pandafolks.panda.loadbalancer.LoadBalancer
 import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.MappingContent
 import com.github.pandafolks.panda.routes.{Group, TreesService}
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.eval.Task
 import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.http4s.Uri.Path
 import org.http4s.{Method, Request, Response, Status}
 import org.mockito.ArgumentMatchers.any
@@ -18,7 +18,7 @@ import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
 class BaseApiGatewayImplTest extends AsyncFlatSpec with ScalaFutures {
-  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "ask" should "work with happy path" in {
     val loadBalancer = mock(classOf[LoadBalancer])

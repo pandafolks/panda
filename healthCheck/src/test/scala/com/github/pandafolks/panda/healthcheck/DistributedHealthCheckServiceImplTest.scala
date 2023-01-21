@@ -8,7 +8,7 @@ import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.listener.ChangeListener
 import monix.eval.Task
 import monix.execution.Scheduler
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
+import monix.execution.schedulers.SchedulerService
 import org.bson.types.ObjectId
 import org.http4s.client.Client
 import org.mockito.ArgumentMatchers.any
@@ -23,7 +23,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import scala.util.hashing.MurmurHash3
 
 class DistributedHealthCheckServiceImplTest extends AsyncFlatSpec with ScalaFutures with PrivateMethodTester {
-  implicit final val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "DistributedHealthCheckServiceImpl#getNodesSizeWithCurrentNodePosition" should "return double empty if there are no working nodes" in {
     val mockNodeTrackerService = mock(classOf[NodeTrackerService])

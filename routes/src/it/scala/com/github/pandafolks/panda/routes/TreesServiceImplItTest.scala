@@ -5,13 +5,13 @@ import com.github.pandafolks.panda.backgroundjobsregistry.InMemoryBackgroundJobs
 import com.github.pandafolks.panda.routes.RoutesTree.RouteInfo
 import com.github.pandafolks.panda.routes.entity.MappingContent
 import com.github.pandafolks.panda.routes.payload.{MapperRecordPayload, MappingPayload, RoutesResourcePayload}
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import monix.execution.Scheduler
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, PrivateMethodTester}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import monix.eval.Task
+import monix.execution.schedulers.SchedulerService
 import org.http4s.Method
 import org.http4s.Uri.Path
 
@@ -28,7 +28,7 @@ class TreesServiceImplItTest
     with BeforeAndAfterAll
     with BeforeAndAfterEach
     with PrivateMethodTester {
-  implicit val scheduler: Scheduler = CoreScheduler.scheduler
+  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
