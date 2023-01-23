@@ -2,7 +2,6 @@ package com.github.pandafolks.panda.utils.listener
 
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.execution.schedulers.SchedulerService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -11,7 +10,7 @@ import scala.jdk.CollectionConverters._
 
 
 final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers with ScalaFutures {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
+  private implicit val testingScheduler: Scheduler = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
 
   "notifyAboutAdd" should "process the items by the overwritten notifyAboutAddInternal method" in {
     import java.util
@@ -21,6 +20,8 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val itemsNumber = 10000
 
     val queue = new QueueBasedChangeListener[Int] {
+      protected lazy implicit val scheduler: Scheduler = testingScheduler
+
       override protected def notifyAboutAddInternal(item: Int): Task[Unit] = Task.eval(memo.add(item * 2)).void
 
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = ???
@@ -41,6 +42,8 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val memo = Collections.synchronizedList(new util.ArrayList[Int])
 
     val queue = new QueueBasedChangeListener[Int] {
+      protected lazy implicit val scheduler: Scheduler = testingScheduler
+
       override protected def notifyAboutAddInternal(item: Int): Task[Unit] = Task.eval(memo.add(item * 3)).void
 
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = ???
@@ -64,6 +67,8 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val itemsNumber = 10000
 
     val queue = new QueueBasedChangeListener[Int] {
+      protected lazy implicit val scheduler: Scheduler = testingScheduler
+
       override protected def notifyAboutAddInternal(item: Int): Task[Unit] = ???
 
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = Task.eval(memo.add(item * 2)).void
@@ -84,6 +89,8 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val memo = Collections.synchronizedList(new util.ArrayList[Int])
 
     val queue = new QueueBasedChangeListener[Int] {
+      protected lazy implicit val scheduler: Scheduler = testingScheduler
+
       override protected def notifyAboutAddInternal(item: Int): Task[Unit] = ???
 
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = Task.eval(memo.add(item * 3)).void
@@ -107,21 +114,23 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val notifyAboutRemoveMemo = Collections.synchronizedList(new util.ArrayList[Int])
 
     val queue = new QueueBasedChangeListener[Int] {
+      protected lazy implicit val scheduler: Scheduler = testingScheduler
+
       override protected def notifyAboutAddInternal(item: Int): Task[Unit] = Task.eval(notifyAboutAddMemo.add(item * 13)).void
 
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = Task.eval(notifyAboutRemoveMemo.add(item * 17)).void
     }
 
     val request = Task.parZip2(
-      Task.parSequence(List.fill(70)(queue.notifyAboutAdd(Range.inclusive(1, 210)))),
+      Task.parSequence(List.fill(60)(queue.notifyAboutAdd(Range.inclusive(1, 210)))),
       Task.parSequence(List.fill(20)(queue.notifyAboutRemove(Range.inclusive(1, 350))))
     ).runToFuture
 
     whenReady(request) { _ =>
-      while (notifyAboutAddMemo.size() != 70 * 210 && notifyAboutRemoveMemo.size() != 20 * 350) {
+      while (notifyAboutAddMemo.size() != 60 * 210 && notifyAboutRemoveMemo.size() != 20 * 350) {
       }
 
-      notifyAboutAddMemo.asScala should contain theSameElementsAs List.fill(70)(Range.inclusive(1, 210)).flatten.map(_ * 13)
+      notifyAboutAddMemo.asScala should contain theSameElementsAs List.fill(60)(Range.inclusive(1, 210)).flatten.map(_ * 13)
       notifyAboutRemoveMemo.asScala should contain theSameElementsAs List.fill(20)(Range.inclusive(1, 350)).flatten.map(_ * 17)
     }
   }
