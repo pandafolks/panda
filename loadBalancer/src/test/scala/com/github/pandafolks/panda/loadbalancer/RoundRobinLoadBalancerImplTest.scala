@@ -20,7 +20,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class RoundRobinLoadBalancerImplTest extends AsyncFlatSpec {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 

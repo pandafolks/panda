@@ -4,8 +4,22 @@ import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.bootstrap.configuration.AppConfiguration
 import com.github.pandafolks.panda.db.DbAppClient
 import com.github.pandafolks.panda.healthcheck.{UnsuccessfulHealthCheckDao, UnsuccessfulHealthCheckDaoImpl}
-import com.github.pandafolks.panda.participant.event.{ParticipantEventDao, ParticipantEventDaoImpl, ParticipantEventService, ParticipantEventServiceImpl}
-import com.github.pandafolks.panda.routes.{MapperDao, MapperDaoImpl, PrefixDao, PrefixDaoImpl, RoutesService, RoutesServiceImpl, TreesService, TreesServiceImpl}
+import com.github.pandafolks.panda.participant.event.{
+  ParticipantEventDao,
+  ParticipantEventDaoImpl,
+  ParticipantEventService,
+  ParticipantEventServiceImpl
+}
+import com.github.pandafolks.panda.routes.{
+  MapperDao,
+  MapperDaoImpl,
+  PrefixDao,
+  PrefixDaoImpl,
+  RoutesService,
+  RoutesServiceImpl,
+  TreesService,
+  TreesServiceImpl
+}
 import com.github.pandafolks.panda.sequence.{SequenceDao, SequenceDaoImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
@@ -18,7 +32,8 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
     private val dbAppClient: DbAppClient,
     private val appConfiguration: AppConfiguration,
     private val backgroundJobsRegistry: BackgroundJobsRegistry
-)(private val scheduler: Scheduler) extends DaosAndServicesInitialization {
+)(private val scheduler: Scheduler)
+    extends DaosAndServicesInitialization {
 
   private val sequenceDao: SequenceDao = new SequenceDaoImpl()
 

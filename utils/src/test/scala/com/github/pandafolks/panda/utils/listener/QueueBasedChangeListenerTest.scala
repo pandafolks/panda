@@ -8,9 +8,9 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.jdk.CollectionConverters._
 
-
 final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers with ScalaFutures {
-  private implicit val testingScheduler: Scheduler = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
+  private implicit val testingScheduler: Scheduler =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
 
   "notifyAboutAdd" should "process the items by the overwritten notifyAboutAddInternal method" in {
     import java.util
@@ -30,8 +30,7 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val request = queue.notifyAboutAdd(Range.inclusive(1, itemsNumber)).runToFuture
 
     whenReady(request) { _ =>
-      while (memo.size() != itemsNumber) {
-      }
+      while (memo.size() != itemsNumber) {}
       memo.asScala should be(Range.inclusive(1, itemsNumber).map(_ * 2))
     }
   }
@@ -52,8 +51,7 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val request = Task.parSequence(List.fill(20)(queue.notifyAboutAdd(Range.inclusive(1, 400)))).runToFuture
 
     whenReady(request) { _ =>
-      while (memo.size() != 20 * 400) {
-      }
+      while (memo.size() != 20 * 400) {}
 
       memo.asScala should contain theSameElementsAs List.fill(20)(Range.inclusive(1, 400)).flatten.map(_ * 3)
     }
@@ -77,8 +75,7 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val request = queue.notifyAboutRemove(Range.inclusive(1, itemsNumber)).runToFuture
 
     whenReady(request) { _ =>
-      while (memo.size() != itemsNumber) {
-      }
+      while (memo.size() != itemsNumber) {}
       memo.asScala should be(Range.inclusive(1, itemsNumber).map(_ * 2))
     }
   }
@@ -99,8 +96,7 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
     val request = Task.parSequence(List.fill(200)(queue.notifyAboutRemove(Range.inclusive(1, 200)))).runToFuture
 
     whenReady(request) { _ =>
-      while (memo.size() != 200 * 200) {
-      }
+      while (memo.size() != 200 * 200) {}
 
       memo.asScala should contain theSameElementsAs List.fill(200)(Range.inclusive(1, 200)).flatten.map(_ * 3)
     }
@@ -121,14 +117,15 @@ final class QueueBasedChangeListenerTest extends AsyncFlatSpec with Matchers wit
       override protected def notifyAboutRemoveInternal(item: Int): Task[Unit] = Task.eval(notifyAboutRemoveMemo.add(item * 17)).void
     }
 
-    val request = Task.parZip2(
-      Task.parSequence(List.fill(60)(queue.notifyAboutAdd(Range.inclusive(1, 210)))),
-      Task.parSequence(List.fill(20)(queue.notifyAboutRemove(Range.inclusive(1, 350))))
-    ).runToFuture
+    val request = Task
+      .parZip2(
+        Task.parSequence(List.fill(60)(queue.notifyAboutAdd(Range.inclusive(1, 210)))),
+        Task.parSequence(List.fill(20)(queue.notifyAboutRemove(Range.inclusive(1, 350))))
+      )
+      .runToFuture
 
     whenReady(request) { _ =>
-      while (notifyAboutAddMemo.size() != 60 * 210 && notifyAboutRemoveMemo.size() != 20 * 350) {
-      }
+      while (notifyAboutAddMemo.size() != 60 * 210 && notifyAboutRemoveMemo.size() != 20 * 350) {}
 
       notifyAboutAddMemo.asScala should contain theSameElementsAs List.fill(60)(Range.inclusive(1, 210)).flatten.map(_ * 13)
       notifyAboutRemoveMemo.asScala should contain theSameElementsAs List.fill(20)(Range.inclusive(1, 350)).flatten.map(_ * 17)

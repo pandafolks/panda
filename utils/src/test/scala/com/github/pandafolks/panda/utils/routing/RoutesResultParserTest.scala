@@ -21,7 +21,7 @@ final class RoutesResultParserTest extends AnyFlatSpec with Matchers {
 
     val expected = List("valid", "valid2", "  ")
 
-    RoutesResultParser.parseSuccessfulResults(input) should contain theSameElementsInOrderAs(expected)
+    RoutesResultParser.parseSuccessfulResults(input) should contain theSameElementsInOrderAs (expected)
   }
 
   "parseErrors" should "handle basic scenario" in {

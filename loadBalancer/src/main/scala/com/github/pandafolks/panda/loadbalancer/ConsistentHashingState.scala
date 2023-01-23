@@ -20,7 +20,8 @@ final class ConsistentHashingState(
 )(
     private val positionsPerParticipant: Int = SystemProperties.consistentHashingStatePositionsPerParticipant,
     private val clearEmptyGroupsIntervalInHours: Int = SystemProperties.consistentHashingStateClearEmptyGroupsIntervalInHours
-)(protected implicit val scheduler: Scheduler) extends QueueBasedChangeListener[Participant] {
+)(protected implicit val scheduler: Scheduler)
+    extends QueueBasedChangeListener[Participant] {
   private val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   private val random = new Random(System.currentTimeMillis())

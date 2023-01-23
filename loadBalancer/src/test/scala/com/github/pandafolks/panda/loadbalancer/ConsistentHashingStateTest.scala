@@ -22,7 +22,8 @@ import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester with ScalaFutures {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "get" should "always return appropriate identifier" in {
     val underTest =

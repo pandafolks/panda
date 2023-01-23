@@ -17,7 +17,8 @@ import scala.concurrent.duration.DurationInt
 
 final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials] = List.empty)(
     private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]
-)(private val scheduler: Scheduler) extends UserService {
+)(private val scheduler: Scheduler)
+    extends UserService {
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 

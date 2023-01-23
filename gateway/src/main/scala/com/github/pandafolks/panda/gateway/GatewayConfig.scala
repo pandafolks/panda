@@ -1,7 +1,13 @@
 package com.github.pandafolks.panda.gateway
 
 import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
-import com.github.pandafolks.panda.loadbalancer.{ConsistentHashingState, HashLoadBalancerImpl, LoadBalancer, RandomLoadBalancerImpl, RoundRobinLoadBalancerImpl}
+import com.github.pandafolks.panda.loadbalancer.{
+  ConsistentHashingState,
+  HashLoadBalancerImpl,
+  LoadBalancer,
+  RandomLoadBalancerImpl,
+  RoundRobinLoadBalancerImpl
+}
 import com.github.pandafolks.panda.participant.ParticipantsCache
 import monix.eval.Task
 import org.http4s.client.Client

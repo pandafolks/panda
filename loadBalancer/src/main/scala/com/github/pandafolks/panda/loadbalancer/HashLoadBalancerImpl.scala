@@ -19,7 +19,8 @@ final class HashLoadBalancerImpl(
     private val participantsCache: ParticipantsCache,
     private val consistentHashingState: ConsistentHashingState,
     private val retriesNumber: Int = 10
-)(private val scheduler: Scheduler) extends LoadBalancer {
+)(private val scheduler: Scheduler)
+    extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val random = new Random(System.currentTimeMillis())
