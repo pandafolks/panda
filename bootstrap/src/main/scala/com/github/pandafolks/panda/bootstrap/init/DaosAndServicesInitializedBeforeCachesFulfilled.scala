@@ -24,6 +24,7 @@ import com.github.pandafolks.panda.sequence.{SequenceDao, SequenceDaoImpl}
 import com.github.pandafolks.panda.user.token.{TokenService, TokenServiceImpl}
 import com.github.pandafolks.panda.user.{UserDao, UserDaoImpl, UserService, UserServiceImpl}
 import monix.eval.Task
+import monix.execution.Scheduler
 
 /** These Daos and Services can be initialized at any point in time. Rule of thumb -> the faster the better.
   */
@@ -31,7 +32,8 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
     private val dbAppClient: DbAppClient,
     private val appConfiguration: AppConfiguration,
     private val backgroundJobsRegistry: BackgroundJobsRegistry
-) extends DaosAndServicesInitialization {
+)(private val scheduler: Scheduler)
+    extends DaosAndServicesInitialization {
 
   private val sequenceDao: SequenceDao = new SequenceDaoImpl()
 
@@ -46,7 +48,7 @@ final class DaosAndServicesInitializedBeforeCachesFulfilled(
   private val userDao: UserDao = new UserDaoImpl(dbAppClient.getUsersWithTokensConnection)
   private val userService: UserService = new UserServiceImpl(userDao, List(appConfiguration.initUser))(
     dbAppClient.getUsersWithTokensConnection
-  )
+  )(scheduler = scheduler)
 
   private val tokenService: TokenService = new TokenServiceImpl(appConfiguration.authTokens)(
     dbAppClient.getUsersWithTokensConnection

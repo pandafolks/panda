@@ -23,7 +23,8 @@ class ParticipantEventServiceItTest
     with EitherValues
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   implicit val defaultConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 

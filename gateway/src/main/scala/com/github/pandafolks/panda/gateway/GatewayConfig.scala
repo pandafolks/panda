@@ -11,6 +11,7 @@ import com.github.pandafolks.panda.loadbalancer.{
 import com.github.pandafolks.panda.participant.ParticipantsCache
 import monix.eval.Task
 import org.http4s.client.Client
+import monix.execution.Scheduler
 
 final case class GatewayConfig(
     loadBalancerAlgorithm: LoadBalanceAlgorithm,
@@ -23,7 +24,7 @@ sealed trait LoadBalanceAlgorithm {
       participantsCache: ParticipantsCache,
       loadBalancerRetries: Option[Int] = Option.empty,
       backgroundJobsRegistry: Option[BackgroundJobsRegistry] = Option.empty
-  ): LoadBalancer
+  )(scheduler: Scheduler): LoadBalancer
 }
 
 case object RoundRobin extends LoadBalanceAlgorithm {
@@ -32,7 +33,7 @@ case object RoundRobin extends LoadBalanceAlgorithm {
       participantsCache: ParticipantsCache,
       loadBalancerRetries: Option[Int] = Option.empty,
       backgroundJobsRegistry: Option[BackgroundJobsRegistry] = Option.empty
-  ): LoadBalancer =
+  )(scheduler: Scheduler): LoadBalancer =
     new RoundRobinLoadBalancerImpl(client, participantsCache)
 }
 
@@ -42,7 +43,7 @@ case object Random extends LoadBalanceAlgorithm {
       participantsCache: ParticipantsCache,
       loadBalancerRetries: Option[Int] = Option.empty,
       backgroundJobsRegistry: Option[BackgroundJobsRegistry] = Option.empty
-  ): LoadBalancer =
+  )(scheduler: Scheduler): LoadBalancer =
     new RandomLoadBalancerImpl(client, participantsCache)
 }
 
@@ -52,11 +53,11 @@ case object Hash extends LoadBalanceAlgorithm {
       participantsCache: ParticipantsCache,
       loadBalancerRetries: Option[Int] = Option.empty,
       backgroundJobsRegistry: Option[BackgroundJobsRegistry] = Option.empty
-  ): LoadBalancer =
+  )(scheduler: Scheduler): LoadBalancer =
     new HashLoadBalancerImpl(
       client,
       participantsCache,
-      new ConsistentHashingState(backgroundJobsRegistry.get)(),
+      new ConsistentHashingState(backgroundJobsRegistry.get)()(scheduler),
       loadBalancerRetries.getOrElse(10)
-    )
+    )(scheduler)
 }

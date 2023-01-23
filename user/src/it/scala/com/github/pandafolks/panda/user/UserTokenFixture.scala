@@ -2,12 +2,17 @@ package com.github.pandafolks.panda.user
 
 import com.github.pandafolks.panda.user.token.{Token, TokenService, TokenServiceImpl, TokensConfig}
 import monix.connect.mongodb.client.{CollectionCodecRef, MongoConnection}
+import monix.execution.Scheduler
+import monix.execution.schedulers.SchedulerService
 import org.mongodb.scala.{ConnectionString, MongoClientSettings}
 import org.scalacheck.Gen
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait UserTokenFixture {
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
     DockerImageName.parse("mongo").withTag("latest")
@@ -29,7 +34,7 @@ trait UserTokenFixture {
   private val usersWithTokensConnection = MongoConnection.create2(settings, (usersCol, tokensCol))
 
   private val userDao: UserDao = new UserDaoImpl(usersWithTokensConnection)
-  protected val userService: UserService = new UserServiceImpl(userDao)(usersWithTokensConnection)
+  protected val userService: UserService = new UserServiceImpl(userDao)(usersWithTokensConnection)(scheduler = scheduler)
 
   private val tokensConfig = TokensConfig(3)
   protected val tokenService: TokenService = new TokenServiceImpl(tokensConfig)(usersWithTokensConnection)

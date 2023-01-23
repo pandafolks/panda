@@ -12,7 +12,8 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
 
 trait NodeTrackerFixture {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
@@ -40,7 +41,7 @@ trait NodeTrackerFixture {
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
   private val jobDao: JobDao = new JobDaoImpl(jobsConnection)
   protected val nodeTrackerService: NodeTrackerService =
-    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(2000)
+    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(2000)(scheduler)
 
   def randomString(prefix: String): String = Gen.uuid.map(prefix + _.toString.take(15)).sample.get
 }

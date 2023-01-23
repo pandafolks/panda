@@ -603,7 +603,7 @@ class DistributedHealthCheckServiceImplItTest
       unsuccessfulHealthCheckDao,
       new ClientStub(),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, 2, Some(5), Some(5), Option.empty)) // these values are equal so only markAsRemoved is used
+    )(HealthCheckConfig(-1, 2, Some(5), Some(5), Option.empty))(scheduler) // these values are equal so only markAsRemoved is used
 
     val identifier1 = randomString("markAsNotWorkingBackgroundJob7")
     val identifier2 = randomString("markAsNotWorkingBackgroundJob8")
@@ -742,7 +742,7 @@ class DistributedHealthCheckServiceImplItTest
       unsuccessfulHealthCheckDao,
       new ClientStub(),
       new InMemoryBackgroundJobsRegistryImpl(scheduler)
-    )(HealthCheckConfig(-1, 2, Some(5), None, Option.empty)) // these values are equal so only markAsRemoved is used
+    )(HealthCheckConfig(-1, 2, Some(5), None, Option.empty))(scheduler) // these values are equal so only markAsRemoved is used
 
     val identifier1 = randomString("markAsNotWorkingBackgroundJob7")
     val identifier2 = randomString("markAsNotWorkingBackgroundJob8")

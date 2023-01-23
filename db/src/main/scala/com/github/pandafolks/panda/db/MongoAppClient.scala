@@ -9,11 +9,12 @@ import com.github.pandafolks.panda.sequence.Sequence
 import com.github.pandafolks.panda.user.User
 import com.github.pandafolks.panda.user.token.Token
 import com.github.pandafolks.panda.utils.PandaStartupException
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import com.mongodb.connection.ClusterConnectionMode
 import com.mongodb.{ConnectionString, ReadConcern, ReadPreference, WriteConcern}
 import monix.connect.mongodb.client.{CollectionCodecRef, CollectionOperator, MongoConnection}
 import monix.eval.Task
+import monix.execution.Scheduler
+import monix.execution.schedulers.CanBlock
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
 
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
-final class MongoAppClient(config: DbConfig) extends DbAppClient {
+final class MongoAppClient(private val config: DbConfig)(private val scheduler: Scheduler) extends DbAppClient {
 
   private val baseSettings =
     if (config.connectionString.isDefined)
@@ -220,7 +221,7 @@ final class MongoAppClient(config: DbConfig) extends DbAppClient {
               )
             )
         )
-    ).runSyncUnsafe(1.minutes)
+    ).runSyncUnsafe(1.minutes)(scheduler, CanBlock.permit)
 
     tmpMongoClient.close()
   }

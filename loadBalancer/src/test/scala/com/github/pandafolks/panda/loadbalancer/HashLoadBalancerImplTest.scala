@@ -21,7 +21,8 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 
 class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val mockParticipantEventService = mock(classOf[ParticipantEventService])
 
@@ -33,7 +34,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       new ClientStub(),
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable, containUnavailable),
       new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
-    )
+    )(scheduler)
     Await.result(
       Future { Thread.sleep(2000) },
       3.seconds
@@ -98,7 +99,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       client,
       participantsCache,
       new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
-    )
+    )(scheduler)
     Await.result(
       Future { Thread.sleep(2500) },
       3.seconds

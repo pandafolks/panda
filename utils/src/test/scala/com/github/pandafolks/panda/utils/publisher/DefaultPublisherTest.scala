@@ -11,14 +11,14 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.immutable
 
 final class DefaultPublisherTest extends AsyncFlatSpec with Matchers with ScalaFutures {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors(), Runtime.getRuntime.availableProcessors())
 
   private class FakeChangeListener() extends ChangeListener[Int] {
     override def notifyAboutAdd(items: immutable.Iterable[Int]): Task[Unit] = ???
 
     override def notifyAboutRemove(items: immutable.Iterable[Int]): Task[Unit] = ???
   }
-
 
   "getListeners" should "return currently registered listeners" in {
     val publisher = new DefaultPublisher[Int]()
@@ -33,7 +33,8 @@ final class DefaultPublisherTest extends AsyncFlatSpec with Matchers with ScalaF
         .flatMap(f => publisher.getListeners.map(r => (f, r)))
         .flatMap(f2 => publisher.unRegister(changeListener1).map(_ => f2))
         .flatMap(f2 => publisher.getListeners.map(r => (f2._1, f2._2, r)))
-      ).runToFuture
+      )
+      .runToFuture
 
     whenReady(f) { res =>
       res._1.size should be(0)

@@ -20,7 +20,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
-  implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
+  implicit val scheduler: SchedulerService =
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
@@ -76,7 +77,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   private val nodeTrackerDao: NodeTrackerDao = new NodeTrackerDaoImpl(nodesConnection)
   private val jobDao: JobDao = new JobDaoImpl(jobsConnection)
   protected val nodeTrackerService: NodeTrackerService =
-    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)
+    new NodeTrackerServiceImpl(nodeTrackerDao, jobDao, new InMemoryBackgroundJobsRegistryImpl(scheduler))(1000)(scheduler)
 
   protected val unsuccessfulHealthCheckColName: String = randomString(
     UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME
@@ -96,7 +97,7 @@ trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
     unsuccessfulHealthCheckDao,
     new ClientStub(),
     new InMemoryBackgroundJobsRegistryImpl(scheduler)
-  )(HealthCheckConfig(-1, 2, Some(5), Some(10), Option.empty)) // schedulers turned off
+  )(HealthCheckConfig(-1, 2, Some(5), Some(10), Option.empty))(scheduler) // schedulers turned off
 
   protected val healthCheckBackgroundJobPrivateMethod: PrivateMethod[Task[Unit]] =
     PrivateMethod[Task[Unit]](Symbol("healthCheckBackgroundJob"))

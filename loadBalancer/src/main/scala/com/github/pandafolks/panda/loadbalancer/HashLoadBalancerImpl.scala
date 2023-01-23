@@ -4,7 +4,8 @@ import com.github.pandafolks.panda.participant.ParticipantsCache
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.http.RequestUtils
 import monix.eval.Task
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
+import monix.execution.Scheduler
+import monix.execution.schedulers.CanBlock
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Uri}
 import org.slf4j.LoggerFactory
@@ -18,13 +19,14 @@ final class HashLoadBalancerImpl(
     private val participantsCache: ParticipantsCache,
     private val consistentHashingState: ConsistentHashingState,
     private val retriesNumber: Int = 10
-) extends LoadBalancer {
+)(private val scheduler: Scheduler)
+    extends LoadBalancer {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private val random = new Random(System.currentTimeMillis())
 
   locally {
-    participantsCache.registerListener(consistentHashingState).runSyncUnsafe(30.seconds)
+    participantsCache.registerListener(consistentHashingState).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
   }
 
   override def route(request: Request[Task], requestedPath: Uri.Path, group: Group): Task[Response[Task]] = {
