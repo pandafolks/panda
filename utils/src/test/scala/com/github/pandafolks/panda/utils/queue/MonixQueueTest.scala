@@ -16,7 +16,7 @@ final class MonixQueueTest extends AsyncFlatSpec with Matchers with ScalaFutures
   implicit val scheduler: SchedulerService = Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   "offer and poll" should "collaborate" in {
-    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)
+    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)(scheduler)
 
     val itemsNumber = 10000
 
@@ -31,7 +31,7 @@ final class MonixQueueTest extends AsyncFlatSpec with Matchers with ScalaFutures
   }
 
   it should "collaborate with many concurrent requests" in {
-    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)
+    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)(scheduler)
 
     val itemsNumber = 10000
 
@@ -46,7 +46,7 @@ final class MonixQueueTest extends AsyncFlatSpec with Matchers with ScalaFutures
   }
 
   "offerMany and poll" should "collaborate" in {
-    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)
+    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)(scheduler)
 
     val f = (
       Task.traverse(List.fill(50)(Range.inclusive(1, 2000).toList))(queue.offerMany)
@@ -59,7 +59,7 @@ final class MonixQueueTest extends AsyncFlatSpec with Matchers with ScalaFutures
   }
 
   it should "collaborate with many concurrent requests" in {
-    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)
+    val queue = MonixQueue.make[Int](BufferCapacity.Unbounded(), MPMC)(scheduler)
 
     val f = (
       Task.parTraverse(List.fill(50)(Range.inclusive(1, 2000).toList))(queue.offerMany)

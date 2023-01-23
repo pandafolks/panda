@@ -2,10 +2,9 @@ package com.github.pandafolks.panda.utils.listener
 
 import com.github.pandafolks.panda.utils.queue.MonixQueue
 import monix.eval.Task
-import monix.execution.{BufferCapacity, Cancelable}
+import monix.execution.{BufferCapacity, Cancelable, Scheduler}
 import monix.execution.ChannelType.MPMC
 import monix.reactive.Observable
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 import org.slf4j.LoggerFactory
 
 import scala.annotation.unused
@@ -14,8 +13,10 @@ import scala.collection.immutable
 abstract class QueueBasedChangeListener[T] extends ChangeListener[T] {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  private val addQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)
-  private val removeQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)
+  protected implicit val scheduler: Scheduler
+
+  private val addQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)(scheduler)
+  private val removeQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)(scheduler)
 
   @unused("Working as a background job")
   private val addQueuePollLoop: Cancelable = Observable

@@ -1,8 +1,7 @@
 package com.github.pandafolks.panda.utils.queue
 
 import monix.eval.Task
-import monix.execution.{AsyncQueue, BufferCapacity, ChannelType}
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
+import monix.execution.{AsyncQueue, BufferCapacity, ChannelType, Scheduler}
 
 final class MonixQueue[T] private (private val queue: AsyncQueue[T]) {
   def poll: Task[T] = Task.deferFuture(queue.poll())
@@ -13,6 +12,6 @@ final class MonixQueue[T] private (private val queue: AsyncQueue[T]) {
 }
 
 object MonixQueue {
-  def make[T](capacity: BufferCapacity, channelType: ChannelType): MonixQueue[T] =
-    new MonixQueue(AsyncQueue.withConfig(capacity, channelType))
+  def make[T](capacity: BufferCapacity, channelType: ChannelType)(scheduler: Scheduler): MonixQueue[T] =
+    new MonixQueue(AsyncQueue.withConfig(capacity, channelType)(scheduler))
 }
