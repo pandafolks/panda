@@ -15,8 +15,8 @@ abstract class QueueBasedChangeListener[T] extends ChangeListener[T] {
 
   protected implicit val scheduler: Scheduler
 
-  private val addQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)
-  private val removeQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)
+  private val addQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)(scheduler)
+  private val removeQueue: MonixQueue[T] = MonixQueue.make(BufferCapacity.Unbounded(), MPMC)(scheduler)
 
   @unused("Working as a background job")
   private val addQueuePollLoop: Cancelable = Observable
