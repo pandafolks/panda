@@ -7,7 +7,8 @@ import com.github.pandafolks.panda.user.token.Token
 import com.github.pandafolks.panda.utils.{AlreadyExists, PandaStartupException, PersistenceError, UndefinedPersistenceError}
 import monix.connect.mongodb.client.CollectionOperator
 import monix.eval.Task
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
+import monix.execution.Scheduler
+import monix.execution.schedulers.CanBlock
 import org.slf4j.LoggerFactory
 import tsec.passwordhashers.jca.BCrypt
 
@@ -16,7 +17,7 @@ import scala.concurrent.duration.DurationInt
 
 final class UserServiceImpl(private val userDao: UserDao, private val initUsers: List[UserCredentials] = List.empty)(
     private val c: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])]
-) extends UserService {
+)(private val scheduler: Scheduler) extends UserService {
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
@@ -38,7 +39,7 @@ final class UserServiceImpl(private val userDao: UserDao, private val initUsers:
       } yield res
     )
       .onErrorRecoverWith { e => Task.now(Left(UndefinedPersistenceError(e.getMessage))) }
-      .runSyncUnsafe(10.seconds)
+      .runSyncUnsafe(10.seconds)(scheduler, CanBlock.permit)
       .fold(
         persistenceError => {
           logger.error("The error occurred during init user creation.")

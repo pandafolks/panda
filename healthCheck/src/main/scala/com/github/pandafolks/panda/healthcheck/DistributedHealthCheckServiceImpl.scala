@@ -10,6 +10,7 @@ import com.github.pandafolks.panda.utils.http.RequestUtils
 import com.github.pandafolks.panda.utils.listener.ChangeListener
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
+import monix.execution.Scheduler
 import monix.execution.schedulers.CanBlock
 import org.http4s.Uri.{Authority, RegName}
 import org.http4s.client.Client
@@ -32,7 +33,7 @@ final class DistributedHealthCheckServiceImpl(
     private val unsuccessfulHealthCheckDao: UnsuccessfulHealthCheckDao,
     private val client: Client[Task],
     private val backgroundJobsRegistry: BackgroundJobsRegistry
-)(private val healthCheckConfig: HealthCheckConfig)
+)(private val healthCheckConfig: HealthCheckConfig)(private val scheduler: Scheduler)
     extends HealthCheckService
     with ChangeListener[Participant] {
 
@@ -72,8 +73,6 @@ final class DistributedHealthCheckServiceImpl(
   private val eventsEmittedSinceLastCacheRefresh: ConcurrentHashMap[String, EmittedEventType] = new ConcurrentHashMap
 
   locally {
-    import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
-
     participantsCache.registerListener(this).runSyncUnsafe(30.seconds)(scheduler, CanBlock.permit)
 
     if (healthCheckConfig.healthCheckEnabled) { // if the healthcheck job is disabled, there is no reason to run job MARKING_PARTICIPANTS_AS_EITHER_TURNED_OFF_OR_REMOVED

@@ -26,7 +26,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
   "get" should "always return appropriate identifier" in {
     val underTest =
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)(scheduler)
 
     val r = new Random(42)
     val group1 = Group("cars")
@@ -77,7 +77,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
   it should "return None if there is no requested group / the group is empty" in {
     val underTest =
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)(scheduler)
 
     val group1 = Group("cars")
     val group2 = Group("planes")
@@ -102,7 +102,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
   "add" should "not lose any data during concurrent invocations (one group case)" in {
     val underTest =
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 600)
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 600)(scheduler)
     val usedPositionsGroupedByGroup =
       PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val usedParticipantsWithPositions =
@@ -126,7 +126,7 @@ class ConsistentHashingStateTest extends AsyncFlatSpec with PrivateMethodTester 
 
   it should "not lose any data during concurrent invocations (multiple groups case)" in {
     val underTest =
-      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)
+      new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 500)(scheduler)
     val usedPositionsGroupedByGroup =
       PrivateMethod[ConcurrentHashMap[Group, TreeMap[Int, Participant]]](Symbol("usedPositionsGroupedByGroup"))
     val usedParticipantsWithPositions =

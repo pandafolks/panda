@@ -33,7 +33,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       new ClientStub(),
       LoadBalancerTestUtils.createParticipantsCacheWithSingleGroup(containAvailable, containUnavailable),
       new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
-    )
+    )(scheduler)
     Await.result(
       Future { Thread.sleep(2000) },
       3.seconds
@@ -98,7 +98,7 @@ class HashLoadBalancerImplTest extends AsyncFlatSpec with ScalaFutures {
       client,
       participantsCache,
       new ConsistentHashingState(new InMemoryBackgroundJobsRegistryImpl(scheduler))(positionsPerParticipant = 100)
-    )
+    )(scheduler)
     Await.result(
       Future { Thread.sleep(2500) },
       3.seconds

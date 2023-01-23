@@ -3,6 +3,7 @@ package com.github.pandafolks.panda.nodestracker
 import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry
 import com.github.pandafolks.panda.utils.PandaStartupException
 import monix.eval.Task
+import monix.execution.Scheduler
 import monix.execution.schedulers.CanBlock
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
@@ -13,10 +14,8 @@ final class NodeTrackerServiceImpl(
     private val nodeTrackerDao: NodeTrackerDao,
     private val jobDao: JobDao,
     private val backgroundJobsRegistry: BackgroundJobsRegistry
-)(private val fullConsistencyMaxDelayInMillis: Int)
+)(private val fullConsistencyMaxDelayInMillis: Int)(private val scheduler: Scheduler)
     extends NodeTrackerService {
-
-  import com.github.pandafolks.panda.utils.scheduler.CoreScheduler.scheduler
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 

@@ -5,7 +5,6 @@ import com.github.pandafolks.panda.participant.Participant
 import com.github.pandafolks.panda.routes.Group
 import com.github.pandafolks.panda.utils.SystemProperties
 import com.github.pandafolks.panda.utils.listener.QueueBasedChangeListener
-import com.github.pandafolks.panda.utils.scheduler.CoreScheduler
 import com.google.common.annotations.VisibleForTesting
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -21,10 +20,8 @@ final class ConsistentHashingState(
 )(
     private val positionsPerParticipant: Int = SystemProperties.consistentHashingStatePositionsPerParticipant,
     private val clearEmptyGroupsIntervalInHours: Int = SystemProperties.consistentHashingStateClearEmptyGroupsIntervalInHours
-) extends QueueBasedChangeListener[Participant] {
+)(protected implicit val scheduler: Scheduler) extends QueueBasedChangeListener[Participant] {
   private val logger: Logger = LoggerFactory.getLogger(getClass.getName)
-
-  protected lazy implicit val scheduler: Scheduler = CoreScheduler.scheduler
 
   private val random = new Random(System.currentTimeMillis())
 

@@ -27,14 +27,14 @@ object App extends MonixServerApp {
   override def program: Resource[Task, Server] =
     for {
       appConfiguration <- Resource.eval(PureConfigModule.makeOrRaise[Task, AppConfiguration])
-      dbAppClient = new MongoAppClient(appConfiguration.db)
-      backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(CoreScheduler.scheduler)
+      dbAppClient = new MongoAppClient(appConfiguration.db)(scheduler = CoreScheduler.scheduler)
+      backgroundJobsRegistry = new InMemoryBackgroundJobsRegistryImpl(scheduler = CoreScheduler.scheduler)
 
       daosAndServicesInitializedBeforeCaches = new DaosAndServicesInitializedBeforeCachesFulfilled(
         dbAppClient,
         appConfiguration,
         backgroundJobsRegistry
-      )
+      )(scheduler = CoreScheduler.scheduler)
 
       participantsCache <- Resource.eval(
         ParticipantsCacheImpl(
@@ -51,7 +51,7 @@ object App extends MonixServerApp {
         dbAppClient,
         appConfiguration,
         backgroundJobsRegistry
-      )
+      )(scheduler = CoreScheduler.scheduler)
 
       // Http clients
       httpGatewayClient <- HttpClient.createMonixBased(appConfiguration.gatewayClient)
@@ -62,7 +62,7 @@ object App extends MonixServerApp {
         participantsCache = participantsCache,
         appConfiguration.gateway.loadBalancerRetries,
         backgroundJobsRegistry = Some(backgroundJobsRegistry)
-      )
+      )(scheduler = CoreScheduler.scheduler)
       apiGateway = new BaseApiGatewayImpl(loadBalancer, treesService)
 
       _ = new DistributedHealthCheckServiceImpl(
@@ -72,7 +72,7 @@ object App extends MonixServerApp {
         daosAndServicesInitializedBeforeCaches.getUnsuccessfulHealthCheckDao,
         httpInternalClient,
         backgroundJobsRegistry
-      )(appConfiguration.healthCheckConfig)
+      )(appConfiguration.healthCheckConfig)(scheduler = CoreScheduler.scheduler)
 
       // routing
       apiGatewayRouting = new ApiGatewayRouting(apiGateway)
