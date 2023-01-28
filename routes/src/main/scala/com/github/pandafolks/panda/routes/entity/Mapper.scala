@@ -10,7 +10,7 @@ final case class Mapper(
     route: String,
     mappingContent: MappingContent,
     httpMethod: HttpMethod,
-    isStandalone: Boolean,
+    isStandalone: Boolean, // standalone means that the mapper can be achieved directly, not standalone mappings can be only achieved from composition mapping
     lastUpdateTimestamp: Long
 )
 

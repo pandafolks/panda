@@ -147,3 +147,22 @@ This addresses the flow of having preconfigured participants. The Panda use case
 launched in the future or are launching at the moment - we do not want to clear them (mark them as TurnedOff/Removed) before they were ever operational.
 
 ---
+## <b>Routing</b>
+
+---
+### How does the Panda gateway find the destination route based on the request route?
+
+Once the gateway gets the request, it needs to connect the request's route with one of the registered mappings if the corresponding one exists in order to pass the request further (e.g. the mapping may specify the `group` which may be your microservice).
+
+The panda lets you register 2 types of routes:
+
+1. Standard routes like: `cars/rent` or `planes/{{plane_id}}/passengers` where `plane_id` is a path param. 
+2. Pocket routes like: `cars/supercars/**` where `**` means there can be anything.
+
+The standard routes have a higher priority than pocket routes. The pocket route will be only picked when there is no corresponding standard route.
+
+The routes lookups are based on the custom implementation of a Trie-like data structure which is kept in memory by every Panda node to keep the lookups very fast.
+The API can be found at [RoutesTree.scala](https://github.com/pandafolks/panda/blob/master/routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesTree.scala) and the implementation at [RoutesTreeImpl.scala](https://github.com/pandafolks/panda/blob/master/routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesTreeImpl.scala).
+`RoutesTreeImpl#construct` takes a list of mappers and creates the `RoutesTree` object that contains all needed data and lets for lookups through the `RoutesTree#find` method.
+
+---

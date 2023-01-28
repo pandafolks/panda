@@ -5,6 +5,10 @@ import com.github.pandafolks.panda.routes.entity.MappingContent
 import org.http4s.Uri.Path
 
 trait RoutesTree {
+  /** Returns the root of the tree.
+   *
+   * @return a root node
+   */
   def getRoot: Node
 
   def find(path: Path, standaloneOnly: Boolean = false): Option[(RouteInfo, Map[String, String])]
@@ -26,6 +30,7 @@ object RoutesTree {
       mappingContent: MappingContent,
       // Pocket Example: "cars/supercars/**" will catch "cars/supercars/ferrari", "cars/supercars/audi/r8", etc.
       isPocket: Boolean = false,
+      // Standalone means that the route can be achieved directly from the initial gateway request, not-standalone routes can be only achieved from composition mappings.
       isStandalone: Boolean = true
   )
 

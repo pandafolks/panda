@@ -266,6 +266,13 @@ class RoutesTreeImplTest extends AnyFlatSpec {
           HttpMethod.Get(),
           isStandalone = true,
           -1
+        ),
+        Mapper(
+          "supercars2/blabla2/{{first_wildcard}}/someFixed2/**",
+          MappingContent(Some("wildcardGroup4"), Option.empty),
+          HttpMethod.Get(),
+          isStandalone = false,
+          -1
         )
       )
     )
@@ -298,6 +305,19 @@ class RoutesTreeImplTest extends AnyFlatSpec {
             "first_wildcard" -> "firstWildcardValue",
             "second_wildcard" -> "secondWildcardValue",
             "third_wildcard" -> "thirdWildcardValue"
+          )
+        )
+      )
+    )
+
+    tree.find(
+      Path.unsafeFromString("supercars2/blabla2/dadadadada/someFixed2/something1/something2")
+    ) should be(
+      Some(
+        (
+          RouteInfo(mappingContent = MappingContent(Some("wildcardGroup4"), Option.empty), isPocket = true, isStandalone = false),
+          Map(
+            "first_wildcard" -> "dadadadada"
           )
         )
       )
