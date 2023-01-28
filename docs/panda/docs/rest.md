@@ -3,7 +3,7 @@ In order to communicate with and maintain the Panda gateway, there is a REST API
 
 ---
 ## Gateway entrypoint
-`gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala`
+[gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala](https://github.com/pandafolks/panda/blob/master/gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala)
 <br /><br />
 
 All REST calls targeted against provided routes need to go through this endpoint. <br />
@@ -20,7 +20,7 @@ gateway/...
 ---
 ## Authentication endpoints
 ##### *User management endpoints.* 
-`user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala`
+[user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala](https://github.com/pandafolks/panda/blob/master/user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala)
 <br /><br />
 
 The endpoint is used for acquiring authentication tokens that are needed in the Panda maintaining operations like adding new participants or modifying routes. <br />
@@ -83,7 +83,7 @@ The endpoint is used for creating a new user with provided credentials. The endp
 ---
 ## Participants endpoints
 ##### *Endpoints used for participants (serves the requests are routed to) management. All calls targeting these endpoints are required to be authenticated.*
-`participant/src/main/scala/com/github/pandafolks/panda/participant/ParticipantsRouting.scala`
+[participant/src/main/scala/com/github/pandafolks/panda/participant/ParticipantsRouting.scala](https://github.com/pandafolks/panda/blob/master/participant/src/main/scala/com/github/pandafolks/panda/participant/ParticipantsRouting.scala)
 <br /><br />
 
 Returns registered groups (unique types of services). <br   />
@@ -346,7 +346,7 @@ Removes participants with delivered identifiers.
 ---
 ## Routes endpoints
 ##### *Endpoints used for mappers and prefixes management. All calls targeting these endpoints are required to be authenticated.*
-`routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesRouting.scala`
+[routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesRouting.scala](https://github.com/pandafolks/panda/blob/master/routes/src/main/scala/com/github/pandafolks/panda/routes/RoutesRouting.scala)
 <br /><br />
   
 Returns the union of all available Mappers and Prefixes. It is possible to optional filtering out results either by the 

@@ -43,7 +43,7 @@ free to make a Pull Request with improvement.
 ## Hints
 
 ### Application entry point
-`bootstap/src/main/scala/com/github/pandafolks/panda/bootstrap/App.scala`
+[bootstap/src/main/scala/com/github/pandafolks/panda/bootstrap/App.scala](https://github.com/pandafolks/panda/blob/master/bootstrap/src/main/scala/com/github/pandafolks/panda/bootstrap/App.scala)
 
 ### Current authentication model
 `http://localhost:8080/api/v1/auth/register` endpoint creates a new user. However, it is accessible only to authenticated users.
@@ -57,8 +57,8 @@ At this moment panda requires:
 
 ### Service examples used for manual testing
 As Panda is an API gateway, it is useful to have some services it can communicate to.
-Inside `exampleExternalDependencies/auxiliaryServices` directory you may find `docker-compose.yml` file which runs some simple services.
-You could register them inside Panda by running `registerInsidePanda.sh` script. 
+Inside [exampleExternalDependencies/auxiliaryServices](https://github.com/pandafolks/panda/tree/master/exampleExternalDependencies/auxiliaryServices) directory you may find [docker-compose.yml](https://github.com/pandafolks/panda/blob/master/exampleExternalDependencies/auxiliaryServices/docker-compose.yml) file which runs some simple services.
+You could register them inside Panda by running [registerInsidePanda.sh](https://github.com/pandafolks/panda/blob/master/exampleExternalDependencies/auxiliaryServices/registerInsidePanda.sh) script. 
 
 ### Managing dependencies
 Panda provides `Makefile` file for managing project dependencies and tasks in the easy way. To see list of useful 
@@ -75,7 +75,7 @@ You would find `panda.jar` inside your `/target` directory.
 You can run it with `java -jar panda.jar`.
 
 ### Using your own config file
-By default, Panda will use `application.conf` config from `bootstap/src/main/resources`. 
+By default, Panda will use [application.conf](https://github.com/pandafolks/panda/blob/master/bootstrap/src/main/resources/application.conf) config from [bootstap/src/main/resources](https://github.com/pandafolks/panda/tree/master/bootstrap/src/main/resources). 
 Feel free to create your own config, you could use it inside panda by adding VM option: 
 ```sbtshell
 -Dconfig.resource=application.conf

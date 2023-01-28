@@ -1,7 +1,7 @@
 # Application Config
 
 This is an example configuration that you can run Panda instances with. <br />
-`bootstap/src/main/resources/application.conf`
+[bootstap/src/main/resources/application.conf](https://github.com/pandafolks/panda/blob/master/bootstrap/src/main/resources/application.conf)
 <br /><br />
 
 ```conf
