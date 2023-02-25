@@ -19,8 +19,8 @@ final class NodeTrackerServiceImpl(
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  // Every node notifies the tracker about its existence 8 times more often than the maximum time in which we obtain the full consistency.
-  private val nodeTrackerRegistrationIntervalInMillis: Int = fullConsistencyMaxDelayInMillis / 8
+  // Every node notifies the tracker about its existence 16 times more often than the maximum time in which we obtain the full consistency.
+  private val nodeTrackerRegistrationIntervalInMillis: Int = fullConsistencyMaxDelayInMillis / 16
   private val nodeTrackerDeviationForGetWorkingNodesInMillis: Long = (fullConsistencyMaxDelayInMillis / 2).toLong
 
   private val nodeId: String = nodeTrackerDao
