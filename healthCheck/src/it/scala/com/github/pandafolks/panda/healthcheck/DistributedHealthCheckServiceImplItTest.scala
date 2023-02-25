@@ -37,7 +37,9 @@ class DistributedHealthCheckServiceImplItTest
           // There is no need to clear nodesCol as these tests are desired to test single node configuration anyway.
           participantEventsAndSequencesConnection.use { case (p, _) => p.db.dropCollection(participantEventsColName) },
           unsuccessfulHealthCheckConnection.use(p => p.db.dropCollection(unsuccessfulHealthCheckColName)),
-          nodesConnection.use(p => p.single.deleteMany(Filters.not(Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId())))), // https://jira.mongodb.org/browse/SERVER-51892
+          nodesConnection.use(p =>
+            p.single.deleteMany(Filters.not(Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId())))
+          ), // https://jira.mongodb.org/browse/SERVER-51892
           jobsConnection.use(p => p.db.dropCollection(jobsColName))
         )
         .runToFuture,

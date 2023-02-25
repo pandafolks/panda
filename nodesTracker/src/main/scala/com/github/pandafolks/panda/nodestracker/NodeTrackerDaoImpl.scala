@@ -36,8 +36,8 @@ final class NodeTrackerDaoImpl(private val c: Resource[Task, CollectionOperator[
         retryStrategy = RetryStrategy(3)
       )
       .map {
-        case UpdateResult(_, modifiedCount, _) if modifiedCount > 0 => Right(())
-        case _ => Left(NotExists("There is no instance with the requested ID in the Node Tracker."))
+        case UpdateResult(_, _, _) => Right(())
+        case _                     => Left(NotExists("There is no instance with the requested ID in the Node Tracker."))
       }
       .onErrorRecoverWith { case t: Throwable => Task.now(Left(UnsuccessfulUpdateOperation(t.getMessage))) }
   )
