@@ -21,7 +21,7 @@ import scala.concurrent.duration.DurationInt
 
 trait DistributedHealthCheckServiceFixture extends PrivateMethodTester {
   implicit val scheduler: SchedulerService =
-    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors()*2, Runtime.getRuntime.availableProcessors()*2)
+    Scheduler.forkJoin(Runtime.getRuntime.availableProcessors() * 2, Runtime.getRuntime.availableProcessors() * 2)
 
   private val dbName = "test"
   protected val mongoContainer: MongoDBContainer = new MongoDBContainer(
