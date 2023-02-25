@@ -5,6 +5,7 @@ import com.github.pandafolks.panda.nodestracker.{Job, Node}
 import com.github.pandafolks.panda.participant.event.ParticipantEvent
 import com.github.pandafolks.panda.participant.event.ParticipantEventType.{Disconnected, Joined, ModifiedData}
 import com.github.pandafolks.panda.participant.{Participant, ParticipantModificationPayload}
+import com.mongodb.client.model.Filters
 import monix.eval.Task
 import org.bson.types.ObjectId
 import org.scalatest.concurrent.ScalaFutures
@@ -36,7 +37,7 @@ class DistributedHealthCheckServiceImplItTest
           // There is no need to clear nodesCol as these tests are desired to test single node configuration anyway.
           participantEventsAndSequencesConnection.use { case (p, _) => p.db.dropCollection(participantEventsColName) },
           unsuccessfulHealthCheckConnection.use(p => p.db.dropCollection(unsuccessfulHealthCheckColName)),
-          nodesConnection.use(p => p.db.dropCollection(nodesColName)),
+          nodesConnection.use(p => p.single.deleteMany(Filters.not(Filters.eq(Node.ID_PROPERTY_NAME, new ObjectId())))), // https://jira.mongodb.org/browse/SERVER-51892
           jobsConnection.use(p => p.db.dropCollection(jobsColName))
         )
         .runToFuture,
@@ -521,7 +522,7 @@ class DistributedHealthCheckServiceImplItTest
     val fakeNodeId = ObjectId.get()
 
     val f = (
-      nodesConnection.use(p => p.single.insertOne(Node(fakeNodeId, System.currentTimeMillis() + 10 * 1000))) // fake node
+      nodesConnection.use(p => p.single.insertOne(Node(fakeNodeId, System.currentTimeMillis() + 20 * 1000))) // fake node
         >> jobsConnection.use(p => p.single.insertOne(Job("MarkingParticipantsAsEitherTurnedOffOrRemoved", fakeNodeId)))
         >> participantEventService.createParticipant(
           ParticipantModificationPayload(
