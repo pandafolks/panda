@@ -11,6 +11,7 @@ import scala.concurrent.duration.FiniteDuration
   * with jobs that need to be run on every node - no matter how many there are.
   */
 final class InMemoryBackgroundJobsRegistryImpl(private val scheduler: Scheduler) extends BackgroundJobsRegistry {
+
   import com.github.pandafolks.panda.backgroundjobsregistry.BackgroundJobsRegistry.JobEntry
 
   private val logger = LoggerFactory.getLogger(getClass.getName)
@@ -21,8 +22,22 @@ final class InMemoryBackgroundJobsRegistryImpl(private val scheduler: Scheduler)
       initialDelay: FiniteDuration,
       period: FiniteDuration
   )(action: () => Task[Unit], name: String): Unit = {
+    addJob(initialDelay, period)(action, name)(scheduler.scheduleAtFixedRate)
+  }
+
+  override def addJobWithFixedDelay(
+      initialDelay: FiniteDuration,
+      period: FiniteDuration
+  )(action: () => Task[Unit], name: String): Unit = {
+    addJob(initialDelay, period)(action, name)(scheduler.scheduleWithFixedDelay)
+  }
+
+  private def addJob(
+      initialDelay: FiniteDuration,
+      period: FiniteDuration
+  )(action: () => Task[Unit], name: String)(schedulingFunction: (FiniteDuration, FiniteDuration) => (=> Unit) => Cancelable): Unit = {
     if (initialDelay.length >= 0 && period.length > 0) {
-      val job: Cancelable = scheduler.scheduleAtFixedRate(initialDelay, period) {
+      val job: Cancelable = schedulingFunction(initialDelay, period) {
         action().runToFuture(scheduler)
         ()
       }

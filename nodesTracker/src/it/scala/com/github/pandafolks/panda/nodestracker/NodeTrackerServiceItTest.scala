@@ -22,7 +22,7 @@ class NodeTrackerServiceItTest extends AsyncFlatSpec with NodeTrackerFixture wit
   }
 
   "background job" should "update timestamp every fullConsistencyMaxDelay / 8 seconds" in {
-    // We are sleeping fullConsistencyMaxDelay / 2 instead of / 8 in order to reduce flakiness.
+    // We are sleeping fullConsistencyMaxDelay / 2 instead of / 16 in order to reduce flakiness.
     val f = (
       for {
         firstTimeStamp <- getNode
