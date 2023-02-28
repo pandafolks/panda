@@ -27,7 +27,7 @@ object Dependencies {
   val silencerLib = "com.github.ghik" % "silencer-lib" % Versions.silencer cross CrossVersion.full
 
   private object Versions {
-    val sst = "0.18.3" // http4s - 0.22.14
+    val sst = "0.18.4" // http4s - 0.22.14
     val silencer = "1.7.8"
     val testContainers = "0.40.12"
     val circe = "0.14.3"
