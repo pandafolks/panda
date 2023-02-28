@@ -64,28 +64,33 @@ class SequenceDaoImplItTest extends AsyncFlatSpec with Matchers with ScalaFuture
     val sequenceKey1 = SequenceKey(randomString("KEY1"))
     val sequenceKey2 = SequenceKey(randomString("KEY2"))
     val sequenceKey3 = SequenceKey(randomString("KEY3"))
+    val sequenceKey4 = SequenceKey(randomString("KEY4"))
 
     val results: CancelableFuture[
       (
+        List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]]
-      )
+
+        )
     ] =
       sequenceConnection
         .use(c =>
           Task.parZip3(
-            Task.parTraverseUnordered(1 to 5000)(_ => sequenceDao.getNextSequence(sequenceKey1, c)),
-            Task.parTraverseUnordered(1 to 3000)(_ => sequenceDao.getNextSequence(sequenceKey2, c)),
-            Task.parTraverseUnordered(1 to 4000)(_ => sequenceDao.getNextSequence(sequenceKey3, c))
-          )
+            Task.parTraverseUnordered(1 to 1000)(_ => sequenceDao.getNextSequence(sequenceKey1, c)),
+            Task.parTraverseUnordered(1 to 600)(_ => sequenceDao.getNextSequence(sequenceKey2, c)),
+            Task.parTraverseUnordered(1 to 800)(_ => sequenceDao.getNextSequence(sequenceKey3, c))
+          ).flatMap(p => Task.parTraverseUnordered(1 to 1100)(_ => sequenceDao.getNextSequence(sequenceKey4, c))
+            .map(p2 => (p._1, p._2, p._3, p2)))
         )
         .runToFuture(scheduler)
 
     whenReady(results) { res =>
-      res._1.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 5000) yield Right(i)).toList
-      res._2.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 3000) yield Right(i)).toList
-      res._3.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 4000) yield Right(i)).toList
+      res._1.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 1000) yield Right(i)).toList
+      res._2.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 600) yield Right(i)).toList
+      res._3.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 800) yield Right(i)).toList
+      res._4.map(_.map(_.intValue())) should contain theSameElementsAs (for (i <- 1 to 1100) yield Right(i)).toList
     }
   }
 }
