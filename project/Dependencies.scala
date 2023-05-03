@@ -15,7 +15,7 @@ object Dependencies {
   private val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   private val tsecPassword = "io.github.jmcardon" %% "tsec-password" % Versions.tsec
   private val cryptoBits = "org.reactormonk" %% "cryptobits" % Versions.cryptoBits
-  private val monixMongo = "io.monix" %% "monix-mongodb" % "0.6.2"
+  private val monixMongo = "io.monix" %% "monix-mongodb" % Versions.monixMongo
   private val scalaCacheCore =  "com.github.cb372" %% "scalacache-core" % Versions.scalaCache
   private val scalaCacheGuava = "com.github.cb372" %% "scalacache-guava" % Versions.scalaCache
   private val scalaCacheCats = "com.github.cb372" %% "scalacache-cats-effect" % Versions.scalaCache
@@ -41,6 +41,7 @@ object Dependencies {
     val scalaCheck = "1.17.0"
     val scaluzzi = "0.1.23"
     val sortImports = "0.6.1"
+    val monixMongo = "0.6.4"
   }
 
   private val CommonTestDependencies = Seq(
