@@ -16,7 +16,7 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import monix.execution.schedulers.CanBlock
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Indexes}
-import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCredential, MongoDatabase, ServerAddress}
+import org.mongodb.scala.{MongoClientSettings, MongoCredential, ServerAddress}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.DurationInt
@@ -78,7 +78,7 @@ final class MongoAppClient(private val config: DbConfig)(private val scheduler: 
   private val mappersAndPrefixesConnection = MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
   override def getParticipantEventsAndSequencesConnection
-      : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
+  : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     participantEventsAndSequencesConnection
 
   override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] =
@@ -96,133 +96,112 @@ final class MongoAppClient(private val config: DbConfig)(private val scheduler: 
 
   locally {
     //    creating indexes
-    val tmpMongoClient: MongoClient = MongoClient(settings)
-    val database: MongoDatabase = tmpMongoClient.getDatabase(config.dbName)
 
-    (
-      Task.fromReactivePublisher(
-        database
-          .getCollection(User.USERS_COLLECTION_NAME)
-          .createIndexes(
-            Seq(
+    (usersWithTokensConnection.use {
+      case (usersC, tokensC) =>
+        usersC.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.ascending(User.USERNAME_PROPERTY_NAME),
+              IndexOptions().background(false).unique(true)
+            ),
+            IndexModel(
+              Indexes.ascending(User.ID_PROPERTY_NAME),
+              IndexOptions().background(false).unique(true)
+            )
+          )
+        ) >>
+          tokensC.single.createIndexes(
+            List(
               IndexModel(
-                Indexes.ascending(User.USERNAME_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
-              ),
-              IndexModel(
-                Indexes.ascending(User.ID_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
+                Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
+                IndexOptions().background(false).unique(false)
               )
             )
           )
-      ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(ParticipantEvent.PARTICIPANT_EVENTS_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.compoundIndex(
-                    Indexes.ascending(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME),
-                    Indexes.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)
-                  ),
-                  IndexOptions().background(true).unique(true)
+    } >>
+      participantEventsAndSequencesConnection.use {
+        case (participantEventC, _) => participantEventC.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.compoundIndex(
+                Indexes.ascending(ParticipantEvent.PARTICIPANT_IDENTIFIER_PROPERTY_NAME),
+                Indexes.descending(ParticipantEvent.EVENT_ID_PROPERTY_NAME)
+              ),
+              IndexOptions().background(true).unique(true)
+            ),
+            IndexModel(
+              Indexes.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME),
+              IndexOptions().background(false).unique(true)
+            )
+          )
+        )
+      } >>
+      nodesConnection.use {
+        nodesC =>
+          nodesC.single.createIndexes(
+            List(
+              IndexModel(
+                Indexes.compoundIndex(
+                  Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                  Indexes.ascending(Node.ID_PROPERTY_NAME)
                 ),
-                IndexModel(
-                  Indexes.ascending(ParticipantEvent.EVENT_ID_PROPERTY_NAME),
-                  IndexOptions().background(false).unique(true)
-                )
+                IndexOptions().background(false).unique(false)
               )
             )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(Token.TOKENS_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
-                  IndexOptions().background(false).unique(false)
-                )
+          )
+      } >>
+      unsuccessfulHealthCheckConnection.use {
+        c =>
+          c.single.createIndexes(
+            List(
+              IndexModel(
+                Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
+                IndexOptions().background(false).unique(true)
+              ),
+              IndexModel(
+                Indexes.descending(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                IndexOptions().background(true).unique(false)
               )
             )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(Node.NODES_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.compoundIndex(
-                    Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                    Indexes.ascending(Node.ID_PROPERTY_NAME)
-                  ),
-                  IndexOptions().background(false).unique(false)
-                )
-              )
-            )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(UnsuccessfulHealthCheck.UNSUCCESSFUL_HEALTH_CHECK_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
-                  IndexOptions().background(false).unique(true)
+          )
+      } >>
+      mappersAndPrefixesConnection.use {
+        case (mappersC, prefixesC) =>
+          mappersC.single.createIndexes(
+            List(
+              IndexModel(
+                Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                IndexOptions().background(false).unique(false)
+              ),
+              IndexModel(
+                Indexes.compoundIndex(
+                  Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
+                  Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
                 ),
-                IndexModel(
-                  Indexes.descending(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                  IndexOptions().background(true).unique(false)
-                )
+                IndexOptions().background(false).unique(true)
               )
             )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(Mapper.MAPPERS_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                  IndexOptions().background(false).unique(false)
-                ),
-                IndexModel(
-                  Indexes.compoundIndex(
-                    Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
-                    Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
-                  ),
-                  IndexOptions().background(false).unique(true)
-                )
-              )
-            )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(Prefix.PREFIXES_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
+          ) >>
+            prefixesC.single.createIndexes(
+              List(
                 IndexModel(
                   Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
                   IndexOptions().background(false).unique(true)
                 )
               )
             )
-        ) >>
-        Task.fromReactivePublisher(
-          database
-            .getCollection(Job.JOBS_COLLECTION_NAME)
-            .createIndexes(
-              Seq(
-                IndexModel(
-                  Indexes.ascending(Job.NAME_PROPERTY_NAME),
-                  IndexOptions().background(false).unique(true)
-                )
+      } >>
+      jobsConnection.use {
+        c =>
+          c.single.createIndexes(
+            List(
+              IndexModel(
+                Indexes.ascending(Job.NAME_PROPERTY_NAME),
+                IndexOptions().background(false).unique(true)
               )
             )
-        )
-    ).runSyncUnsafe(1.minutes)(scheduler, CanBlock.permit)
-
-    tmpMongoClient.close()
+          )
+      }).runSyncUnsafe(5.minutes)(scheduler, CanBlock.permit)
   }
 }
