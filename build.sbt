@@ -91,6 +91,11 @@ lazy val panda = (project in file("."))
 lazy val bootstrap = pandaConnector("bootstrap", Dependencies.bootstapDependencies, Seq(db, gateway))
 lazy val db = pandaConnector("db", Dependencies.dbDependencies, Seq(user, healthCheck, participant, sequence, nodesTracker))
 lazy val gateway = pandaConnector("gateway", Dependencies.gatewayDependencies, Seq(loadBalancer, routes, utils))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "pandaBuildInfo"
+  )
 lazy val loadBalancer = pandaConnector("loadBalancer", Dependencies.loadBalancerDependencies, Seq(participant, utils, httpClient, backgroundJobsRegistry))
 lazy val healthCheck = pandaConnector("healthCheck", Dependencies.healthCheckDependencies, Seq(participant, nodesTracker, httpClient))
 lazy val participant = pandaConnector("participant", Dependencies.participantDependencies, Seq(sequence, utils, routes, user, backgroundJobsRegistry))

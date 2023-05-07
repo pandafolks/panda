@@ -18,6 +18,29 @@ There is no authorization check. <br /><br />
 gateway/...
 ``` 
 ---
+## Healthcheck endpoint
+[gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala](https://github.com/pandafolks/panda/blob/master/gateway/src/main/scala/com/github/pandafolks/panda/gateway/ApiGatewayRouting.scala)
+<br /><br />
+
+Returns Panda Gateway instance details. <br   />
+**Response payload example:**
+```json 
+{
+    "name": "panda",
+    "version": "0.1.0-SNAPSHOT",
+    "scalaVersion": "2.13.8",
+    "sbtVersion": "1.4.9",
+    "javaVersion": "15.0.2+7-27"
+}
+```
+**Status codes:** <br />
+- **200** - instance is working<br />
+- **403** - the user does not have access to this resource<br />
+
+```shell
+[GET] api/v1/healthcheck
+``` 
+---
 ## Authentication endpoints
 ##### *User management endpoints.* 
 [user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala](https://github.com/pandafolks/panda/blob/master/user/src/main/scala/com/github/pandafolks/panda/user/AuthRouting.scala)

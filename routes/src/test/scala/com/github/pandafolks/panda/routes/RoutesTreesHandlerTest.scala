@@ -11,11 +11,25 @@ class RoutesTreesHandlerTest extends AnyFlatSpec {
 
   "getTree" should "return the tree and prefix based on the method" in {
     val handler = RoutesTreesHandler.construct(
-      Map.from(List(
-        (HttpMethod.Get(), List(Mapper("route", MappingContent(Option.empty, Option.empty), HttpMethod.Get(), true, 2L), Mapper("route2", MappingContent(Option.empty, Option.empty), HttpMethod.Get(), true, 3L))),
-        (HttpMethod.Post(), List(Mapper("route3", MappingContent(Option.empty, Option.empty), HttpMethod.Post(), true, 2L), Mapper("route4", MappingContent(Option.empty, Option.empty), HttpMethod.Post(), true, 3L))),
-        (HttpMethod.Delete(), List.empty[Mapper]),
-      )),
+      Map.from(
+        List(
+          (
+            HttpMethod.Get(),
+            List(
+              Mapper("route", MappingContent(Option.empty, Option.empty), HttpMethod.Get(), true, 2L),
+              Mapper("route2", MappingContent(Option.empty, Option.empty), HttpMethod.Get(), true, 3L)
+            )
+          ),
+          (
+            HttpMethod.Post(),
+            List(
+              Mapper("route3", MappingContent(Option.empty, Option.empty), HttpMethod.Post(), true, 2L),
+              Mapper("route4", MappingContent(Option.empty, Option.empty), HttpMethod.Post(), true, 3L)
+            )
+          ),
+          (HttpMethod.Delete(), List.empty[Mapper])
+        )
+      ),
       Map.from(List(("one", Prefix("one", "oneValue", 1L)), ("two", Prefix("two", "twoValue", 1L))))
     )
 

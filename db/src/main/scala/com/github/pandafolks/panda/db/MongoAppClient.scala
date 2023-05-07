@@ -78,7 +78,7 @@ final class MongoAppClient(private val config: DbConfig)(private val scheduler: 
   private val mappersAndPrefixesConnection = MongoConnection.create2(settings, (mappersCol, prefixesCol))
 
   override def getParticipantEventsAndSequencesConnection
-  : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
+      : Resource[Task, (CollectionOperator[ParticipantEvent], CollectionOperator[Sequence])] =
     participantEventsAndSequencesConnection
 
   override def getUsersWithTokensConnection: Resource[Task, (CollectionOperator[User], CollectionOperator[Token])] =
@@ -97,31 +97,30 @@ final class MongoAppClient(private val config: DbConfig)(private val scheduler: 
   locally {
     //    creating indexes
 
-    (usersWithTokensConnection.use {
-      case (usersC, tokensC) =>
-        usersC.single.createIndexes(
+    (usersWithTokensConnection.use { case (usersC, tokensC) =>
+      usersC.single.createIndexes(
+        List(
+          IndexModel(
+            Indexes.ascending(User.USERNAME_PROPERTY_NAME),
+            IndexOptions().background(false).unique(true)
+          ),
+          IndexModel(
+            Indexes.ascending(User.ID_PROPERTY_NAME),
+            IndexOptions().background(false).unique(true)
+          )
+        )
+      ) >>
+        tokensC.single.createIndexes(
           List(
             IndexModel(
-              Indexes.ascending(User.USERNAME_PROPERTY_NAME),
-              IndexOptions().background(false).unique(true)
-            ),
-            IndexModel(
-              Indexes.ascending(User.ID_PROPERTY_NAME),
-              IndexOptions().background(false).unique(true)
+              Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
+              IndexOptions().background(false).unique(false)
             )
           )
-        ) >>
-          tokensC.single.createIndexes(
-            List(
-              IndexModel(
-                Indexes.hashed(Token.TEMP_ID_COLLECTION_NAME),
-                IndexOptions().background(false).unique(false)
-              )
-            )
-          )
+        )
     } >>
-      participantEventsAndSequencesConnection.use {
-        case (participantEventC, _) => participantEventC.single.createIndexes(
+      participantEventsAndSequencesConnection.use { case (participantEventC, _) =>
+        participantEventC.single.createIndexes(
           List(
             IndexModel(
               Indexes.compoundIndex(
@@ -137,71 +136,67 @@ final class MongoAppClient(private val config: DbConfig)(private val scheduler: 
           )
         )
       } >>
-      nodesConnection.use {
-        nodesC =>
-          nodesC.single.createIndexes(
-            List(
-              IndexModel(
-                Indexes.compoundIndex(
-                  Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                  Indexes.ascending(Node.ID_PROPERTY_NAME)
-                ),
-                IndexOptions().background(false).unique(false)
-              )
-            )
-          )
-      } >>
-      unsuccessfulHealthCheckConnection.use {
-        c =>
-          c.single.createIndexes(
-            List(
-              IndexModel(
-                Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
-                IndexOptions().background(false).unique(true)
+      nodesConnection.use { nodesC =>
+        nodesC.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.compoundIndex(
+                Indexes.ascending(Node.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+                Indexes.ascending(Node.ID_PROPERTY_NAME)
               ),
-              IndexModel(
-                Indexes.descending(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                IndexOptions().background(true).unique(false)
-              )
+              IndexOptions().background(false).unique(false)
             )
           )
+        )
       } >>
-      mappersAndPrefixesConnection.use {
-        case (mappersC, prefixesC) =>
-          mappersC.single.createIndexes(
-            List(
-              IndexModel(
-                Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
-                IndexOptions().background(false).unique(false)
+      unsuccessfulHealthCheckConnection.use { c =>
+        c.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.ascending(UnsuccessfulHealthCheck.IDENTIFIER_PROPERTY_NAME),
+              IndexOptions().background(false).unique(true)
+            ),
+            IndexModel(
+              Indexes.descending(UnsuccessfulHealthCheck.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+              IndexOptions().background(true).unique(false)
+            )
+          )
+        )
+      } >>
+      mappersAndPrefixesConnection.use { case (mappersC, prefixesC) =>
+        mappersC.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.ascending(Mapper.LAST_UPDATE_TIMESTAMP_PROPERTY_NAME),
+              IndexOptions().background(false).unique(false)
+            ),
+            IndexModel(
+              Indexes.compoundIndex(
+                Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
+                Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
               ),
-              IndexModel(
-                Indexes.compoundIndex(
-                  Indexes.ascending(Mapper.ROUTE_PROPERTY_NAME),
-                  Indexes.ascending(Mapper.HTTP_METHOD_PROPERTY_NAME)
-                ),
-                IndexOptions().background(false).unique(true)
-              )
+              IndexOptions().background(false).unique(true)
             )
-          ) >>
-            prefixesC.single.createIndexes(
-              List(
-                IndexModel(
-                  Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
-                  IndexOptions().background(false).unique(true)
-                )
-              )
-            )
-      } >>
-      jobsConnection.use {
-        c =>
-          c.single.createIndexes(
+          )
+        ) >>
+          prefixesC.single.createIndexes(
             List(
               IndexModel(
-                Indexes.ascending(Job.NAME_PROPERTY_NAME),
+                Indexes.ascending(Prefix.GROUP_NAME_PROPERTY_NAME),
                 IndexOptions().background(false).unique(true)
               )
             )
           )
+      } >>
+      jobsConnection.use { c =>
+        c.single.createIndexes(
+          List(
+            IndexModel(
+              Indexes.ascending(Job.NAME_PROPERTY_NAME),
+              IndexOptions().background(false).unique(true)
+            )
+          )
+        )
       }).runSyncUnsafe(5.minutes)(scheduler, CanBlock.permit)
   }
 }

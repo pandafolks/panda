@@ -71,7 +71,7 @@ make help
 ```sbtshell
 sbt assembly
 ```
-You would find `panda.jar` inside your `/target` directory.
+You would find `panda.jar` inside your `/target/scala-2.13` directory.
 You can run it with `java -jar panda.jar`.
 
 ### Using your own config file

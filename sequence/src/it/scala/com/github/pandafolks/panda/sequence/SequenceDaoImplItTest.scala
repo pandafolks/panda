@@ -68,21 +68,25 @@ class SequenceDaoImplItTest extends AsyncFlatSpec with Matchers with ScalaFuture
 
     val results: CancelableFuture[
       (
-        List[Either[PersistenceError, BsonInt64]],
+          List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]],
           List[Either[PersistenceError, BsonInt64]]
-
-        )
+      )
     ] =
       sequenceConnection
         .use(c =>
-          Task.parZip3(
-            Task.parTraverseUnordered(1 to 1000)(_ => sequenceDao.getNextSequence(sequenceKey1, c)),
-            Task.parTraverseUnordered(1 to 600)(_ => sequenceDao.getNextSequence(sequenceKey2, c)),
-            Task.parTraverseUnordered(1 to 800)(_ => sequenceDao.getNextSequence(sequenceKey3, c))
-          ).flatMap(p => Task.parTraverseUnordered(1 to 1100)(_ => sequenceDao.getNextSequence(sequenceKey4, c))
-            .map(p2 => (p._1, p._2, p._3, p2)))
+          Task
+            .parZip3(
+              Task.parTraverseUnordered(1 to 1000)(_ => sequenceDao.getNextSequence(sequenceKey1, c)),
+              Task.parTraverseUnordered(1 to 600)(_ => sequenceDao.getNextSequence(sequenceKey2, c)),
+              Task.parTraverseUnordered(1 to 800)(_ => sequenceDao.getNextSequence(sequenceKey3, c))
+            )
+            .flatMap(p =>
+              Task
+                .parTraverseUnordered(1 to 1100)(_ => sequenceDao.getNextSequence(sequenceKey4, c))
+                .map(p2 => (p._1, p._2, p._3, p2))
+            )
         )
         .runToFuture(scheduler)
 
