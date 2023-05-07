@@ -96,6 +96,7 @@ object App extends MonixServerApp {
         participantsRouting.getRoutesWithAuth
           <+> routesRouting.getRoutesWithAuth
           <+> authRouting.getRoutesWithAuth
+          <+> apiGatewayRouting.getRoutesWithAuth
       )
 
       allRoutes = (apiGatewayRouting.getRoutes <+> authRouting.getRoutes <+> authedRoutes).orNotFound
