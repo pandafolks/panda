@@ -26,8 +26,6 @@ final class LoggerStartupListener extends ContextAwareBase with LoggerContextLis
     context.putProperty("GATEWAY_TRAFFIC_LOG_MAX_HISTORY_DAYS", SystemProperties.gatewayTrafficLogMaxHistoryInDays)
     context.putProperty("GATEWAY_TRAFFIC_LOG_TOTAL_SIZE_CAP", SystemProperties.gatewayTrafficLogTotalSizeCap)
 
-    context.putProperty("LOG_TO_STDOUT", "True")
-
     started = true
   }
 
