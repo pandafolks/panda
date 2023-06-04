@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriodic="300 seconds">
+    <contextListener class="com.github.pandafolks.panda.bootstrap.LoggerStartupListener"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -8,9 +9,28 @@
         </encoder>
     </appender>
 
-    <appender name="GATEWAY" class="ch.qos.logback.core.FileAppender">
-        <file>gateway_traffic.log</file>
-        <append>true</append>
+    <appender name="MAIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${MAIN_LOG_FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${MAIN_LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.txt</fileNamePattern>
+            <maxFileSize>${MAIN_LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAIN_LOG_MAX_HISTORY_DAYS}</maxHistory>
+            <totalSizeCap>${MAIN_LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%20.20thread] %50.50logger{50}: %message%n%ex{full}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="GATEWAY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${GATEWAY_TRAFFIC_LOG_FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${GATEWAY_TRAFFIC_LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.txt</fileNamePattern>
+            <maxFileSize>${GATEWAY_TRAFFIC_LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${GATEWAY_TRAFFIC_LOG_MAX_HISTORY_DAYS}</maxHistory>
+            <totalSizeCap>${GATEWAY_TRAFFIC_LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%20.20thread] %50.50logger{50}: %message%n%ex{full}</pattern>
             <charset>utf8</charset>
@@ -39,10 +59,12 @@
     </logger>
 <!--    gateway related loggers-->
 
-    <root level="DEBUG">
+    <root level="INFO">
+        <appender-ref ref="MAIN"/>
         <appender-ref ref="STDOUT"/>
     </root>
 
     <logger name="org.mongodb.driver.connection" level="WARN" />
     <logger name="org.mongodb.driver.cluster" level="WARN" />
+    <logger name="org.mongodb.driver.client" level="WARN" />
 </configuration>
