@@ -88,7 +88,7 @@ final class RoutesServiceImpl(
     )((mappers, prefixes) => RoutesResourcePayload(mappers = Some(mappers), prefixes = Some(prefixes)))
   }
 
-  @deprecated("Cannot handle composition routes with depth bigger than 1")
+  @deprecated("Cannot handle composition routes with depth bigger than 1", since = "0.1.0")
   @nowarn
   private def searchMappers(
       data: List[(String, MapperRecordPayload)],
