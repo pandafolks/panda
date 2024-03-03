@@ -57,9 +57,9 @@ object Participant {
     )
 
   def createDefaultIdentifier(host: String, port: Int, groupName: String): String =
-    List(host, port, groupName).mkString("-")
+    host + "-" + port + "-" + groupName
 
-  @Deprecated
+  @deprecated("outdated", since = "0.1.0")
   def createHealthcheckEndpoint(host: String, port: Int, route: String): String =
     Path
       .unsafeFromString(Path.unsafeFromString(host).dropEndsWithSlash.renderString + ":" + port)
