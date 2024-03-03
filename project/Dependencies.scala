@@ -23,25 +23,23 @@ object Dependencies {
 
   val scalafixScaluzzi = "com.github.vovapolu" %% "scaluzzi" % Versions.scaluzzi
   val scalafixSortImports = "com.nequissimus" %% "sort-imports" % Versions.sortImports
-  val silencer = "com.github.ghik" % "silencer-plugin" % Versions.silencer cross CrossVersion.full
-  val silencerLib = "com.github.ghik" % "silencer-lib" % Versions.silencer cross CrossVersion.full
 
   private object Versions {
     val sst = "0.18.4" // http4s - 0.22.14
     val silencer = "1.7.8"
-    val testContainers = "0.40.12"
-    val circe = "0.14.3"
+    val testContainers = "0.41.3"
+    val circe = "0.14.6"
     val scalaCache = "0.28.0"
-    val logback = "1.4.5"
-    val scalaTest = "3.2.15"
+    val logback = "1.5.2"
+    val scalaTest = "3.2.18"
     val mockito = "3.2.12.0"
-    val collectionContrib = "0.2.2"
+    val collectionContrib = "0.3.0"
     val tsec = "0.2.0"
     val cryptoBits = "1.3.1"
     val scalaCheck = "1.17.0"
     val scaluzzi = "0.1.23"
     val sortImports = "0.6.1"
-    val monixMongo = "0.6.4"
+    val monixMongo = "0.9.0"
   }
 
   private val CommonTestDependencies = Seq(

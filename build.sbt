@@ -17,7 +17,7 @@ inThisBuild(List(
 //skip in publish := true
 
 lazy val sharedSettings = Seq(
-  scalaVersion := "2.13.8",
+  scalaVersion := "2.13.13",
   version := "0.1.0-SNAPSHOT",
   mainClass in(Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App"),
   scalacOptions ++= Seq(
@@ -66,10 +66,6 @@ lazy val sharedSettings = Seq(
   ThisBuild / scalafixDependencies ++= Seq(
     Dependencies.scalafixScaluzzi,
     Dependencies.scalafixSortImports
-  ),
-  libraryDependencies ++= Seq(
-    compilerPlugin(Dependencies.silencer),
-    Dependencies.silencerLib
   ),
 )
 
