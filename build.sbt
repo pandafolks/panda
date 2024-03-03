@@ -17,7 +17,7 @@ inThisBuild(List(
 //skip in publish := true
 
 lazy val sharedSettings = Seq(
-  scalaVersion := "2.13.13",
+  scalaVersion := "2.12.19",
   version := "0.1.0-SNAPSHOT",
   mainClass in(Compile, run) := Some("com.github.pandafolks.panda.bootstrap.App"),
   scalacOptions ++= Seq(
